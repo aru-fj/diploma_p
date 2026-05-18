@@ -4,8 +4,20 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
 import { getStoredJobSeekerProfile } from "../account-settings/profile-store";
+import { supabase } from "@/lib/supabase-client";
 
 const accountAccessKey = "mediahire.jobseeker.accountAccess";
+
+type ProfileRow = {
+  avatar_url?: string | null;
+  email?: string | null;
+  first_name?: string | null;
+  full_name?: string | null;
+  last_name?: string | null;
+  location?: string | null;
+  minimum_salary?: number | string | null;
+  payment_period?: string | null;
+};
 
 export function JobSeekerDashboardRouteSwitcher({
   children,
@@ -150,8 +162,45 @@ export function JobSeekerDashboardRouteSwitcher({
       return;
     }
 
-    function hydratePublicProfile() {
-      const profile = getStoredJobSeekerProfile();
+    async function getProfileForHydration() {
+      const fallbackProfile = getStoredJobSeekerProfile();
+      const { data: userData } = await supabase.auth.getUser();
+
+      if (!userData.user) {
+        return fallbackProfile;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select(
+          "avatar_url,email,first_name,full_name,last_name,location,payment_period,minimum_salary",
+        )
+        .eq("user_id", userData.user.id)
+        .maybeSingle<ProfileRow>();
+
+      if (!profile) {
+        return fallbackProfile;
+      }
+
+      return {
+        ...fallbackProfile,
+        avatarPreview: profile.avatar_url || fallbackProfile.avatarPreview,
+        email: profile.email || fallbackProfile.email,
+        firstName: profile.first_name || fallbackProfile.firstName,
+        fullName:
+          profile.full_name ||
+          [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
+          fallbackProfile.fullName,
+        lastName: profile.last_name || fallbackProfile.lastName,
+        location: profile.location || fallbackProfile.location,
+        minimumSalary:
+          profile.minimum_salary?.toString() || fallbackProfile.minimumSalary,
+        paymentPeriod: profile.payment_period || fallbackProfile.paymentPeriod,
+      };
+    }
+
+    async function hydratePublicProfile() {
+      const profile = await getProfileForHydration();
       const replacements = new Map([
         ["Dana Muhtarova", profile.fullName],
         ["Motion & Designer", profile.role],
@@ -187,14 +236,18 @@ export function JobSeekerDashboardRouteSwitcher({
       }
     }
 
-    hydratePublicProfile();
+    function handleProfileUpdate() {
+      void hydratePublicProfile();
+    }
 
-    window.addEventListener("mediahire:jobseeker-profile-updated", hydratePublicProfile);
+    void hydratePublicProfile();
+
+    window.addEventListener("mediahire:jobseeker-profile-updated", handleProfileUpdate);
 
     return () => {
       window.removeEventListener(
         "mediahire:jobseeker-profile-updated",
-        hydratePublicProfile,
+        handleProfileUpdate,
       );
     };
   }, [pathname]);

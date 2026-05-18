@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 import {
   Bell,
   CircleHelp,
@@ -13,7 +13,6 @@ import {
   Menu,
   Search,
   Settings,
-  SlidersHorizontal,
   Upload,
   UserCog,
   X,
@@ -29,11 +28,12 @@ import {
   slideInLeft,
 } from "../ui/design-system";
 import {
-  defaultJobSeekerProfile,
   getStoredJobSeekerProfile,
   saveJobSeekerProfile,
   type JobSeekerProfile,
 } from "./profile-store";
+import { supabase } from "@/lib/supabase-client";
+import { upsertProfile } from "../supabase-auth/auth-service";
 import { profileAvatar } from "../jobseeker-dashboard/dashboard-data";
 
 type SidebarItem = {
@@ -262,11 +262,13 @@ function AccountTopbar({
 function ProfilePictureUpload({
   error,
   onImageChange,
+  onImageError,
   onRemove,
   preview,
 }: {
   error?: string;
   onImageChange: (preview: string) => void;
+  onImageError: (message: string) => void;
   onRemove: () => void;
   preview: string;
 }) {
@@ -274,6 +276,21 @@ function ProfilePictureUpload({
     const file = event.target.files?.[0];
 
     if (!file) {
+      return;
+    }
+
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+    const maxSize = 10 * 1024 * 1024;
+
+    if (!allowedTypes.includes(file.type)) {
+      onImageError("Please upload a PNG or JPEG image.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > maxSize) {
+      onImageError("Image must be under 10MB.");
+      event.target.value = "";
       return;
     }
 
@@ -369,7 +386,7 @@ function AccountInput({
   );
 }
 
-function AccountFormSection({ children }: { children: React.ReactNode }) {
+function AccountFormSection({ children }: { children: ReactNode }) {
   return <div className="grid gap-5 md:grid-cols-2">{children}</div>;
 }
 
@@ -463,7 +480,7 @@ export function JobSeekerAccountSettingsPage() {
     return Object.keys(nextErrors).length === 0;
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!validateForm()) {
       return;
     }
@@ -471,14 +488,39 @@ export function JobSeekerAccountSettingsPage() {
     setIsSaving(true);
     setSaveMessage("");
 
-    window.setTimeout(() => {
+    try {
+      const { data, error } = await supabase.auth.getUser();
+
+      if (error || !data.user) {
+        throw error || new Error("Please sign in before saving account settings.");
+      }
+
       const normalizedProfile = buildProfile(profile);
+
+      await upsertProfile({
+        avatarUrl: normalizedProfile.avatarPreview,
+        email: normalizedProfile.email,
+        firstName: normalizedProfile.firstName,
+        lastName: normalizedProfile.lastName,
+        location: normalizedProfile.location,
+        minimumSalary: normalizedProfile.minimumSalary,
+        paymentPeriod: normalizedProfile.paymentPeriod,
+        postalCode: normalizedProfile.postalCode,
+        provider:
+          data.user.app_metadata?.provider === "google" ? "google" : "email",
+        role: "jobseeker",
+        userId: data.user.id,
+      });
+
       saveJobSeekerProfile(normalizedProfile);
       setSavedProfile(normalizedProfile);
       setProfile(normalizedProfile);
-      setIsSaving(false);
       setSaveMessage("Account settings saved successfully.");
-    }, 650);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not save profile");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function handleCancel() {
@@ -519,6 +561,9 @@ export function JobSeekerAccountSettingsPage() {
             <ProfilePictureUpload
               error={errors.avatar}
               onImageChange={updateAvatar}
+              onImageError={(message) =>
+                setErrors((current) => ({ ...current, avatar: message }))
+              }
               onRemove={() => updateAvatar("")}
               preview={profile.avatarPreview}
             />

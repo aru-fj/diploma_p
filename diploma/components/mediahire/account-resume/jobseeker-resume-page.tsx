@@ -37,6 +37,7 @@ import {
   slideInLeft,
 } from "../ui/design-system";
 import { profileAvatar } from "../jobseeker-dashboard/dashboard-data";
+import { supabase } from "@/lib/supabase-client";
 
 type SidebarItem = {
   href: string;
@@ -480,15 +481,43 @@ export function JobSeekerResumePage() {
     setSaveMessage("");
   }
 
-  function handleSave() {
+  async function handleSave() {
     setIsSaving(true);
     setSaveMessage("");
 
-    window.setTimeout(() => {
+    try {
+      const { data, error } = await supabase.auth.getUser();
+
+      if (error || !data.user) {
+        throw error || new Error("Please sign in before saving your resume.");
+      }
+
+      const { error: resumeError } = await supabase.from("jobseeker_resumes").upsert(
+        {
+          about: formState.about || null,
+          education: formState.education || null,
+          job_preferences: formState.jobPreferences || null,
+          languages: formState.languages || null,
+          links: formState.links || null,
+          preferred_job_benefits: formState.benefits || null,
+          professional_skill: formState.skills || null,
+          user_id: data.user.id,
+          work_experience: formState.experience || null,
+        },
+        { onConflict: "user_id" },
+      );
+
+      if (resumeError) {
+        throw resumeError;
+      }
+
       setSavedState(formState);
-      setIsSaving(false);
       setSaveMessage("Resume changes saved successfully.");
-    }, 650);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not save resume");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
