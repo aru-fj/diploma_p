@@ -15,6 +15,8 @@ type VerificationCodeInputProps = {
   onChange: (nextCode: string[]) => void;
 };
 
+const verificationLength = 6;
+
 export function VerificationCodeInput({
   code,
   disabled = false,
@@ -23,7 +25,10 @@ export function VerificationCodeInput({
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const refs = inputRefs as RefObject<Array<HTMLInputElement | null>>;
 
-  const inputIndexes = useMemo(() => [0, 1, 2, 3, 4, 5], []);
+  const inputIndexes = useMemo(
+    () => Array.from({ length: verificationLength }, (_, index) => index),
+    [],
+  );
 
   function focusInput(index: number) {
     refs.current?.[index]?.focus();
@@ -32,11 +37,14 @@ export function VerificationCodeInput({
 
   function updateDigit(index: number, value: string) {
     const digit = value.replace(/\D/g, "").slice(-1);
-    const nextCode = [...code];
+    const nextCode = Array.from({ length: verificationLength }, (_, codeIndex) =>
+      code[codeIndex] || "",
+    );
+
     nextCode[index] = digit;
     onChange(nextCode);
 
-    if (digit && index < code.length - 1) {
+    if (digit && index < verificationLength - 1) {
       focusInput(index + 1);
     }
   }
@@ -53,31 +61,33 @@ export function VerificationCodeInput({
     const pastedCode = event.clipboardData
       .getData("text")
       .replace(/\D/g, "")
-      .slice(0, 6)
+      .slice(0, verificationLength)
       .split("");
 
     if (!pastedCode.length) {
       return;
     }
 
-    const nextCode = ["", "", "", "", "", ""];
+    const nextCode = Array.from({ length: verificationLength }, () => "");
+
     pastedCode.forEach((digit, index) => {
       nextCode[index] = digit;
     });
+
     onChange(nextCode);
-    focusInput(Math.min(pastedCode.length, 6) - 1);
+    focusInput(Math.min(pastedCode.length, verificationLength) - 1);
   }
 
   return (
     <div
       aria-label="Verification code"
-      className="mt-8 flex justify-center gap-4"
+      className="mt-8 flex justify-center gap-2 sm:gap-4"
       role="group"
     >
       {inputIndexes.map((index) => (
         <motion.input
           aria-label={`Verification digit ${index + 1}`}
-          className="h-16 w-16 rounded-xl border border-slate-300 bg-white text-center text-2xl font-black text-slate-950 outline-none transition focus:border-[#0B63E5] focus:ring-4 focus:ring-[#0B63E5]/10 disabled:bg-slate-100 sm:h-[4.25rem] sm:w-[4.25rem]"
+          className="h-14 w-12 rounded-xl border border-slate-300 bg-white text-center text-xl font-black text-slate-950 outline-none transition focus:border-[#0B63E5] focus:ring-4 focus:ring-[#0B63E5]/10 disabled:bg-slate-100 sm:h-[4.25rem] sm:w-[4.25rem] sm:text-2xl"
           disabled={disabled}
           inputMode="numeric"
           key={index}
@@ -90,7 +100,7 @@ export function VerificationCodeInput({
             inputRefs.current[index] = node;
           }}
           type="text"
-          value={code[index]}
+          value={code[index] || ""}
           whileFocus={{ scale: 1.04 }}
         />
       ))}
