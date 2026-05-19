@@ -23,9 +23,12 @@ export type CategoryPill = {
 };
 
 export type DashboardProject = {
+  id: string;
   author: string;
   image: string;
   title: string;
+  category?: string;
+  tags?: string[];
 };
 
 export type DashboardPerson = {
@@ -56,76 +59,33 @@ export const categoryPills: CategoryPill[] = [
 
 export const dashboardProjects: DashboardProject[] = [
   {
+    id: "tales-from-the-river",
     author: "Alex Fernàndez",
     image:
-      "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=900&q=85",
+      "/projects/image-1.1.png",
     title: "Tales from the River",
+    category: "Photography",
+    tags: ["Photography"],
   },
+  
   {
+    id: "festival-of-light",
     author: "Dimesh Hasenov",
     image:
-      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=85",
+      "/projects/image-2.1.png",
     title: "festival of light",
+    category: "Animation",
+    tags: ["Animation"],
   },
+  
   {
+    id: "chubby-characters",
     author: "Aruzhan Kanatkyzy",
     image:
-      "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=900&q=85",
+      "/projects/image-3.1.png",
     title: "Chubby characters",
-  },
-  {
-    author: "Aidos Kabanbay",
-    image:
-      "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=900&q=85",
-    title: "Specter Design",
-  },
-  {
-    author: "Aliya Karinkazy",
-    image:
-      "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=900&q=85",
-    title: "Shattered Sky",
-  },
-  {
-    author: "Galym Korkurov",
-    image:
-      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=85",
-    title: "Apples",
-  },
-  {
-    author: "Rami Baltabek",
-    image:
-      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=85",
-    title: "Miyagi Labs",
-  },
-  {
-    author: "Artem Kirov",
-    image:
-      "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=900&q=85",
-    title: "We Got This",
-  },
-  {
-    author: "Milana Timurova",
-    image:
-      "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=85",
-    title: "Magnum",
-  },
-  {
-    author: "Nazym Garayeva",
-    image:
-      "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=900&q=85",
-    title: "MAGICAL LIGHT",
-  },
-  {
-    author: "Kanatbek Didar",
-    image:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=85",
-    title: "Adventure",
-  },
-  {
-    author: "Vadim Burnagaz",
-    image:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=85",
-    title: "INVITA",
+    category: "Graphic design",
+    tags: ["Graphic design"],
   },
 ];
 
