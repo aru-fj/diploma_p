@@ -1,12 +1,6 @@
-'use client'
-
-import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import type { Metadata } from "next";
 
-
 import { JobSeekerActivityDashboardPage } from "@/components/mediahire/jobseeker-dashboard/jobseeker-dashboard-page";
-
 
 export const metadata: Metadata = {
   title: "Account | MediaHire",
