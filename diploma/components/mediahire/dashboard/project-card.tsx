@@ -29,7 +29,7 @@ export function ProjectCard({ index, project }: ProjectCardProps) {
     >
       <Link
         className={`group block h-full p-3 transition duration-300 hover:shadow-[0_28px_80px_rgba(11,99,229,0.12)] ${mediaHireClassNames.card} ${mediaHireClassNames.focus}`}
-        href="#"
+        href={`/home/jobseeker/work/${project.id}`}
       >
         <div className="relative aspect-[1.2] overflow-hidden rounded-xl bg-slate-100">
           <Image
