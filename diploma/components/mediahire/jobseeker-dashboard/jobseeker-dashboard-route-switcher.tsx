@@ -3,21 +3,48 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
-import { getStoredJobSeekerProfile } from "../account-settings/profile-store";
+import {
+  getStoredJobSeekerProfile,
+  jobSeekerProfileStorageKey,
+} from "../account-settings/profile-store";
 import { supabase } from "@/lib/supabase-client";
 
 const accountAccessKey = "mediahire.jobseeker.accountAccess";
 
 type ProfileRow = {
   avatar_url?: string | null;
+  bio?: string | null;
+  city?: string | null;
+  country?: string | null;
   email?: string | null;
+  expected_salary?: number | string | null;
   first_name?: string | null;
   full_name?: string | null;
+  job_title?: string | null;
   last_name?: string | null;
   location?: string | null;
   minimum_salary?: number | string | null;
   payment_period?: string | null;
+  postal_code?: string | null;
+  resume_url?: string | null;
+  skills?: string | null;
 };
+
+function profileFullName(profile: ProfileRow) {
+  return (
+    profile.full_name ||
+    [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
+    ""
+  );
+}
+
+function profileLocation(profile: ProfileRow) {
+  return (
+    profile.location ||
+    [profile.city, profile.country].filter(Boolean).join(", ") ||
+    ""
+  );
+}
 
 export function JobSeekerDashboardRouteSwitcher({
   children,
@@ -130,7 +157,9 @@ export function JobSeekerDashboardRouteSwitcher({
       if (label === "Logout" || label === "Log out") {
         event.preventDefault();
         window.sessionStorage.removeItem(accountAccessKey);
-        router.replace("/");
+        void supabase.auth.signOut().finally(() => {
+          router.replace("/");
+        });
       }
     }
 
@@ -158,7 +187,15 @@ export function JobSeekerDashboardRouteSwitcher({
   }, [pathname, router]);
 
   useEffect(() => {
-    if (pathname !== "/profile/jobseeker") {
+    const shouldHydrate =
+      pathname.startsWith("/home/jobseeker") ||
+      pathname.startsWith("/search-job") ||
+      pathname.startsWith("/community") ||
+      pathname.startsWith("/profile/jobseeker") ||
+      pathname.startsWith("/account/jobseeker") ||
+      pathname.startsWith("/dashboard/jobseeker");
+
+    if (!shouldHydrate) {
       return;
     }
 
@@ -170,41 +207,69 @@ export function JobSeekerDashboardRouteSwitcher({
         return fallbackProfile;
       }
 
-      const { data: profile } = await supabase
+      const { data } = await supabase
         .from("profiles")
         .select(
-          "avatar_url,email,first_name,full_name,last_name,location,payment_period,minimum_salary",
+          "avatar_url,bio,city,country,email,expected_salary,first_name,full_name,job_title,last_name,location,payment_period,postal_code,minimum_salary,resume_url,skills",
         )
         .eq("user_id", userData.user.id)
-        .maybeSingle<ProfileRow>();
+        .maybeSingle();
+
+      const profile = data as ProfileRow | null;
+      const authEmail = userData.user.email || "";
 
       if (!profile) {
-        return fallbackProfile;
+        return {
+          ...fallbackProfile,
+          email: authEmail || fallbackProfile.email,
+        };
       }
 
       return {
         ...fallbackProfile,
         avatarPreview: profile.avatar_url || fallbackProfile.avatarPreview,
-        email: profile.email || fallbackProfile.email,
+        bio: profile.bio || fallbackProfile.bio,
+        city: profile.city || fallbackProfile.city,
+        country: profile.country || fallbackProfile.country,
+        email: profile.email || authEmail || fallbackProfile.email,
+        expectedSalary:
+          profile.expected_salary?.toString() ||
+          profile.minimum_salary?.toString() ||
+          fallbackProfile.expectedSalary,
         firstName: profile.first_name || fallbackProfile.firstName,
-        fullName:
-          profile.full_name ||
-          [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
-          fallbackProfile.fullName,
+        fullName: profileFullName(profile) || fallbackProfile.fullName,
+        jobTitle: profile.job_title || fallbackProfile.jobTitle,
         lastName: profile.last_name || fallbackProfile.lastName,
-        location: profile.location || fallbackProfile.location,
+        location: profileLocation(profile) || fallbackProfile.location,
         minimumSalary:
           profile.minimum_salary?.toString() || fallbackProfile.minimumSalary,
         paymentPeriod: profile.payment_period || fallbackProfile.paymentPeriod,
+        postalCode: profile.postal_code || fallbackProfile.postalCode,
+        resumeUrl: profile.resume_url || fallbackProfile.resumeUrl,
+        role: profile.job_title || fallbackProfile.role,
+        skills: profile.skills || fallbackProfile.skills,
       };
     }
 
     async function hydratePublicProfile() {
       const profile = await getProfileForHydration();
+      try {
+        window.localStorage.setItem(
+          jobSeekerProfileStorageKey,
+          JSON.stringify(profile),
+        );
+        window.dispatchEvent(
+          new CustomEvent("mediahire:jobseeker-profile-updated", {
+            detail: { ...profile, source: "supabase-hydration" },
+          }),
+        );
+      } catch {
+        // Local storage can be unavailable in private browser contexts.
+      }
+
       const replacements = new Map([
         ["Dana Muhtarova", profile.fullName],
         ["Motion & Designer", profile.role],
-        ["Graphic Designer", profile.role],
         ["Astana, Kazakhstan", profile.location],
         ["dana.muhtarova@gmail.com", profile.email],
         ["danamuhtarova@gmail.com", profile.email],
@@ -224,11 +289,47 @@ export function JobSeekerDashboardRouteSwitcher({
         node = walker.nextNode();
       }
 
+      document.querySelectorAll("input").forEach((input) => {
+        const placeholder = input.getAttribute("placeholder")?.toLowerCase() || "";
+        const label = input.getAttribute("aria-label")?.toLowerCase() || "";
+        const name = input.getAttribute("name")?.toLowerCase() || "";
+        const haystack = `${placeholder} ${label} ${name}`;
+
+        if (!input.value && haystack.includes("first")) {
+          input.value = profile.firstName;
+        }
+
+        if (!input.value && haystack.includes("last")) {
+          input.value = profile.lastName;
+        }
+
+        if (!input.value && haystack.includes("email")) {
+          input.value = profile.email;
+        }
+
+        if (!input.value && haystack.includes("location")) {
+          input.value = profile.location;
+        }
+
+        if (!input.value && haystack.includes("postal")) {
+          input.value = profile.postalCode;
+        }
+
+        if (!input.value && haystack.includes("salary")) {
+          input.value = profile.expectedSalary || profile.minimumSalary;
+        }
+      });
+
       if (profile.avatarPreview) {
         document.querySelectorAll("img").forEach((image) => {
           const alt = image.getAttribute("alt") || "";
 
-          if (alt.includes("Dana") || alt.includes("Muhtarova")) {
+          if (
+            alt.includes("Dana") ||
+            alt.includes("Muhtarova") ||
+            alt.toLowerCase().includes("avatar") ||
+            alt.toLowerCase().includes("profile")
+          ) {
             image.setAttribute("src", profile.avatarPreview);
             image.setAttribute("srcset", "");
           }
@@ -236,7 +337,13 @@ export function JobSeekerDashboardRouteSwitcher({
       }
     }
 
-    function handleProfileUpdate() {
+    function handleProfileUpdate(event: Event) {
+      const detail = (event as CustomEvent<{ source?: string }>).detail;
+
+      if (detail?.source === "supabase-hydration") {
+        return;
+      }
+
       void hydratePublicProfile();
     }
 

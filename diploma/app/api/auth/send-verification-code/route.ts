@@ -27,16 +27,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      message: "A new verification code has been sent.",
+      message: "Verification code has been sent.",
       ...result,
     });
   } catch (error) {
+    console.error("Send verification code error:", error);
+
     const message =
       error instanceof Error
         ? error.message
         : "We could not send the verification code right now. Please try again.";
-
-    console.error("Resend verification code error:", error);
 
     return NextResponse.json(
       { error: message },

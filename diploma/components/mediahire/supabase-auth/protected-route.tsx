@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { supabase } from "@/lib/supabase-client";
+import { getNextAuthSession } from "./nextauth-session";
 
 export function ProtectedRoute({
   children,
@@ -20,12 +21,13 @@ export function ProtectedRoute({
 
     async function checkSession() {
       const { data } = await supabase.auth.getSession();
+      const nextAuthSession = data.session ? null : await getNextAuthSession();
 
       if (!isMounted) {
         return;
       }
 
-      if (!data.session) {
+      if (!data.session && !nextAuthSession) {
         window.location.replace(`${redirectTo}?next=${encodeURIComponent(pathname)}`);
         return;
       }

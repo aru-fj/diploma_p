@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { FullAuthorizationGuard } from "@/components/mediahire/supabase-auth/full-authorization-guard";
 import { ProtectedRoute } from "@/components/mediahire/supabase-auth/protected-route";
 
 export default function EmployerAccountLayout({
@@ -7,5 +8,9 @@ export default function EmployerAccountLayout({
 }: {
   children: ReactNode;
 }) {
-  return <ProtectedRoute redirectTo="/login/employer">{children}</ProtectedRoute>;
+  return (
+    <ProtectedRoute redirectTo="/login/employer">
+      <FullAuthorizationGuard role="employer">{children}</FullAuthorizationGuard>
+    </ProtectedRoute>
+  );
 }

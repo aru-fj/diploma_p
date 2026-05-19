@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { signUpWithEmail } from "@/components/mediahire/supabase-auth/auth-service";
 import { AuthInput } from "./auth-input";
 import { AuthLogo } from "./logo";
 import { PasswordInput } from "./password-input";
@@ -34,12 +35,15 @@ export function JobSeekerSignupPage() {
   const router = useRouter();
   const [form, setForm] = useState<SignupForm>(initialForm);
   const [errors, setErrors] = useState<SignupErrors>({});
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
 
   function updateField(field: keyof SignupForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
+    setSubmitError("");
   }
 
   function validate() {
@@ -76,30 +80,60 @@ export function JobSeekerSignupPage() {
     return Object.keys(nextErrors).length === 0;
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!validate()) {
       return;
     }
 
+    setIsSubmitting(true);
+    setSubmitError("");
+
     const email = form.email.trim();
+    const firstName = form.firstName.trim();
+    const lastName = form.lastName.trim();
 
-    window.localStorage.setItem(
-      "mediahire.pendingProfile",
-      JSON.stringify({
+    try {
+      await signUpWithEmail({
         email,
-        firstName: form.firstName.trim(),
-        lastName: form.lastName.trim(),
+        firstName,
+        lastName,
+        password: form.password,
         role: "jobseeker",
-      }),
-    );
-
-    router.push(
-      `/verify-email?role=jobseeker&email=${encodeURIComponent(
+      });
+    
+      window.localStorage.setItem(
+        "mediahire.pendingProfile",
+        JSON.stringify({
+          email,
+          firstName,
+          lastName,
+          role: "jobseeker",
+        }),
+      );
+    
+      window.sessionStorage.setItem(
+        "mediahire.pendingEmailSignup",
+        JSON.stringify({
+          email,
+          password: form.password,
+          role: "jobseeker",
+        }),
+      );
+    
+      window.location.href = `/verify-email?role=jobseeker&email=${encodeURIComponent(
         email,
-      )}&next=${encodeURIComponent("/signup/jobseeker/location")}`,
-    );
+      )}&provider=email&next=${encodeURIComponent("/signup/jobseeker/location")}`;
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function handleGoogleSignup() {
@@ -193,13 +227,20 @@ export function JobSeekerSignupPage() {
                 value={form.confirmPassword}
               />
 
+              {submitError ? (
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">
+                  {submitError}
+                </p>
+              ) : null}
+
               <motion.button
-                className="mt-2 h-14 w-full rounded-xl bg-[#0B63E5] text-lg font-black text-white shadow-[0_16px_36px_rgba(11,99,229,0.24)] transition hover:bg-[#0758cf] focus:outline-none focus:ring-4 focus:ring-[#0B63E5]/20"
+                className="mt-2 h-14 w-full rounded-xl bg-[#0B63E5] text-lg font-black text-white shadow-[0_16px_36px_rgba(11,99,229,0.24)] transition hover:bg-[#0758cf] focus:outline-none focus:ring-4 focus:ring-[#0B63E5]/20 disabled:cursor-not-allowed disabled:opacity-60"
                 type="submit"
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.985 }}
+                disabled={isSubmitting}
+                whileHover={{ y: isSubmitting ? 0 : -2 }}
+                whileTap={{ scale: isSubmitting ? 1 : 0.985 }}
               >
-                Sign up
+                {isSubmitting ? "Creating account..." : "Sign up"}
               </motion.button>
             </form>
 

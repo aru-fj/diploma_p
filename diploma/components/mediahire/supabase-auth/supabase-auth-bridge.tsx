@@ -83,6 +83,12 @@ function isPrimaryAuthSubmit(element: HTMLElement | null, mode: AuthMode) {
     : label === "log in" || label === "login";
 }
 
+function nextOnboardingPath(role: MediaHireRole) {
+  return role === "jobseeker"
+    ? "/signup/jobseeker/location"
+    : "/signup/employer/company-details";
+}
+
 export function SupabaseAuthBridge({
   children,
   mode,
@@ -113,7 +119,7 @@ export function SupabaseAuthBridge({
       control.setAttribute("aria-busy", "true");
 
       try {
-        await signInWithGoogle(role);
+        await signInWithGoogle(role, mode);
       } catch (error) {
         window.alert(error instanceof Error ? error.message : "Google OAuth failed");
         isSubmitting = false;
@@ -141,13 +147,26 @@ export function SupabaseAuthBridge({
       try {
         if (mode === "signup") {
           await signUpWithEmail(values);
-          router.push(`/verify-email?role=${role}&email=${encodeURIComponent(values.email)}`);
+          window.sessionStorage.setItem(
+            "mediahire.pendingEmailSignup",
+            JSON.stringify({
+              email: values.email,
+              password: values.password,
+              role,
+            }),
+          );
+          window.location.href = nextOnboardingPath(role);
           return;
         }
 
         await loginWithEmail(values);
         router.push(role === "jobseeker" ? "/home/jobseeker" : "/account/employer");
       } catch (error) {
+        if (mode === "login") {
+          window.alert("Incorrect email or password");
+          return;
+        }
+
         window.alert(error instanceof Error ? error.message : "Authentication failed");
       } finally {
         isSubmitting = false;

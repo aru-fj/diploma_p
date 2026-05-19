@@ -23,7 +23,7 @@ export function VerificationCodeInput({
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const refs = inputRefs as RefObject<Array<HTMLInputElement | null>>;
 
-  const inputIndexes = useMemo(() => [0, 1, 2, 3], []);
+  const inputIndexes = useMemo(() => [0, 1, 2, 3, 4, 5], []);
 
   function focusInput(index: number) {
     refs.current?.[index]?.focus();
@@ -53,19 +53,19 @@ export function VerificationCodeInput({
     const pastedCode = event.clipboardData
       .getData("text")
       .replace(/\D/g, "")
-      .slice(0, 4)
+      .slice(0, 6)
       .split("");
 
     if (!pastedCode.length) {
       return;
     }
 
-    const nextCode = ["", "", "", ""];
+    const nextCode = ["", "", "", "", "", ""];
     pastedCode.forEach((digit, index) => {
       nextCode[index] = digit;
     });
     onChange(nextCode);
-    focusInput(Math.min(pastedCode.length, 4) - 1);
+    focusInput(Math.min(pastedCode.length, 6) - 1);
   }
 
   return (

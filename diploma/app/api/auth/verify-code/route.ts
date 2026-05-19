@@ -18,11 +18,7 @@ export async function POST(request: Request) {
 
     const result = await verifyRegistrationCode(body.email, body.code);
 
-    return NextResponse.json({
-      ok: true,
-      verified: true,
-      ...result,
-    });
+    return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     const message =
       error instanceof Error

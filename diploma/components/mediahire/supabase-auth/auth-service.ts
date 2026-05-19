@@ -21,16 +21,30 @@ export type LoginPayload = {
 
 export type ProfileUpsertPayload = {
   avatarUrl?: string;
+  bio?: string;
+  city?: string;
+  country?: string;
   email?: string;
+  expectedSalary?: string;
   firstName?: string;
+  jobTitle?: string;
   lastName?: string;
   location?: string;
   minimumSalary?: string;
   paymentPeriod?: string;
   postalCode?: string;
   provider?: MediaHireProvider;
+  resumeUrl?: string;
   role: MediaHireRole;
+  skills?: string;
   userId: string;
+};
+
+type VerificationCodeRequest = {
+  email: string;
+  provider?: MediaHireProvider;
+  role: MediaHireRole;
+  userId?: string;
 };
 
 export function getAuthRedirectUrl(path: string) {
@@ -47,20 +61,31 @@ export async function upsertProfile(payload: ProfileUpsertPayload) {
     payload.minimumSalary && !Number.isNaN(Number(payload.minimumSalary))
       ? Number(payload.minimumSalary)
       : null;
+  const expectedSalary =
+    payload.expectedSalary && !Number.isNaN(Number(payload.expectedSalary))
+      ? Number(payload.expectedSalary)
+      : minimumSalary;
 
   const { error } = await supabase.from("profiles").upsert(
     {
       avatar_url: payload.avatarUrl || null,
+      bio: payload.bio || null,
+      city: payload.city || null,
+      country: payload.country || null,
       email: payload.email || null,
+      expected_salary: expectedSalary,
       first_name: payload.firstName || null,
       full_name: fullName || null,
+      job_title: payload.jobTitle || null,
       last_name: payload.lastName || null,
       location: payload.location || null,
       minimum_salary: minimumSalary,
       payment_period: payload.paymentPeriod || null,
       postal_code: payload.postalCode || null,
       provider: payload.provider || "email",
+      resume_url: payload.resumeUrl || null,
       role: payload.role,
+      skills: payload.skills || null,
       user_id: payload.userId,
     },
     { onConflict: "user_id" },
@@ -68,6 +93,27 @@ export async function upsertProfile(payload: ProfileUpsertPayload) {
 
   if (error) {
     throw error;
+  }
+}
+
+export async function requestVerificationCode({
+  email,
+  provider = "email",
+  role,
+  userId,
+}: VerificationCodeRequest) {
+  const response = await fetch("/api/auth/send-verification-code", {
+    body: JSON.stringify({ email, provider, role, userId }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    method: "POST",
+  });
+
+  const result = (await response.json()) as { error?: string };
+
+  if (!response.ok) {
+    throw new Error(result.error || "Could not send verification code");
   }
 }
 
@@ -84,10 +130,15 @@ export async function signUpWithEmail({
     email,
     options: {
       data: {
+        city: "",
+        country: "",
+        expected_salary: "",
         first_name: firstName,
         full_name: fullName,
+        job_title: "",
         last_name: lastName,
         provider: "email",
+        resume_url: "",
         role,
       },
       emailRedirectTo: getAuthRedirectUrl(
@@ -106,6 +157,15 @@ export async function signUpWithEmail({
       email,
       firstName,
       lastName,
+      provider: "email",
+      role,
+      userId: data.user.id,
+    });
+  }
+
+  if (data.user) {
+    await requestVerificationCode({
+      email,
       provider: "email",
       role,
       userId: data.user.id,
@@ -139,26 +199,16 @@ export async function loginWithEmail({ email, password, role }: LoginPayload) {
   return data;
 }
 
-export async function signInWithGoogle(role: MediaHireRole) {
-  const callbackPath =
-    role === "jobseeker"
-      ? "/signup/jobseeker/google-details"
-      : "/signup/employer/google-details";
-
-  const { error } = await supabase.auth.signInWithOAuth({
-    options: {
-      queryParams: {
-        access_type: "offline",
-        prompt: "select_account",
-      },
-      redirectTo: getAuthRedirectUrl(callbackPath),
-    },
-    provider: "google",
-  });
-
-  if (error) {
-    throw error;
+export async function signInWithGoogle(role: MediaHireRole, mode: "login" | "signup") {
+  if (typeof window === "undefined") {
+    return;
   }
+
+  const startUrl = new URL("/api/auth/google/start", window.location.origin);
+  startUrl.searchParams.set("role", role);
+  startUrl.searchParams.set("mode", mode);
+
+  window.location.assign(startUrl.toString());
 }
 
 export async function requireSession(redirectTo: string) {

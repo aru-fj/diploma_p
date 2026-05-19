@@ -17,7 +17,7 @@ import { RoleSwitchText } from "./role-switch-text";
 import { VerificationCodeInput } from "./verification-code-input";
 
 const initialSeconds = 5 * 60;
-const emptyCode = ["", "", "", ""];
+const emptyCode = ["", "", "", "", "", ""];
 
 function getSafeNextRoute(nextRoute: string | null) {
   if (!nextRoute?.startsWith("/") || nextRoute.startsWith("//")) {
@@ -36,7 +36,7 @@ function getVerifiedRoute(role: MediaHireRole, nextRoute: string | null) {
 
   return role === "employer"
     ? "/signup/employer/company-details"
-    : "/dashboard/jobseeker";
+    : "/signup/jobseeker/location";
 }
 
 export function VerifyEmailPage() {
@@ -108,7 +108,7 @@ export function VerifyEmailPage() {
     event.preventDefault();
 
     if (!isComplete) {
-      setError("Enter the 4-digit verification code");
+      setError("Enter the 6-digit verification code");
       return;
     }
 

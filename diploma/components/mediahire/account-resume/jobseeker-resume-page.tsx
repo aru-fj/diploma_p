@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import {
   Bell,
   BriefcaseBusiness,
@@ -37,6 +37,11 @@ import {
   slideInLeft,
 } from "../ui/design-system";
 import { profileAvatar } from "../jobseeker-dashboard/dashboard-data";
+import {
+  getStoredJobSeekerProfile,
+  saveJobSeekerProfile,
+  type JobSeekerProfile,
+} from "../account-settings/profile-store";
 import { supabase } from "@/lib/supabase-client";
 
 type SidebarItem = {
@@ -72,17 +77,6 @@ const sidebarItems: SidebarItem[] = [
   { href: "/account/jobseeker/resume", icon: FileText, label: "My Resume" },
   { href: "/settings/jobseeker", icon: Settings, label: "Settings" },
   { href: "/account/jobseeker/settings", icon: UserCog, label: "Account Setting" },
-];
-
-const personalInfo: PersonalInfo[] = [
-  { label: "First name", value: "Dana" },
-  { label: "Last name", value: "Muhtarova" },
-  { label: "Email Address", value: "danamuhtarova@gmail.com" },
-  { label: "Mobile Number", value: "+1 (555) 123-4567" },
-  { label: "Role", value: "Graphic Designer" },
-  { label: "City", value: "Astana" },
-  { label: "Year of Birth", value: "2005" },
-  { label: "Gender", value: "Female" },
 ];
 
 const resumeSections: ResumeSection[] = [
@@ -222,13 +216,17 @@ function AccountSidebar({
 
 function DashboardTopbar({
   onOpenSidebar,
+  profile,
   search,
   setSearch,
 }: {
   onOpenSidebar: () => void;
+  profile: JobSeekerProfile;
   search: string;
   setSearch: (value: string) => void;
 }) {
+  const avatarSrc = profile.avatarPreview || profileAvatar;
+
   return (
     <header className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
       <div className="flex items-start gap-3">
@@ -270,18 +268,19 @@ function DashboardTopbar({
             <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
           </button>
           <Image
-            alt="Dana Muhtarova"
+            alt={profile.fullName}
             className="h-11 w-11 rounded-full object-cover"
             height={44}
-            src={profileAvatar}
+            src={avatarSrc}
             width={44}
+            unoptimized={avatarSrc.startsWith("data:")}
           />
           <div className="hidden min-w-0 pr-2 sm:block">
             <p className="truncate text-sm font-black text-slate-950">
-              Dana Muhtarova
+              {profile.fullName}
             </p>
             <p className="truncate text-xs font-semibold text-slate-400">
-              danamuhtarova@gmail.com
+              {profile.email}
             </p>
           </div>
         </div>
@@ -290,7 +289,7 @@ function DashboardTopbar({
   );
 }
 
-function ResumeHeaderCard() {
+function ResumeHeaderCard({ profile }: { profile: JobSeekerProfile }) {
   return (
     <motion.section
       animate="show"
@@ -305,9 +304,12 @@ function ResumeHeaderCard() {
         </div>
 
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-black text-[#0B63E5]">Dana Muhtarova</h2>
+          <h2 className="text-lg font-black text-[#0B63E5]">
+            {profile.fullName}
+          </h2>
           <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
-            Graphic Designer • Astana IT University, Media Technology
+            {profile.jobTitle || profile.role} •{" "}
+            {profile.city || "City not added"}
           </p>
           <div className="mt-4 flex flex-col gap-3 sm:flex-row">
             <motion.button
@@ -335,7 +337,22 @@ function ResumeHeaderCard() {
   );
 }
 
-function PersonalInfoGrid() {
+function getPersonalInfo(profile: JobSeekerProfile): PersonalInfo[] {
+  return [
+    { label: "First name", value: profile.firstName || "Not added" },
+    { label: "Last name", value: profile.lastName || "Not added" },
+    { label: "Email Address", value: profile.email || "Not added" },
+    { label: "Mobile Number", value: profile.mobile || "Not added" },
+    { label: "Role", value: profile.jobTitle || profile.role || "Not added" },
+    { label: "City", value: profile.city || "Not added" },
+    { label: "Year of Birth", value: profile.yearOfBirth || "Not added" },
+    { label: "Gender", value: profile.gender || "Not added" },
+  ];
+}
+
+function PersonalInfoGrid({ profile }: { profile: JobSeekerProfile }) {
+  const personalInfo = getPersonalInfo(profile);
+
   return (
     <motion.section
       animate="show"
@@ -461,6 +478,9 @@ function ActionButtons({
 export function JobSeekerResumePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [profile, setProfile] = useState<JobSeekerProfile>(() =>
+    getStoredJobSeekerProfile(),
+  );
   const [formState, setFormState] = useState<ResumeFormState>(initialResumeState);
   const [savedState, setSavedState] = useState<ResumeFormState>(initialResumeState);
   const [isSaving, setIsSaving] = useState(false);
@@ -470,6 +490,22 @@ export function JobSeekerResumePage() {
     () => JSON.stringify(formState) !== JSON.stringify(savedState),
     [formState, savedState],
   );
+
+  useEffect(() => {
+    function handleProfileUpdate() {
+      setProfile(getStoredJobSeekerProfile());
+    }
+
+    handleProfileUpdate();
+    window.addEventListener("mediahire:jobseeker-profile-updated", handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener(
+        "mediahire:jobseeker-profile-updated",
+        handleProfileUpdate,
+      );
+    };
+  }, []);
 
   function updateSection(id: keyof ResumeFormState, value: string) {
     setFormState((current) => ({ ...current, [id]: value }));
@@ -511,6 +547,28 @@ export function JobSeekerResumePage() {
         throw resumeError;
       }
 
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          bio: formState.about || null,
+          skills: formState.skills || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", data.user.id);
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      const updatedProfile = {
+        ...profile,
+        bio: formState.about || profile.bio,
+        resumeUrl: profile.resumeUrl,
+        skills: formState.skills || profile.skills,
+      };
+      saveJobSeekerProfile(updatedProfile);
+      setProfile(updatedProfile);
+
       setSavedState(formState);
       setSaveMessage("Resume changes saved successfully.");
     } catch (error) {
@@ -537,13 +595,14 @@ export function JobSeekerResumePage() {
         <div className="min-w-0">
           <DashboardTopbar
             onOpenSidebar={() => setIsSidebarOpen(true)}
+            profile={profile}
             search={search}
             setSearch={setSearch}
           />
 
           <div className="mt-8 max-w-4xl space-y-6">
-            <ResumeHeaderCard />
-            <PersonalInfoGrid />
+            <ResumeHeaderCard profile={profile} />
+            <PersonalInfoGrid profile={profile} />
 
             {resumeSections.map((section, index) => (
               <ResumeSectionCard

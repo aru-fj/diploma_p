@@ -1,10 +1,14 @@
 export type JobSeekerProfile = {
   avatarPreview: string;
+  bio: string;
   city: string;
+  country: string;
   email: string;
+  expectedSalary: string;
   firstName: string;
   fullName: string;
   gender: string;
+  jobTitle: string;
   lastName: string;
   location: string;
   minimumSalary: string;
@@ -13,7 +17,9 @@ export type JobSeekerProfile = {
   postalCode: string;
   preferredLocation: string;
   preferredPostalCode: string;
+  resumeUrl: string;
   role: string;
+  skills: string;
   yearOfBirth: string;
 };
 
@@ -21,20 +27,26 @@ export const jobSeekerProfileStorageKey = "mediahire.jobseeker.profile";
 
 export const defaultJobSeekerProfile: JobSeekerProfile = {
   avatarPreview: "",
+  bio: "",
   city: "Astana",
-  email: "danamuhtarova@gmail.com",
-  firstName: "Dana",
-  fullName: "Dana Muhtarova",
+  country: "Kazakhstan",
+  email: "No email added",
+  expectedSalary: "",
+  firstName: "Job",
+  fullName: "Job Seeker",
   gender: "Female",
-  lastName: "Muhtarova",
+  jobTitle: "Creative Specialist",
+  lastName: "Seeker",
   location: "Astana, Kazakhstan",
   minimumSalary: "",
-  mobile: "+7 707 418 2857",
+  mobile: "No phone added",
   paymentPeriod: "",
   postalCode: "",
   preferredLocation: "",
   preferredPostalCode: "",
-  role: "Graphic Designer",
+  resumeUrl: "",
+  role: "Creative Specialist",
+  skills: "",
   yearOfBirth: "2005",
 };
 

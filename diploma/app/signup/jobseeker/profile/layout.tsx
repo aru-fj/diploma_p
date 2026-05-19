@@ -1,19 +1,18 @@
 import type { ReactNode } from "react";
 
-import { GoogleProfileSync } from "@/components/mediahire/supabase-auth/google-profile-sync";
 import { OnboardingFlowBridge } from "@/components/mediahire/supabase-auth/onboarding-flow-bridge";
 import { VerifiedRegistrationGuard } from "@/components/mediahire/supabase-auth/verified-registration-guard";
 
-export default function JobSeekerGoogleDetailsLayout({
+export default function JobSeekerProfileOnboardingLayout({
   children,
 }: {
   children: ReactNode;
 }) {
   return (
     <VerifiedRegistrationGuard role="jobseeker">
-      <GoogleProfileSync role="jobseeker">
-        <OnboardingFlowBridge role="jobseeker">{children}</OnboardingFlowBridge>
-      </GoogleProfileSync>
+      <OnboardingFlowBridge completionMode="complete" role="jobseeker">
+        {children}
+      </OnboardingFlowBridge>
     </VerifiedRegistrationGuard>
   );
 }

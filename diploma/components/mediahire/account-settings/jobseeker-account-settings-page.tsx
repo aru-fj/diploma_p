@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, type ChangeEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 import {
   Bell,
   CircleHelp,
@@ -61,13 +61,30 @@ const sidebarItems: SidebarItem[] = [
 ];
 
 function buildProfile(profile: JobSeekerProfile): JobSeekerProfile {
+  const baseLocation = profile.location || profile.preferredLocation;
+  const city = profile.city || baseLocation.split(",")[0]?.trim() || "Astana";
+  const country =
+    profile.country ||
+    baseLocation
+      .split(",")
+      .slice(1)
+      .join(",")
+      .trim() ||
+    "Kazakhstan";
+  const location =
+    baseLocation || [city, country].filter(Boolean).join(", ");
+  const jobTitle = profile.jobTitle || profile.role || "Creative Specialist";
+  const expectedSalary = profile.expectedSalary || profile.minimumSalary;
+
   return {
     ...profile,
-    city: profile.city || profile.location.split(",")[0] || "Astana",
+    city,
+    country,
+    expectedSalary,
     fullName: `${profile.firstName} ${profile.lastName}`.trim(),
-    location:
-      profile.location ||
-      [profile.city || "Astana", "Kazakhstan"].filter(Boolean).join(", "),
+    jobTitle,
+    location,
+    role: jobTitle,
   };
 }
 
@@ -442,6 +459,24 @@ export function JobSeekerAccountSettingsPage() {
     [profile, savedProfile],
   );
 
+  useEffect(() => {
+    function handleProfileUpdate() {
+      const nextProfile = buildProfile(getStoredJobSeekerProfile());
+      setProfile(nextProfile);
+      setSavedProfile(nextProfile);
+    }
+
+    handleProfileUpdate();
+    window.addEventListener("mediahire:jobseeker-profile-updated", handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener(
+        "mediahire:jobseeker-profile-updated",
+        handleProfileUpdate,
+      );
+    };
+  }, []);
+
   function updateField(name: keyof JobSeekerProfile, value: string) {
     setProfile((current) => buildProfile({ ...current, [name]: value }));
     setErrors((current) => ({ ...current, [name]: "" }));
@@ -499,16 +534,24 @@ export function JobSeekerAccountSettingsPage() {
 
       await upsertProfile({
         avatarUrl: normalizedProfile.avatarPreview,
+        bio: normalizedProfile.bio,
+        city: normalizedProfile.city,
+        country: normalizedProfile.country,
         email: normalizedProfile.email,
+        expectedSalary: normalizedProfile.expectedSalary,
         firstName: normalizedProfile.firstName,
+        jobTitle: normalizedProfile.jobTitle,
         lastName: normalizedProfile.lastName,
         location: normalizedProfile.location,
         minimumSalary: normalizedProfile.minimumSalary,
         paymentPeriod: normalizedProfile.paymentPeriod,
-        postalCode: normalizedProfile.postalCode,
+        postalCode:
+          normalizedProfile.postalCode || normalizedProfile.preferredPostalCode,
         provider:
           data.user.app_metadata?.provider === "google" ? "google" : "email",
         role: "jobseeker",
+        resumeUrl: normalizedProfile.resumeUrl,
+        skills: normalizedProfile.skills,
         userId: data.user.id,
       });
 
