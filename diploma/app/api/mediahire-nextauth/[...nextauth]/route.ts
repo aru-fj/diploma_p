@@ -42,18 +42,27 @@ export const authOptions: NextAuthOptions = {
         const email = profile?.email || token.email;
 
         if (email) {
-          const supabaseUserId = await ensureGoogleSupabaseProfile({
-            avatarUrl:
-              typeof profile?.picture === "string" ? profile.picture : token.picture,
-            email,
-            fullName:
-              typeof profile?.name === "string"
-                ? profile.name
-                : typeof token.name === "string"
-                  ? token.name
-                  : "",
-            role,
-          });
+          const googleProfile = profile as {
+              picture?: unknown;
+              name?: unknown;
+              email?: unknown;
+            } | undefined;
+            const supabaseUserId = await ensureGoogleSupabaseProfile({
+              avatarUrl:
+                typeof googleProfile?.picture === "string"
+                  ? googleProfile.picture
+                  : typeof token.picture === "string"
+                    ? token.picture
+                    : "",
+              email,
+              fullName:
+                typeof googleProfile?.name === "string"
+                  ? googleProfile.name
+                  : typeof token.name === "string"
+                    ? token.name
+                    : "",
+              role,
+            });
 
           token.role = role;
           token.supabaseUserId = supabaseUserId;
