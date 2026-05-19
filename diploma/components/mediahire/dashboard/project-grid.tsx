@@ -4,7 +4,6 @@ import { dashboardProjects } from "./dashboard-data";
 import { ProjectCard } from "./project-card";
 
 type ProjectGridProps = {
-  activeCategory: string;
   search: string;
 };
 
@@ -28,11 +27,7 @@ export function ProjectGrid({ search }: ProjectGridProps) {
 
       <div className="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
         {visibleProjects.map((project, index) => (
-          <ProjectCard
-            index={index}
-            key={project.id}
-            project={project}
-          />
+          <ProjectCard index={index} key={project.id} project={project} />
         ))}
       </div>
     </section>
