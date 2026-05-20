@@ -40,7 +40,9 @@ export function ProjectCard({ index, project }: ProjectCardProps) {
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 31vw"
             src={project.image}
           />
+
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/25 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
+
           <span className="absolute right-3 top-3 grid h-9 w-9 translate-y-2 place-items-center rounded-full bg-white/90 text-slate-950 opacity-0 shadow-lg backdrop-blur transition group-hover:translate-y-0 group-hover:opacity-100">
             <ArrowUpRight size={17} />
           </span>
@@ -50,9 +52,16 @@ export function ProjectCard({ index, project }: ProjectCardProps) {
           <h3 className="text-lg font-black leading-tight text-slate-950">
             {project.title}
           </h3>
+
           <p className="mt-2 text-sm font-bold text-slate-500">
             {project.author}
           </p>
+
+          {project.category ? (
+            <div className="mt-3 inline-flex items-center rounded-full bg-[#0B63E5]/10 px-3 py-1 text-xs font-black text-[#0B63E5]">
+              {project.category}
+            </div>
+          ) : null}
         </div>
       </Link>
     </motion.article>

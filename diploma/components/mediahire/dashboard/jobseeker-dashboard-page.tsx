@@ -88,7 +88,10 @@ export function JobSeekerDashboardPage({
             search={search}
           />
         ) : (
-          <ProjectGrid search={search} />
+          <ProjectGrid
+            activeCategory={activeCategory}
+            search={search}
+          />
         )}
       </motion.div>
 

@@ -27,6 +27,23 @@ async function updateOnboardingState(
     throw new Error("Please sign in before continuing registration.");
   }
 
+  if (!data.user && nextAuthSession?.user?.supabaseUserId) {
+    const response = await fetch("/api/auth/onboarding-state", {
+      body: JSON.stringify(updates),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+    const result = (await response.json()) as { error?: string };
+
+    if (!response.ok) {
+      throw new Error(result.error || "Could not update onboarding state.");
+    }
+
+    return;
+  }
+
   const { error } = await supabase
     .from("profiles")
     .update(updates)
@@ -35,6 +52,78 @@ async function updateOnboardingState(
   if (error) {
     console.error("Update onboarding profile error:", error);
     throw new Error("Could not update onboarding state.");
+  }
+}
+
+function collectEmployerCompanyDetails() {
+  const inputs = Array.from(document.querySelectorAll<HTMLInputElement>("input"));
+  const textareas = Array.from(document.querySelectorAll<HTMLTextAreaElement>("textarea"));
+
+  function inputByNeedles(needles: string[]) {
+    return (
+      inputs.find((input) => {
+        const haystack = [
+          input.name,
+          input.id,
+          input.placeholder,
+          input.getAttribute("aria-label"),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return needles.some((needle) => haystack.includes(needle));
+      })?.value.trim() || ""
+    );
+  }
+
+  return {
+    companyDescription: textareas[0]?.value.trim() || "",
+    companyField: inputByNeedles(["company field", "field", "industry"]),
+    companyName: inputByNeedles(["company name", "company"]),
+  };
+}
+
+async function upsertEmployerCompanyDetails() {
+  const { data } = await supabase.auth.getUser();
+  const nextAuthSession = data.user ? null : await getNextAuthSession();
+  const userId = data.user?.id || nextAuthSession?.user?.supabaseUserId;
+
+  if (!userId) {
+    throw new Error("Please sign in before saving company information.");
+  }
+
+  const details = collectEmployerCompanyDetails();
+
+  if (!data.user && nextAuthSession?.user?.supabaseUserId) {
+    const response = await fetch("/api/employer/profile", {
+      body: JSON.stringify(details),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+    const result = (await response.json()) as { error?: string };
+
+    if (!response.ok) {
+      throw new Error(result.error || "Could not save company information.");
+    }
+
+    return;
+  }
+
+  const { error } = await supabase.from("employer_profiles").upsert(
+    {
+      company_description: details.companyDescription || null,
+      company_field: details.companyField || null,
+      company_name: details.companyName || "Employer Company",
+      user_id: userId,
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (error) {
+    throw error;
   }
 }
 
@@ -104,6 +193,10 @@ export function OnboardingFlowBridge({
       control.setAttribute("aria-busy", "true");
 
       try {
+        if (role === "employer") {
+          await upsertEmployerCompanyDetails();
+        }
+
         await updateOnboardingState({
           onboarding_completed: true,
           onboarding_skipped: false,

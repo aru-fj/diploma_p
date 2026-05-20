@@ -1,9 +1,8 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { AuthInput } from "./auth-input";
 import { AuthLogo } from "./logo";
@@ -17,7 +16,6 @@ type LoginErrors = {
 };
 
 export function JobSeekerLoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<LoginErrors>({});
@@ -38,32 +36,10 @@ export function JobSeekerLoginPage() {
     return Object.keys(nextErrors).length === 0;
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!validate()) {
-      return;
-    }
-
-    const userEmail = email.trim();
-
-    window.localStorage.setItem(
-      "mediahire.pendingProfile",
-      JSON.stringify({
-        email: userEmail,
-        role: "jobseeker",
-      }),
-    );
-
-    router.push(
-      `/verify-email?role=jobseeker&email=${encodeURIComponent(
-        userEmail,
-      )}&next=${encodeURIComponent("/dashboard/jobseeker")}`,
-    );
-  }
 
   function handleGoogleSignin() {
-    router.push("/auth/google?role=jobseeker&intent=signin");
+    window.location.href =
+      "/auth/google?role=jobseeker&intent=signin";
   }
 
   return (
@@ -87,11 +63,12 @@ export function JobSeekerLoginPage() {
               </p>
             </div>
 
-            <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
+            <form className="mt-8 space-y-5" noValidate>
               <AuthInput
                 autoComplete="email"
                 error={errors.email}
                 id="email"
+                name="email"
                 label="Email*"
                 onChange={(event) => {
                   setEmail(event.target.value);
@@ -106,6 +83,7 @@ export function JobSeekerLoginPage() {
                 autoComplete="current-password"
                 error={errors.password}
                 id="password"
+                name="password"
                 isVisible={isPasswordVisible}
                 label="Password*"
                 onChange={(event) => {

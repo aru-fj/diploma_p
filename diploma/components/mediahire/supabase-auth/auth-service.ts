@@ -23,6 +23,9 @@ export type ProfileUpsertPayload = {
   avatarUrl?: string;
   bio?: string;
   city?: string;
+  companyDescription?: string;
+  companyField?: string;
+  companyName?: string;
   country?: string;
   email?: string;
   expectedSalary?: string;
@@ -94,6 +97,55 @@ export async function upsertProfile(payload: ProfileUpsertPayload) {
   if (error) {
     throw error;
   }
+
+  if (payload.role === "employer") {
+    await upsertEmployerProfile(payload);
+  }
+}
+
+export async function upsertEmployerProfile(payload: ProfileUpsertPayload) {
+  const fullName = [payload.firstName, payload.lastName].filter(Boolean).join(" ");
+  const fallbackCompanyName =
+    payload.companyName || fullName || payload.email || "Employer Company";
+
+  const { error } = await supabase.from("employer_profiles").upsert(
+    {
+      company_description: payload.companyDescription || null,
+      company_field: payload.companyField || payload.jobTitle || null,
+      company_name: fallbackCompanyName,
+      logo_url: payload.avatarUrl || null,
+      user_id: payload.userId,
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function getStoredRole(userId: string, fallbackEmail?: string) {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (profile?.role) {
+    return profile.role as MediaHireRole;
+  }
+
+  if (!fallbackEmail) {
+    return null;
+  }
+
+  const { data: emailProfile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("email", fallbackEmail)
+    .maybeSingle();
+
+  return (emailProfile?.role as MediaHireRole | undefined) || null;
 }
 
 export async function requestVerificationCode({
@@ -186,6 +238,19 @@ export async function loginWithEmail({ email, password, role }: LoginPayload) {
   }
 
   if (data.user) {
+    const metadataRole = data.user.user_metadata?.role as MediaHireRole | undefined;
+    const storedRole = await getStoredRole(data.user.id, data.user.email || email);
+    const actualRole = storedRole || metadataRole;
+
+    if (actualRole && actualRole !== role) {
+      await supabase.auth.signOut();
+      throw new Error(
+        role === "employer"
+          ? "This account is registered as a job seeker."
+          : "This account is registered as an employer.",
+      );
+    }
+
     await upsertProfile({
       email: data.user.email || email,
       firstName: data.user.user_metadata?.first_name,

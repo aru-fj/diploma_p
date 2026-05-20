@@ -13,9 +13,17 @@ function normalizeMode(mode: string | null): OAuthMode {
 
 function callbackPath(role: OAuthRole, mode: OAuthMode) {
   if (mode === "signup") {
-    return role === "jobseeker"
-      ? "/signup/jobseeker/google-details"
-      : "/signup/employer/company-details";
+    if (role === "jobseeker") {
+      return "/signup/jobseeker/google-details";
+    }
+
+    const params = new URLSearchParams({
+      next: "/signup/employer/company-details",
+      provider: "google",
+      role: "employer",
+    });
+
+    return `/verify-email?${params.toString()}`;
   }
 
   return role === "jobseeker" ? "/home/jobseeker" : "/account/employer";

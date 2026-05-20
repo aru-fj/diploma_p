@@ -50,19 +50,33 @@ function splitFullName(fullName: string) {
   };
 }
 
-function getFormValues(role: MediaHireRole) {
-  const email = inputValue(["email"]);
-  const password = passwordValue(0);
-  const directFirstName = inputValue(["first"]);
-  const directLastName = inputValue(["last"]);
-  const fullNameInput = inputValue(["full name", "name"]);
-  const fallbackName = splitFullName(fullNameInput);
+function getFormValues(
+  role: MediaHireRole,
+  form?: HTMLFormElement | null,
+) {
+  if (!form) {
+    return {
+      email: "",
+      firstName: "",
+      lastName: "",
+      password: "",
+      role,
+    };
+  }
+
+  const formData = new FormData(form);
+
+  const email = String(formData.get("email") || "").trim();
+  const password = String(formData.get("password") || "");
+
+  const firstName = String(formData.get("firstName") || "").trim();
+  const lastName = String(formData.get("lastName") || "").trim();
 
   return {
     email,
-    firstName: directFirstName || fallbackName.firstName,
-    lastName: directLastName || fallbackName.lastName,
     password,
+    firstName,
+    lastName,
     role,
   };
 }
@@ -87,6 +101,16 @@ function nextOnboardingPath(role: MediaHireRole) {
   return role === "jobseeker"
     ? "/signup/jobseeker/location"
     : "/signup/employer/company-details";
+}
+
+function verificationPath(role: MediaHireRole, email: string) {
+  const params = new URLSearchParams({
+    email,
+    next: nextOnboardingPath(role),
+    role,
+  });
+
+  return `/verify-email?${params.toString()}`;
 }
 
 export function SupabaseAuthBridge({
@@ -134,7 +158,12 @@ export function SupabaseAuthBridge({
         return;
       }
 
-      const values = getFormValues(role);
+      const form =
+        event.target instanceof HTMLFormElement
+          ? event.target
+          : control?.closest("form");
+
+      const values = getFormValues(role, form);
 
       if (!values.email || !values.password) {
         window.alert("Please enter email and password.");
@@ -155,7 +184,7 @@ export function SupabaseAuthBridge({
               role,
             }),
           );
-          window.location.href = nextOnboardingPath(role);
+          window.location.href = verificationPath(role, values.email);
           return;
         }
 
@@ -163,7 +192,12 @@ export function SupabaseAuthBridge({
         router.push(role === "jobseeker" ? "/home/jobseeker" : "/account/employer");
       } catch (error) {
         if (mode === "login") {
-          window.alert("Incorrect email or password");
+          const message = error instanceof Error ? error.message : "";
+          window.alert(
+            message.includes("registered as")
+              ? message
+              : "Incorrect email or password",
+          );
           return;
         }
 

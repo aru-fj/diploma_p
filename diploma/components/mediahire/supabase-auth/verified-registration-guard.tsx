@@ -30,9 +30,14 @@ export function VerifiedRegistrationGuard({
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("is_verified,email")
+        .select("is_verified,email,role")
         .eq("user_id", user.id)
         .maybeSingle();
+
+      if (profile?.role && profile.role !== role) {
+        window.location.replace(role === "jobseeker" ? "/login/jobseeker" : "/login/employer");
+        return;
+      }
 
       if (!profile?.is_verified) {
         window.location.replace(

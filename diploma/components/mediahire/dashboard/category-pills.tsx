@@ -1,8 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { categoryPills } from "./dashboard-data";
-import { mediaHireMotion } from "../ui/design-system";
 
 type CategoryPillsProps = {
   activeCategory: string;
@@ -14,31 +12,31 @@ export function CategoryPills({
   onChange,
 }: CategoryPillsProps) {
   return (
-    <section className="mx-auto mt-6 w-full max-w-6xl overflow-x-auto pb-1">
-      <div className="flex w-max gap-2.5 md:mx-auto md:w-full md:flex-wrap md:justify-center lg:gap-3">
-        {categoryPills.map((category) => {
-          const Icon = category.icon;
-          const isActive = activeCategory === category.label;
+    <div className="mt-6 w-full">
+      <div className="overflow-x-auto overflow-y-visible px-1 pt-1 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex min-w-max gap-3">
+          {categoryPills.map((category) => {
+            const Icon = category.icon;
+            const isActive = activeCategory === category.label;
 
-          return (
-            <motion.button
-              className={`inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 text-[13px] font-black text-white shadow-[0_14px_34px_-22px_rgba(11,99,229,0.85)] transition hover:shadow-[0_18px_44px_-26px_rgba(11,99,229,0.95)] sm:h-12 sm:px-5 sm:text-sm ${
-                isActive
-                  ? "bg-[#0B63E5]"
-                  : "bg-[#0B63E5] hover:bg-[#0758cf]"
-              }`}
-              key={category.label}
-              onClick={() => onChange(category.label)}
-              type="button"
-              whileHover={{ y: -2, transition: mediaHireMotion.fast }}
-              whileTap={{ scale: 0.98 }}
-            >
-              {Icon ? <Icon className="h-4 w-4 sm:h-[17px] sm:w-[17px]" /> : null}
-              {category.label}
-            </motion.button>
-          );
-        })}
+            return (
+              <button
+                key={category.label}
+                type="button"
+                onClick={() => onChange(category.label)}
+                className={`flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-bold transition duration-300 ${
+                  isActive
+                    ? "bg-[#0B63E5] text-white shadow-[0_10px_24px_rgba(11,99,229,0.20)]"
+                    : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-[#0B63E5]/5 hover:text-[#0B63E5]"
+                }`}
+              >
+                {Icon ? <Icon size={18} strokeWidth={2.4} /> : null}
+                <span className="whitespace-nowrap">{category.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
-    </section>
+    </div>
   );
 }

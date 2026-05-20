@@ -32,7 +32,7 @@ export async function ensureGoogleSupabaseProfile({
 
   const { data: existingProfile, error: profileError } = await supabaseAdmin
     .from("profiles")
-    .select("user_id")
+    .select("role,user_id")
     .eq("email", normalizedEmail)
     .maybeSingle();
 
@@ -41,6 +41,14 @@ export async function ensureGoogleSupabaseProfile({
   }
 
   if (existingProfile?.user_id) {
+    if (existingProfile.role && existingProfile.role !== role) {
+      throw new Error(
+        role === "employer"
+          ? "This Google account is registered as a job seeker."
+          : "This Google account is registered as an employer.",
+      );
+    }
+
     await supabaseAdmin
       .from("profiles")
       .update({
@@ -55,6 +63,18 @@ export async function ensureGoogleSupabaseProfile({
         verified_at: new Date().toISOString(),
       })
       .eq("user_id", existingProfile.user_id);
+
+    if (role === "employer") {
+      await supabaseAdmin.from("employer_profiles").upsert(
+        {
+          company_field: "Employer",
+          company_name: fullName || normalizedEmail,
+          logo_url: avatarUrl || null,
+          user_id: existingProfile.user_id,
+        },
+        { onConflict: "user_id" },
+      );
+    }
 
     return existingProfile.user_id as string;
   }
@@ -99,6 +119,18 @@ export async function ensureGoogleSupabaseProfile({
     },
     { onConflict: "user_id" },
   );
+
+  if (role === "employer") {
+    await supabaseAdmin.from("employer_profiles").upsert(
+      {
+        company_field: "Employer",
+        company_name: fullName || normalizedEmail,
+        logo_url: avatarUrl || null,
+        user_id: createdUser.user.id,
+      },
+      { onConflict: "user_id" },
+    );
+  }
 
   return createdUser.user.id;
 }

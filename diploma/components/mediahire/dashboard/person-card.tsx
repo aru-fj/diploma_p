@@ -27,7 +27,7 @@ export function PersonCard({ index, onMessage, person }: PersonCardProps) {
       <Link
         aria-label={`Open ${person.name} profile`}
         className="mx-auto block w-fit rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#0B63E5]/15"
-        href={`/profile/${person.id}`}
+        href={`/home/jobseeker/people/${person.id}`}
       >
         <Image
           alt={person.name}
@@ -40,7 +40,7 @@ export function PersonCard({ index, onMessage, person }: PersonCardProps) {
 
       <Link
         className="mt-4 block text-sm font-black text-slate-950 transition hover:text-[#0B63E5]"
-        href={`/profile/${person.id}`}
+        href={`/home/jobseeker/people/${person.id}`}
       >
         {person.name}
       </Link>

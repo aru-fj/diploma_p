@@ -44,7 +44,7 @@ export function FullAuthorizationGuard({
       }
 
       const profileSelector =
-        "email,is_verified,onboarding_completed,onboarding_skipped";
+        "email,is_verified,onboarding_completed,onboarding_skipped,role";
       const { data: profileRows } =
         user?.id || nextAuthUser?.supabaseUserId
           ? await supabase
@@ -58,6 +58,11 @@ export function FullAuthorizationGuard({
               .eq("email", nextAuthUser?.email || "")
               .limit(1);
       const profile = profileRows?.[0];
+
+      if (profile?.role && profile.role !== role) {
+        window.location.replace(loginPath(role));
+        return;
+      }
 
       if (!profile?.is_verified) {
         window.location.replace(
