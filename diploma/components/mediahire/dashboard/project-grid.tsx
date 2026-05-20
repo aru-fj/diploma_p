@@ -1,28 +1,56 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { dashboardProjects } from "./dashboard-data";
+import type { SortOption } from "./filter-modal";
 import { ProjectCard } from "./project-card";
+import {
+  getSavedProfileIds,
+  SAVED_PROFILES_CHANGED_EVENT,
+} from "@/components/mediahire/saved-profiles-storage";
 
 type ProjectGridProps = {
   activeCategory: string;
+  activeSort: SortOption;
   search: string;
 };
 
-const savedProjectIds: string[] = [];
-
 const emptyMessages: Record<string, string> = {
-  Saved:
-    "Saved projects will appear here after you follow creators and save their works.",
-  "Graphic design":
-    "There are no portfolios related to Graphic design yet.",
-  "3D Animation":
-    "There are no portfolios related to 3D Animation yet.",
+  Saved: "Saved projects will appear here after you save a creator profile.",
+  "Graphic design": "There are no portfolios related to Graphic design yet.",
+  "3D Animation": "There are no portfolios related to 3D Animation yet.",
   Marketing: "There are no portfolios related to Marketing yet.",
   Production: "There are no portfolios related to Production yet.",
   Photography: "There are no portfolios related to Photography yet.",
 };
 
-export function ProjectGrid({ activeCategory, search }: ProjectGridProps) {
+function getProfileIdFromHref(profileHref: string) {
+  return profileHref.split("/").filter(Boolean).pop() || "";
+}
+
+export function ProjectGrid({
+  activeCategory,
+  activeSort,
+  search,
+}: ProjectGridProps) {
+  const [savedProfileIds, setSavedProfileIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const syncSavedProfiles = () => {
+      setSavedProfileIds(getSavedProfileIds());
+    };
+
+    syncSavedProfiles();
+
+    window.addEventListener(SAVED_PROFILES_CHANGED_EVENT, syncSavedProfiles);
+    window.addEventListener("storage", syncSavedProfiles);
+
+    return () => {
+      window.removeEventListener(SAVED_PROFILES_CHANGED_EVENT, syncSavedProfiles);
+      window.removeEventListener("storage", syncSavedProfiles);
+    };
+  }, []);
+
   const normalizedSearch = search.trim().toLowerCase();
 
   const filteredByCategory =
@@ -30,7 +58,7 @@ export function ProjectGrid({ activeCategory, search }: ProjectGridProps) {
       ? dashboardProjects
       : activeCategory === "Saved"
         ? dashboardProjects.filter((project) =>
-            savedProjectIds.includes(project.id),
+            savedProfileIds.includes(getProfileIdFromHref(project.profileHref)),
           )
         : dashboardProjects.filter(
             (project) => project.category === activeCategory,
@@ -44,6 +72,30 @@ export function ProjectGrid({ activeCategory, search }: ProjectGridProps) {
       project.category?.toLowerCase().includes(normalizedSearch),
   );
 
+  const sortedProjects = [...visibleProjects].sort((a, b) => {
+    if (activeSort === "Top Rated") {
+      return a.title.localeCompare(b.title);
+    }
+
+    if (activeSort === "Popular Now") {
+      return b.author.localeCompare(a.author);
+    }
+
+    if (activeSort === "Most Viewed") {
+      return b.id.localeCompare(a.id);
+    }
+
+    if (activeSort === "Most Discussed") {
+      return a.author.localeCompare(b.author);
+    }
+
+    if (activeSort === "Recently Added") {
+      return b.title.localeCompare(a.title);
+    }
+
+    return 0;
+  });
+
   const emptyMessage =
     activeCategory === "For You"
       ? "No recommended portfolios found."
@@ -56,9 +108,9 @@ export function ProjectGrid({ activeCategory, search }: ProjectGridProps) {
         Latest work
       </h2>
 
-      {visibleProjects.length > 0 ? (
+      {sortedProjects.length > 0 ? (
         <div className="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-          {visibleProjects.map((project, index) => (
+          {sortedProjects.map((project, index) => (
             <ProjectCard index={index} key={project.id} project={project} />
           ))}
         </div>
@@ -67,7 +119,9 @@ export function ProjectGrid({ activeCategory, search }: ProjectGridProps) {
           <p className="text-lg font-black text-slate-900">{emptyMessage}</p>
 
           <p className="mt-3 text-sm font-semibold text-slate-500">
-            Explore other categories or come back later to see new portfolios.
+            {activeCategory === "Saved"
+              ? "Open a person profile and click Save. Their works will appear here."
+              : "Explore other categories or come back later to see new portfolios."}
           </p>
         </div>
       )}

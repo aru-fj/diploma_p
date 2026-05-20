@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-
+import { SaveProfileButton } from "@/components/mediahire/save-profile-button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -9,7 +9,6 @@ import {
   Globe2,
   Mail,
   MapPin,
-  Plus,
   Search,
   UserRound,
 } from "lucide-react";
@@ -204,13 +203,7 @@ export default async function PublicSpecialistProfilePage({
           </div>
 
           <div className="mt-7 space-y-2">
-            <button
-              className="flex h-9 w-full items-center justify-center gap-2 rounded-full bg-[#0B63E5] text-sm font-black text-white transition hover:bg-[#0758cf]"
-              type="button"
-            >
-              <Plus size={18} />
-              Save
-            </button>
+            <SaveProfileButton profileId={specialist.id} />
 
             <button
               className="flex h-9 w-full items-center justify-center gap-2 rounded-full border border-[#0B63E5] bg-[#EAF3FF] text-sm font-black text-slate-800 transition hover:bg-[#DDEEFF]"

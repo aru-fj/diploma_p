@@ -6,7 +6,7 @@ import { CategoryPills } from "./category-pills";
 import { DashboardFooter } from "./dashboard-footer";
 import type { DashboardPerson } from "./dashboard-data";
 import { DashboardHeader } from "./dashboard-header";
-import { FilterModal } from "./filter-modal";
+import { FilterModal, type SortOption } from "./filter-modal";
 import { MessageModal } from "./message-modal";
 import { PeopleGrid } from "./people-grid";
 import { ProjectGrid } from "./project-grid";
@@ -30,6 +30,7 @@ export function JobSeekerDashboardPage({
   const [search, setSearch] = useState("");
   const [mode, setMode] = useState<DashboardMode>(initialMode);
   const [activeCategory, setActiveCategory] = useState("For You");
+  const [activeSort, setActiveSort] = useState<SortOption>("Recommended");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -39,8 +40,10 @@ export function JobSeekerDashboardPage({
 
   function handleModeChange(nextMode: DashboardMode) {
     setMode(nextMode);
+    setActiveSort("Recommended");
 
     const url = new URL(window.location.href);
+
     if (nextMode === "People") {
       url.searchParams.set("tab", "people");
     } else {
@@ -66,7 +69,9 @@ export function JobSeekerDashboardPage({
           onToggleUserMenu={() => setIsUserMenuOpen((current) => !current)}
         />
 
-        <section className={`mx-auto mt-10 w-full max-w-6xl p-5 sm:p-6 ${mediaHireClassNames.sectionCard}`}>
+        <section
+          className={`mx-auto mt-10 w-full max-w-6xl p-5 sm:p-6 ${mediaHireClassNames.sectionCard}`}
+        >
           <SearchFilterBar
             mode={mode}
             onModeChange={handleModeChange}
@@ -84,12 +89,14 @@ export function JobSeekerDashboardPage({
         {mode === "People" ? (
           <PeopleGrid
             activeCategory={activeCategory}
+            activeSort={activeSort}
             onMessage={setMessagePerson}
             search={search}
           />
         ) : (
           <ProjectGrid
             activeCategory={activeCategory}
+            activeSort={activeSort}
             search={search}
           />
         )}
@@ -98,8 +105,11 @@ export function JobSeekerDashboardPage({
       <DashboardFooter />
 
       <FilterModal
+        activeSort={activeSort}
         isOpen={isFilterOpen}
+        mode={mode}
         onClose={() => setIsFilterOpen(false)}
+        onSortChange={setActiveSort}
       />
 
       <MessageModal

@@ -12,7 +12,6 @@ import {
   MapPin,
   MessageSquare,
   Phone,
-  Plus,
   Search,
   Star,
   UserRound,
@@ -24,6 +23,7 @@ import {
   jobSeekerProfileStorageKey,
 } from "../account-settings/profile-store";
 import { supabase } from "@/lib/supabase-client";
+import { SaveProfileButton } from "@/components/mediahire/save-profile-button";
 
 const accountAccessKey = "mediahire.jobseeker.accountAccess";
 
@@ -363,14 +363,7 @@ function SpecialistSidebar({ profile }: { profile: SpecialistProfile }) {
       </div>
 
       <div className="mt-7 grid gap-3">
-        <motion.button
-          className="flex h-11 items-center justify-center gap-2 rounded-full bg-[#0B63E5] text-sm font-black text-white shadow-[0_16px_34px_rgba(11,99,229,0.24)] transition hover:bg-[#0958cc]"
-          type="button"
-          whileTap={{ scale: 0.98 }}
-        >
-          <Plus size={18} />
-          Save
-        </motion.button>
+        <SaveProfileButton profileId={profile.id} />
         <motion.button
           className="flex h-11 items-center justify-center gap-2 rounded-full border border-[#0B63E5] bg-white text-sm font-black text-slate-700 transition hover:bg-[#eef4ff] hover:text-[#0B63E5]"
           type="button"
