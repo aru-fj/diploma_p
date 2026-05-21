@@ -23,6 +23,26 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(rewriteUrl);
   }
 
+  if (
+    pathname === "/profile/jobseeker" ||
+    pathname === "/dashboard/jobseeker/profile"
+  ) {
+    const rewriteUrl = request.nextUrl.clone();
+    rewriteUrl.pathname = "/home/jobseeker/my-profile";
+
+    return NextResponse.rewrite(rewriteUrl);
+  }
+
+  if (pathname.startsWith("/home/jobseeker/work/")) {
+    const rewriteUrl = request.nextUrl.clone();
+    rewriteUrl.pathname = pathname.replace(
+      "/home/jobseeker/work",
+      "/home/jobseeker/project-work",
+    );
+
+    return NextResponse.rewrite(rewriteUrl);
+  }
+
   if (!pathname.startsWith("/api/auth/")) {
     return NextResponse.next();
   }
@@ -43,5 +63,11 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/auth/:path*", "/home/jobseeker/people/:path*"],
+  matcher: [
+    "/api/auth/:path*",
+    "/home/jobseeker/people/:path*",
+    "/home/jobseeker/work/:path*",
+    "/profile/jobseeker",
+    "/dashboard/jobseeker/profile",
+  ],
 };

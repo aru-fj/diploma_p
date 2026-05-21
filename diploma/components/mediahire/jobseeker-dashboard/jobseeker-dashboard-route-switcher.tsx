@@ -11,6 +11,7 @@ import {
   Mail,
   MapPin,
   MessageSquare,
+  Plus,
   Phone,
   Search,
   Star,
@@ -22,8 +23,13 @@ import {
   getStoredJobSeekerProfile,
   jobSeekerProfileStorageKey,
 } from "../account-settings/profile-store";
+import {
+  demoProfile,
+  getPublishedStoredProjects,
+  type MediaHireProject,
+} from "../projects-data";
 import { supabase } from "@/lib/supabase-client";
-import { SaveProfileButton } from "@/components/mediahire/save-profile-button";
+import { requireJobSeekerAuth } from "../shared/guest-permissions";
 
 const accountAccessKey = "mediahire.jobseeker.accountAccess";
 
@@ -60,6 +66,17 @@ function profileLocation(profile: ProfileRow) {
     [profile.city, profile.country].filter(Boolean).join(", ") ||
     ""
   );
+}
+
+function splitList(value?: string | string[] | null) {
+  if (Array.isArray(value)) {
+    return value.filter(Boolean);
+  }
+
+  return (value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 type SpecialistPortfolioItem = {
@@ -293,9 +310,9 @@ function SpecialistFooter() {
         <div>
           <h4 className="text-sm font-black text-slate-950">Our services</h4>
           <div className="mt-4 grid gap-3 text-sm font-semibold text-slate-500">
-            <Link href="/search-job">Find job</Link>
+            <Link href="/home/jobseeker/job-search">Find job</Link>
             <Link href="/account/jobseeker/resume">Create resume</Link>
-            <Link href="/search-job">Search company</Link>
+            <Link href="/home/jobseeker/job-search">Search company</Link>
             <Link href="#pricing">Pricing Plan</Link>
           </div>
         </div>
@@ -323,6 +340,7 @@ function SpecialistFooter() {
 }
 
 function SpecialistSidebar({ profile }: { profile: SpecialistProfile }) {
+  const [isSaved, setIsSaved] = useState(false);
   const contactRows = [
     { icon: MapPin, label: profile.location },
     { icon: UserRound, label: profile.role },
@@ -363,9 +381,32 @@ function SpecialistSidebar({ profile }: { profile: SpecialistProfile }) {
       </div>
 
       <div className="mt-7 grid gap-3">
-        <SaveProfileButton profileId={profile.id} />
+        <motion.button
+          className={`flex h-11 items-center justify-center gap-2 rounded-full text-sm font-black transition ${
+            isSaved
+              ? "bg-emerald-600 text-white"
+              : "bg-[#0B63E5] text-white hover:bg-[#0958cc]"
+          }`}
+          onClick={() => {
+            void (async () => {
+              if (!(await requireJobSeekerAuth("save profiles"))) {
+                return;
+              }
+
+              setIsSaved((current) => !current);
+            })();
+          }}
+          type="button"
+          whileTap={{ scale: 0.98 }}
+        >
+          <Plus size={17} />
+          {isSaved ? "Saved" : "Save"}
+        </motion.button>
         <motion.button
           className="flex h-11 items-center justify-center gap-2 rounded-full border border-[#0B63E5] bg-white text-sm font-black text-slate-700 transition hover:bg-[#eef4ff] hover:text-[#0B63E5]"
+          onClick={() => {
+            void requireJobSeekerAuth("message people");
+          }}
           type="button"
           whileTap={{ scale: 0.98 }}
         >
@@ -516,9 +557,101 @@ export function SpecialistProfilePage({
   const [activeTab, setActiveTab] = useState<"portfolio" | "reviews">(
     "portfolio",
   );
+  const [remoteProfile, setRemoteProfile] = useState<SpecialistProfile | null>(
+    null,
+  );
+  const [remoteProfileLoaded, setRemoteProfileLoaded] = useState(false);
 
   const selectedProfile =
-    profile || (profileId ? specialistProfiles[profileId] : undefined);
+    profile || (profileId ? specialistProfiles[profileId] : undefined) || remoteProfile;
+
+  useEffect(() => {
+    if (!profileId || profile || specialistProfiles[profileId]) {
+      setRemoteProfileLoaded(true);
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadRemoteProfile() {
+      const { data: profileRow } = await supabase
+        .from("profiles")
+        .select(
+          "id,full_name,first_name,last_name,email,avatar_url,location,city,country,profession,job_title,bio,skills,software,available_status",
+        )
+        .eq("id", profileId)
+        .maybeSingle();
+
+      if (!profileRow) {
+        if (isMounted) {
+          setRemoteProfileLoaded(true);
+        }
+        return;
+      }
+
+      const { data: projectRows } = await supabase
+        .from("projects")
+        .select("id,title,cover_url")
+        .eq("author_id", profileRow.id)
+        .eq("status", "published")
+        .order("published_at", { ascending: false });
+
+      const name =
+        profileRow.full_name ||
+        [profileRow.first_name, profileRow.last_name].filter(Boolean).join(" ") ||
+        profileRow.email ||
+        "MediaHire creator";
+
+      if (isMounted) {
+        setRemoteProfile({
+          avatar: profileRow.avatar_url || demoProfile.avatarUrl,
+          email: profileRow.email || "No email added",
+          experience: "Portfolio available",
+          id: profileRow.id,
+          location:
+            profileRow.location ||
+            [profileRow.city, profileRow.country].filter(Boolean).join(", ") ||
+            "No location added",
+          name,
+          phone: "No phone added",
+          portfolio: (projectRows || []).map((project) => ({
+            category: profileRow.profession || profileRow.job_title || "Creative work",
+            href: `/home/jobseeker/work/${project.id}`,
+            image:
+              project.cover_url ||
+              "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?auto=format&fit=crop&w=900&q=85",
+            title: project.title,
+          })),
+          portfolioLink: "Portfolio available",
+          reviews: [],
+          role: profileRow.profession || profileRow.job_title || "Creative specialist",
+          skills: splitList(profileRow.skills),
+          software: splitList(profileRow.software),
+          status: profileRow.available_status || "Available for Freelance",
+        });
+        setRemoteProfileLoaded(true);
+      }
+    }
+
+    void loadRemoteProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profile, profileId]);
+
+  if (!selectedProfile && !remoteProfileLoaded) {
+    return (
+      <main className="min-h-screen bg-[#f5f7fb] px-5 py-16">
+        <div className="mx-auto max-w-xl rounded-[2rem] bg-white p-8 text-center shadow-sm">
+          <h1 className="text-3xl font-black text-slate-950">Loading profile</h1>
+          <p className="mt-3 text-sm font-semibold text-slate-500">
+            Preparing this MediaHire profile.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   if (!selectedProfile) {
     return (
@@ -1146,7 +1279,7 @@ export function JobSeekerDashboardRouteSwitcher({
 
       if (label === "Search Job") {
         event.preventDefault();
-        router.push("/search-job");
+        router.push("/home/jobseeker/job-search");
       }
 
       if (label === "Community") {
@@ -1228,6 +1361,20 @@ export function JobSeekerDashboardRouteSwitcher({
       return;
     }
 
+    let remotePeople:
+      | Array<{
+          avatar_url?: string | null;
+          email?: string | null;
+          first_name?: string | null;
+          full_name?: string | null;
+          id: string;
+          job_title?: string | null;
+          last_name?: string | null;
+          profession?: string | null;
+          skills?: string[] | string | null;
+        }>
+      | null = null;
+
     function findPeopleCard(element: HTMLElement) {
       let current: HTMLElement | null = element;
 
@@ -1285,12 +1432,111 @@ export function JobSeekerDashboardRouteSwitcher({
           }
         });
       });
+
+      injectRemotePeopleCards();
+    }
+
+    function findPeopleGrid() {
+      const candidates = Array.from(document.querySelectorAll<HTMLElement>("div, section"));
+
+      return (
+        candidates.find((candidate) => {
+          const text = candidate.textContent || "";
+          const messageCount = candidate.textContent?.match(/Message/g)?.length || 0;
+          return (
+            messageCount >= 2 &&
+            text.includes("Alex") &&
+            text.includes("Dimash")
+          );
+        }) || null
+      );
+    }
+
+    function injectRemotePeopleCards() {
+      const grid = findPeopleGrid();
+
+      if (!grid || !remotePeople?.length) {
+        return;
+      }
+
+      remotePeople.forEach((person) => {
+        if (grid.querySelector(`[data-mediahire-remote-person-id="${person.id}"]`)) {
+          return;
+        }
+
+        const fullName =
+          person.full_name ||
+          [person.first_name, person.last_name].filter(Boolean).join(" ") ||
+          person.email ||
+          "MediaHire creator";
+        const normalized = normalizePersonName(fullName);
+
+        if (peopleProfileLinks.has(normalized)) {
+          return;
+        }
+
+        const role = person.profession || person.job_title || "Creative specialist";
+        const skills = splitList(person.skills);
+        const avatar =
+          person.avatar_url ||
+          "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=160&q=85";
+        const card = document.createElement("a");
+        const profileHref = `/home/jobseeker/people/${person.id}`;
+        card.href = profileHref;
+        card.dataset.mediahireRemotePersonId = person.id;
+        card.dataset.mediahirePersonCard = "true";
+        card.dataset.mediahirePersonHref = profileHref;
+        card.className =
+          "block rounded-[1.7rem] border border-[#0B63E5]/45 bg-white p-6 text-center shadow-[0_18px_48px_rgba(15,23,42,0.06)] transition hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(11,99,229,0.14)]";
+        card.innerHTML = `
+          <img alt="${fullName}" class="mx-auto h-16 w-16 rounded-2xl object-cover" src="${avatar}" />
+          <h3 class="mt-4 text-base font-black text-slate-950">${fullName}</h3>
+          <p class="mt-1 text-xs font-semibold text-slate-400">Freelance</p>
+          <span class="mt-3 inline-flex rounded-full border border-[#0B63E5] px-4 py-1 text-xs font-bold text-[#0B63E5]">${skills[0] || role}</span>
+          <button class="mt-5 h-9 w-full rounded-full bg-[#0B63E5] text-xs font-black text-white" type="button">Message</button>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    async function loadRemotePeople() {
+      const withRole = await supabase
+        .from("profiles")
+        .select(
+          "id,full_name,first_name,last_name,email,avatar_url,profession,job_title,skills",
+        )
+        .eq("role", "jobseeker")
+        .limit(12);
+
+      if (withRole.error) {
+        const withoutRole = await supabase
+          .from("profiles")
+          .select(
+            "id,full_name,first_name,last_name,email,avatar_url,profession,job_title,skills",
+          )
+          .limit(12);
+
+        remotePeople = withoutRole.data || [];
+      } else {
+        remotePeople = withRole.data || [];
+      }
+      applyPeopleListRules();
     }
 
     function handlePeopleCardClick(event: MouseEvent) {
       const target = event.target;
 
       if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const actionControl = target.closest<HTMLElement>("button, a");
+      const actionLabel = actionControl?.textContent?.trim().toLowerCase() || "";
+
+      if (actionLabel === "message") {
+        event.preventDefault();
+        event.stopPropagation();
+        void requireJobSeekerAuth("message people");
         return;
       }
 
@@ -1308,6 +1554,7 @@ export function JobSeekerDashboardRouteSwitcher({
     }
 
     applyPeopleListRules();
+    void loadRemotePeople();
 
     const observer = new MutationObserver(applyPeopleListRules);
     observer.observe(document.body, {
@@ -1321,9 +1568,14 @@ export function JobSeekerDashboardRouteSwitcher({
       document.removeEventListener("click", handlePeopleCardClick, true);
       document
         .querySelectorAll<HTMLElement>(
-          "[data-mediahire-person-card='true'], [data-mediahire-hidden-person-card='true']",
+          "[data-mediahire-person-card='true'], [data-mediahire-hidden-person-card='true'], [data-mediahire-remote-person-id]",
         )
         .forEach((element) => {
+          if (element.dataset.mediahireRemotePersonId) {
+            element.remove();
+            return;
+          }
+
           element.style.cursor = "";
           element.style.display = "";
           element.style.pointerEvents = "";
@@ -1333,6 +1585,139 @@ export function JobSeekerDashboardRouteSwitcher({
         });
     };
   }, [pathname, router]);
+
+  useEffect(() => {
+    if (pathname !== "/home/jobseeker") {
+      return;
+    }
+
+    let remoteProjects: MediaHireProject[] = [];
+    let isMounted = true;
+
+    function findProjectGrid() {
+      const main = document.querySelector("main");
+
+      if (!main) {
+        return null;
+      }
+
+      const candidates = Array.from(main.querySelectorAll<HTMLElement>("div, section"));
+
+      return (
+        candidates.find((candidate) => {
+          const imageCount = candidate.querySelectorAll("img").length;
+          const text = candidate.textContent || "";
+
+          return imageCount >= 6 && text.includes("Tales from the River");
+        }) || null
+      );
+    }
+
+    function injectPublishedProjects() {
+      const grid = findProjectGrid();
+
+      if (!grid) {
+        return;
+      }
+
+      const projects = [...remoteProjects, ...getPublishedStoredProjects()];
+
+      projects.forEach((project) => {
+        if (grid.querySelector(`[data-mediahire-home-project-id="${project.id}"]`)) {
+          return;
+        }
+
+        const cover =
+          project.coverUrl ||
+          project.media.find((block) => block.type === "image" && block.url)?.url ||
+          "";
+
+        if (!cover) {
+          return;
+        }
+
+        const card = document.createElement("a");
+        card.href = `/home/jobseeker/work/${project.id}`;
+        card.dataset.mediahireHomeProjectId = project.id;
+        card.className =
+          "group block rounded-[1.7rem] bg-white p-4 shadow-[0_18px_48px_rgba(15,23,42,0.07)] ring-1 ring-slate-100 transition hover:-translate-y-1";
+        card.innerHTML = `
+          <img alt="${project.title}" class="h-[260px] w-full rounded-[1.25rem] object-cover transition duration-500 group-hover:scale-[1.02]" src="${cover}" />
+          <h3 class="mt-5 text-xl font-black text-slate-950">${project.title}</h3>
+          <p class="mt-2 text-sm font-black text-slate-500">${project.authorName}</p>
+        `;
+        grid.prepend(card);
+      });
+    }
+
+    async function loadRemotePublishedProjects() {
+      const { data: projectRows, error } = await supabase
+        .from("projects")
+        .select(
+          "id,title,description,status,cover_url,created_at,updated_at,published_at,author_id",
+        )
+        .eq("status", "published")
+        .order("published_at", { ascending: false });
+
+      if (error || !projectRows?.length || !isMounted) {
+        return;
+      }
+
+      const authorIds = Array.from(
+        new Set(projectRows.map((project) => project.author_id).filter(Boolean)),
+      );
+      const { data: profileRows } = authorIds.length
+        ? await supabase
+            .from("profiles")
+            .select("id,full_name,first_name,last_name,email,avatar_url")
+            .in("id", authorIds)
+        : { data: [] };
+      const profileById = new Map(
+        (profileRows || []).map((profile) => [profile.id, profile]),
+      );
+
+      remoteProjects = projectRows.map((project) => {
+        const profile = profileById.get(project.author_id);
+        const authorName =
+          profile?.full_name ||
+          [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") ||
+          profile?.email ||
+          "MediaHire creator";
+
+        return {
+          authorAvatar: profile?.avatar_url || undefined,
+          authorId: project.author_id,
+          authorName,
+          coverUrl: project.cover_url || undefined,
+          createdAt: project.created_at,
+          description: project.description || "",
+          id: project.id,
+          media: [],
+          publishedAt: project.published_at || undefined,
+          status: "published",
+          title: project.title,
+          updatedAt: project.updated_at || project.created_at,
+        } satisfies MediaHireProject;
+      });
+      injectPublishedProjects();
+    }
+
+    injectPublishedProjects();
+    void loadRemotePublishedProjects();
+
+    const observer = new MutationObserver(injectPublishedProjects);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+    window.addEventListener("mediahire:projects-updated", injectPublishedProjects);
+
+    return () => {
+      isMounted = false;
+      observer.disconnect();
+      window.removeEventListener("mediahire:projects-updated", injectPublishedProjects);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     const shouldHydrate =
@@ -1359,7 +1744,8 @@ export function JobSeekerDashboardRouteSwitcher({
         return fallbackProfile;
       }
 
-      const { data } = await supabase
+      let profileData = null;
+      const byUserId = await supabase
         .from("profiles")
         .select(
           "avatar_url,bio,city,country,email,expected_salary,first_name,full_name,job_title,last_name,location,payment_period,postal_code,minimum_salary,resume_url,skills",
@@ -1367,7 +1753,21 @@ export function JobSeekerDashboardRouteSwitcher({
         .eq("user_id", userData.user.id)
         .maybeSingle();
 
-      const profile = data as ProfileRow | null;
+      if (byUserId.error) {
+        const byId = await supabase
+          .from("profiles")
+          .select(
+            "avatar_url,bio,city,country,email,expected_salary,first_name,full_name,job_title,last_name,location,payment_period,postal_code,minimum_salary,resume_url,skills",
+          )
+          .eq("id", userData.user.id)
+          .maybeSingle();
+
+        profileData = byId.data;
+      } else {
+        profileData = byUserId.data;
+      }
+
+      const profile = profileData as ProfileRow | null;
       const authEmail = userData.user.email || "";
 
       if (!profile) {
@@ -1520,6 +1920,73 @@ export function JobSeekerDashboardRouteSwitcher({
       );
     };
   }, [isSpecialistProfilePath, pathname]);
+
+  useEffect(() => {
+    if (pathname !== "/home/jobseeker" && pathname !== "/") {
+      return;
+    }
+
+    function handlePublicHomeAction(event: MouseEvent) {
+      const target = event.target;
+
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const control = target.closest<HTMLElement>("button, a");
+      const label = control?.textContent?.trim().toLowerCase() || "";
+
+      if (label === "search") {
+        const scope = control?.closest<HTMLElement>("section, form, div") || document.body;
+        const inputs = Array.from(scope.querySelectorAll<HTMLInputElement>("input"));
+        const keywordInput = inputs.find((input) => {
+          const placeholder = input.placeholder.toLowerCase();
+
+          return placeholder.includes("job") || placeholder.includes("keyword");
+        });
+        const locationInput = inputs.find((input) =>
+          input.placeholder.toLowerCase().includes("location"),
+        );
+
+        if (keywordInput || locationInput) {
+          const params = new URLSearchParams();
+          const query = keywordInput?.value.trim();
+          const location = locationInput?.value.trim();
+
+          if (query) {
+            params.set("query", query);
+          }
+          if (location) {
+            params.set("location", location);
+          }
+
+          event.preventDefault();
+          event.stopPropagation();
+          window.location.href = `/home/jobseeker/job-search${params.toString() ? `?${params}` : ""}`;
+          return;
+        }
+      }
+
+      if (label.includes("saved")) {
+        event.preventDefault();
+        event.stopPropagation();
+        void requireJobSeekerAuth("open saved items");
+        return;
+      }
+
+      if (label.includes("post a job")) {
+        event.preventDefault();
+        event.stopPropagation();
+        window.location.href = "/signup/employer";
+      }
+    }
+
+    document.addEventListener("click", handlePublicHomeAction, true);
+
+    return () => {
+      document.removeEventListener("click", handlePublicHomeAction, true);
+    };
+  }, [pathname]);
 
   if (pathname === "/dashboard/jobseeker") {
     return null;
