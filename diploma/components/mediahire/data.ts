@@ -1,4 +1,4 @@
-export const navLinks = ["Home", "Search Job", "My Projects", "Community"];
+export const navLinks = ["Home", "Search Job", "My Profile", "Community"];
 
 export const categories = [
   "For You",

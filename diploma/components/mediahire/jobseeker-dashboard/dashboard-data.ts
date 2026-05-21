@@ -45,7 +45,7 @@ export type Application = {
   history: ApplicationHistoryItem[];
   id: string;
   role: string;
-  status: "Interviewed" | "Applied" | "Rejected" | "Accepted";
+  status: "Applied" | "Under Review" | "Interviewed" | "Accepted" | "Rejected";
 };
 
 export const sidebarMenuItems: DashboardMenuItem[] = [
@@ -145,7 +145,14 @@ export const applications: Application[] = [
   },
 ];
 
-export const filterPills = ["All", "Applied", "Rejected", "Accepted", "Interviewed"];
+export const filterPills = [
+  "All",
+  "Applied",
+  "Under Review",
+  "Interviewed",
+  "Accepted",
+  "Rejected",
+];
 
 export const statusSummary = [
   { color: "bg-[#0B63E5]", label: "Total job", value: 2 },

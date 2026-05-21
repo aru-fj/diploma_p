@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bell,
   ChevronDown,
@@ -15,14 +15,11 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  applications,
   filterPills,
   messages,
   profileAvatar,
-  savedJobs,
   sidebarBottomItems,
   sidebarMenuItems,
-  statusSummary,
   type Application,
   type MessagePreview,
   type SavedJob,
@@ -34,12 +31,21 @@ import {
   mediaHireMotion,
   slideInLeft,
 } from "../ui/design-system";
+import { getMediaHireJob } from "../jobs-data";
+import {
+  getApplications,
+  getCurrentUserProfile,
+  getSavedJobs,
+  getSettings,
+  type JobApplicationRecord,
+} from "../shared/user-state";
+import type { JobSeekerProfile } from "../account-settings/profile-store";
 
 type DashboardTab = "Apply status" | "Offered job";
 
 function DashboardLogo() {
   return (
-    <Link className="block leading-tight" href="/dashboard/jobseeker">
+    <Link className="block leading-tight" href="/account/jobseeker">
       <span className="block text-xl font-black tracking-tight">
         <span className="text-[#0B63E5]">Media</span>
         <span className="text-slate-950">Hire</span>
@@ -81,21 +87,30 @@ function DashboardSidebar({
       <nav className="mt-10 grid gap-2">
         {sidebarMenuItems.map((item) => {
           const isActive = item.label === "Dashboard";
+          const href =
+            item.label === "My Resume"
+              ? "/account/jobseeker/resume"
+              : item.label === "Settings"
+                ? "/settings/jobseeker"
+                : item.label === "Account Setting"
+                  ? "/account/jobseeker/settings"
+                  : "/account/jobseeker";
 
           return (
-            <motion.button
+            <motion.div
               className={`flex h-12 items-center gap-3 rounded-2xl px-4 text-left text-sm font-black transition ${
                 isActive
                   ? "bg-[#0B63E5] text-white shadow-[0_16px_34px_rgba(11,99,229,0.22)]"
                   : "text-slate-600 hover:bg-[#eef4ff] hover:text-[#0B63E5]"
               }`}
               key={item.label}
-              type="button"
               whileHover={{ x: isActive ? 0 : 2, transition: mediaHireMotion.fast }}
             >
-              <item.icon size={18} />
-              {item.label}
-            </motion.button>
+              <Link className="flex w-full items-center gap-3" href={href}>
+                <item.icon size={18} />
+                {item.label}
+              </Link>
+            </motion.div>
           );
         })}
       </nav>
@@ -149,13 +164,18 @@ function DashboardSidebar({
 
 function DashboardTopbar({
   onOpenSidebar,
+  profile,
   search,
   onSearchChange,
 }: {
   onOpenSidebar: () => void;
   onSearchChange: (value: string) => void;
+  profile: JobSeekerProfile;
   search: string;
 }) {
+  const settings = getSettings();
+  const avatarSrc = profile.avatarPreview || profileAvatar;
+
   return (
     <header className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
       <div className="flex items-start gap-3">
@@ -194,21 +214,24 @@ function DashboardTopbar({
             type="button"
           >
             <Bell size={18} />
-            <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+            {settings.applicationUpdates || settings.messages ? (
+              <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+            ) : null}
           </button>
           <Image
-            alt="Dana Muhtarova"
+            alt={profile.fullName}
             className="h-11 w-11 rounded-full object-cover"
             height={44}
-            src={profileAvatar}
+            src={avatarSrc}
             width={44}
+            unoptimized={avatarSrc.startsWith("data:")}
           />
           <div className="hidden min-w-0 pr-2 sm:block">
             <p className="truncate text-sm font-black text-slate-950">
-              Dana Muhtarova
+              {profile.fullName}
             </p>
             <p className="truncate text-xs font-semibold text-slate-400">
-              danamuhtarova@gmail.com
+              {profile.email}
             </p>
           </div>
         </div>
@@ -243,7 +266,17 @@ function StatsCard({
   );
 }
 
-function ProfileSummaryCard() {
+function ProfileSummaryCard({
+  applicationsCount,
+  profile,
+  savedJobsCount,
+}: {
+  applicationsCount: number;
+  profile: JobSeekerProfile;
+  savedJobsCount: number;
+}) {
+  const avatarSrc = profile.avatarPreview || profileAvatar;
+
   return (
     <motion.section
       animate="show"
@@ -254,18 +287,19 @@ function ProfileSummaryCard() {
     >
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
         <Image
-          alt="Dana Muhtarova"
+          alt={profile.fullName}
           className="h-24 w-24 rounded-3xl object-cover ring-4 ring-[#eef4ff]"
           height={96}
-          src={profileAvatar}
+          src={avatarSrc}
           width={96}
+          unoptimized={avatarSrc.startsWith("data:")}
         />
         <div className="min-w-0 flex-1">
           <h2 className="text-2xl font-black tracking-tight text-slate-950">
-            Dana Muhtarova
+            {profile.fullName}
           </h2>
           <p className="mt-1 text-sm font-bold text-slate-500">
-            Graphic Designer, 4+ years of experience
+            {profile.jobTitle || profile.role}, {applicationsCount} applications
           </p>
           <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100">
             <div className="h-full w-[76%] rounded-full bg-[#0B63E5]" />
@@ -274,8 +308,8 @@ function ProfileSummaryCard() {
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <StatsCard icon="eye" label="people viewed your profile" value={3} />
-        <StatsCard icon="heart" label="people liked your resume" value={0} />
+        <StatsCard icon="eye" label="saved jobs" value={savedJobsCount} />
+        <StatsCard icon="heart" label="applications sent" value={applicationsCount} />
       </div>
     </motion.section>
   );
@@ -293,11 +327,11 @@ function SavedJobRow({ job, index }: { index: number; job: SavedJob }) {
     >
       <Link
         className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-sm font-black ${job.companyColor}`}
-        href={`/jobs/${job.id}`}
+        href={`/home/jobseeker/jobs/${job.id}`}
       >
         {job.companyLogo}
       </Link>
-      <Link className="min-w-0 flex-1" href={`/jobs/${job.id}`}>
+      <Link className="min-w-0 flex-1" href={`/home/jobseeker/jobs/${job.id}`}>
         <h3 className="truncate text-base font-black text-slate-950">
           {job.title}
         </h3>
@@ -312,17 +346,23 @@ function SavedJobRow({ job, index }: { index: number; job: SavedJob }) {
   );
 }
 
-function SavedJobsCard({ search }: { search: string }) {
+function SavedJobsCard({
+  search,
+  savedJobItems,
+}: {
+  savedJobItems: SavedJob[];
+  search: string;
+}) {
   const visibleJobs = useMemo(() => {
     const normalized = search.trim().toLowerCase();
-    if (!normalized) return savedJobs;
+    if (!normalized) return savedJobItems;
 
-    return savedJobs.filter((job) =>
+    return savedJobItems.filter((job) =>
       `${job.title} ${job.skill} ${job.location} ${job.type}`
         .toLowerCase()
         .includes(normalized),
     );
-  }, [search]);
+  }, [savedJobItems, search]);
 
   return (
     <motion.section
@@ -340,15 +380,38 @@ function SavedJobsCard({ search }: { search: string }) {
       </div>
 
       <div className="mt-5 grid gap-2">
-        {visibleJobs.map((job, index) => (
+        {visibleJobs.length ? visibleJobs.map((job, index) => (
           <SavedJobRow index={index} job={job} key={job.id} />
-        ))}
+        )) : (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-[#f8fbff] p-8 text-center text-sm font-black text-slate-500">
+            No saved jobs yet.
+          </div>
+        )}
       </div>
     </motion.section>
   );
 }
 
-function StatusDonutCard() {
+function StatusDonutCard({ items }: { items: Application[] }) {
+  const summary = [
+    { color: "bg-[#0B63E5]", label: "Total job", value: items.length },
+    {
+      color: "bg-amber-400",
+      label: "Under Review",
+      value: items.filter((item) => item.status === "Under Review").length,
+    },
+    {
+      color: "bg-emerald-400",
+      label: "Accepted",
+      value: items.filter((item) => item.status === "Accepted").length,
+    },
+    {
+      color: "bg-rose-400",
+      label: "Rejected",
+      value: items.filter((item) => item.status === "Rejected").length,
+    },
+  ];
+
   return (
     <motion.section
       animate="show"
@@ -377,7 +440,7 @@ function StatusDonutCard() {
         >
           <div className="grid h-28 w-28 place-items-center rounded-full bg-white text-center shadow-inner">
             <div>
-              <p className="text-3xl font-black text-slate-950">2</p>
+              <p className="text-3xl font-black text-slate-950">{items.length}</p>
               <p className="text-xs font-bold text-slate-400">Total job</p>
             </div>
           </div>
@@ -385,7 +448,7 @@ function StatusDonutCard() {
       </div>
 
       <div className="mt-7 grid gap-3">
-        {statusSummary.map((item) => (
+        {summary.map((item) => (
           <div className="flex items-center justify-between gap-4" key={item.label}>
             <span className="flex items-center gap-2 text-sm font-bold text-slate-600">
               <span className={`h-2.5 w-2.5 rounded-full ${item.color}`} />
@@ -408,7 +471,7 @@ function MessagePreviewItem({ message }: { message: MessagePreview }) {
   return (
     <Link
       className="flex items-center gap-3 rounded-3xl p-3 transition hover:bg-[#f8fbff]"
-      href="/dashboard/jobseeker/community"
+      href="/community"
     >
       <span
         className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-sm font-black ${message.avatarColor}`}
@@ -431,6 +494,25 @@ function MessagePreviewItem({ message }: { message: MessagePreview }) {
 }
 
 function MessagesPreviewCard() {
+  const settings = getSettings();
+
+  if (!settings.messages) {
+    return (
+      <motion.section
+        animate="show"
+        className={`p-5 sm:p-6 ${mediaHireClassNames.card}`}
+        initial="hidden"
+        transition={mediaHireMotion.item(3)}
+        variants={fadeInUp}
+      >
+        <h2 className="text-xl font-black text-slate-950">Messages</h2>
+        <p className="mt-4 text-sm font-semibold text-slate-500">
+          Message notifications are turned off in Settings.
+        </p>
+      </motion.section>
+    );
+  }
+
   return (
     <motion.section
       animate="show"
@@ -443,7 +525,7 @@ function MessagesPreviewCard() {
         <h2 className="text-xl font-black text-slate-950">Messages</h2>
         <Link
           className="text-sm font-black text-[#0B63E5]"
-          href="/dashboard/jobseeker/community"
+          href="/community"
         >
           More
         </Link>
@@ -493,14 +575,14 @@ function ApplicationTimeline({ history }: { history: Application["history"] }) {
   );
 }
 
-function ApplicationStatusCard() {
+function ApplicationStatusCard({ items }: { items: Application[] }) {
   const [activeTab, setActiveTab] = useState<DashboardTab>("Apply status");
   const [activeFilter, setActiveFilter] = useState("All");
-  const [expandedId, setExpandedId] = useState(applications[0]?.id ?? "");
+  const [expandedId, setExpandedId] = useState(items[0]?.id ?? "");
   const visibleApplications =
     activeTab === "Offered job"
       ? []
-      : applications.filter(
+      : items.filter(
           (application) =>
             activeFilter === "All" || application.status === activeFilter,
         );
@@ -617,6 +699,60 @@ function ApplicationStatusCard() {
 export function JobSeekerActivityDashboardPage() {
   const [search, setSearch] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [profile, setProfile] = useState<JobSeekerProfile>(() =>
+    getCurrentUserProfile(),
+  );
+  const [savedJobItems, setSavedJobItems] = useState<SavedJob[]>([]);
+  const [applicationItems, setApplicationItems] = useState<Application[]>([]);
+
+  useEffect(() => {
+    function hydrateDashboard() {
+      setProfile(getCurrentUserProfile());
+      setSavedJobItems([
+        ...getSavedJobs().map((job) => ({
+          companyColor: "bg-[#eef4ff] text-[#0B63E5]",
+          companyLogo: job.companyName.slice(0, 2),
+          date: "Saved",
+          id: job.id,
+          location: job.location,
+          skill: job.tags[1] || job.level,
+          title: job.title,
+          type: job.type,
+        })),
+      ]);
+      setApplicationItems([
+        ...getApplications().map((application: JobApplicationRecord) => {
+          const job = getMediaHireJob(application.jobId);
+
+          return {
+            company: job?.companyName || "MediaHire company",
+            history: [
+              { label: application.status, time: "Just Now" },
+              { label: "Applied", time: "Saved in your activity" },
+            ],
+            id: application.id,
+            role: job?.title || "Creative role",
+            status: application.status,
+          } satisfies Application;
+        }),
+      ]);
+    }
+
+    hydrateDashboard();
+
+    window.addEventListener("mediahire:saved-jobs-updated", hydrateDashboard);
+    window.addEventListener("mediahire:applications-updated", hydrateDashboard);
+    window.addEventListener("mediahire:jobseeker-profile-updated", hydrateDashboard);
+
+    return () => {
+      window.removeEventListener("mediahire:saved-jobs-updated", hydrateDashboard);
+      window.removeEventListener("mediahire:applications-updated", hydrateDashboard);
+      window.removeEventListener(
+        "mediahire:jobseeker-profile-updated",
+        hydrateDashboard,
+      );
+    };
+  }, []);
 
   return (
     <motion.main
@@ -636,18 +772,23 @@ export function JobSeekerActivityDashboardPage() {
           <DashboardTopbar
             onOpenSidebar={() => setIsSidebarOpen(true)}
             onSearchChange={setSearch}
+            profile={profile}
             search={search}
           />
 
           <div className="mt-7 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="grid min-w-0 gap-6">
-              <ProfileSummaryCard />
-              <SavedJobsCard search={search} />
-              <ApplicationStatusCard />
+              <ProfileSummaryCard
+                applicationsCount={applicationItems.length}
+                profile={profile}
+                savedJobsCount={savedJobItems.length}
+              />
+              <SavedJobsCard savedJobItems={savedJobItems} search={search} />
+              <ApplicationStatusCard items={applicationItems} />
             </div>
 
             <aside className="grid content-start gap-6">
-              <StatusDonutCard />
+              <StatusDonutCard items={applicationItems} />
               <MessagesPreviewCard />
             </aside>
           </div>
