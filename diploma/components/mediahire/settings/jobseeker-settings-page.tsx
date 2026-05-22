@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bell,
   CircleHelp,
@@ -180,6 +180,11 @@ function ToggleRow({
 }
 
 export function JobSeekerSettingsPage() {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [settings, setSettings] = useState<JobSeekerSettings>(() => getSettings());
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -260,10 +265,10 @@ export function JobSeekerSettingsPage() {
                 />
                 <div className="hidden min-w-0 pr-2 sm:block">
                   <p className="truncate text-sm font-black text-slate-950">
-                    {profile.fullName}
+                    {isMounted ? profile.fullName : "Job Seeker"}
                   </p>
                   <p className="truncate text-xs font-semibold text-slate-400">
-                    {profile.email}
+                    {isMounted ? profile.email : "jobseeker@mediahire.kz"}
                   </p>
                 </div>
               </div>

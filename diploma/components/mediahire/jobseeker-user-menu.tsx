@@ -22,7 +22,11 @@ type JobSeekerUserMenuProps = {
   onToggle?: () => void;
 };
 
-function displayName(profile: JobSeekerProfile) {
+function displayName(profile: JobSeekerProfile | null) {
+  if (!profile) {
+    return "Job Seeker";
+  }
+
   return (
     profile.fullName ||
     [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
@@ -36,12 +40,13 @@ export function JobSeekerUserMenu({
   onToggle,
 }: JobSeekerUserMenuProps) {
   const router = useRouter();
-  const [profile, setProfile] = useState(() => getStoredJobSeekerProfile());
+
+  const [profile, setProfile] = useState<JobSeekerProfile | null>(null);
   const [internalOpen, setInternalOpen] = useState(false);
 
   const open = isOpen ?? internalOpen;
   const name = displayName(profile);
-  const avatarSrc = profile.avatarPreview || fallbackAvatar;
+  const avatarSrc = profile?.avatarPreview || fallbackAvatar;
 
   useEffect(() => {
     const syncProfile = () => {
@@ -55,7 +60,10 @@ export function JobSeekerUserMenu({
     window.addEventListener("storage", syncProfile);
 
     return () => {
-      window.removeEventListener("mediahire:jobseeker-profile-updated", syncProfile);
+      window.removeEventListener(
+        "mediahire:jobseeker-profile-updated",
+        syncProfile,
+      );
       window.removeEventListener("mediahire:user-state-updated", syncProfile);
       window.removeEventListener("storage", syncProfile);
     };
@@ -92,13 +100,14 @@ export function JobSeekerUserMenu({
       >
         <span className="relative block h-10 w-10 overflow-hidden rounded-full ring-2 ring-white">
           <Image
-            alt={name}
+            alt="Job seeker avatar"
             className="h-full w-full object-cover"
             height={40}
             src={avatarSrc}
             unoptimized={avatarSrc.startsWith("data:")}
             width={40}
           />
+
           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
         </span>
 
