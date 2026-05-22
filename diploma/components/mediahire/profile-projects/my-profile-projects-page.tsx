@@ -42,6 +42,22 @@ type DraftBlock = ProjectMediaBlock & {
   file?: File;
 };
 
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      resolve(String(reader.result || ""));
+};
+
+    reader.onerror = () => {
+      reject(reader.error);
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
 function splitList(value?: string | string[] | null) {
   if (Array.isArray(value)) {
     return value.filter(Boolean);
@@ -82,12 +98,27 @@ function localProfileSummary(): ProfileSummary {
 const projectFallbackCover =
   "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=90";
 
-function projectCover(project: MediaHireProject) {
-  return (
-    project.coverUrl ||
-    project.media.find((block) => block.type === "image" && block.url)?.url ||
-    projectFallbackCover
+function isValidProjectImage(url?: string) {
+  return Boolean(
+    url &&
+      !url.startsWith("blob:") &&
+      !url.includes("undefined") &&
+      !url.includes("null"),
   );
+}
+
+function projectCover(project: MediaHireProject) {
+  const mediaCover = project.media.find(
+    (block) =>
+      (block.type === "image" || block.type === "photo_grid") &&
+      isValidProjectImage(block.url),
+  )?.url;
+
+  if (isValidProjectImage(project.coverUrl)) {
+    return project.coverUrl;
+  }
+
+  return mediaCover || projectFallbackCover;
 }
 
 async function loadProfile() {
@@ -436,18 +467,25 @@ function AddProjectForm({
       return block.url;
     }
 
-    const extension = block.file.name.split(".").pop() || "file";
-    const path = `${profile.id}/${projectId}/${block.id}.${extension}`;
-    const { error } = await supabase.storage
-      .from("project-media")
-      .upload(path, block.file, { upsert: true });
+    const fallbackDataUrl = await fileToDataUrl(block.file);
 
-    if (error) {
-      return block.url;
+    try {
+      const extension = block.file.name.split(".").pop() || "file";
+      const path = `${profile.id}/${projectId}/${block.id}.${extension}`;
+
+      const { error } = await supabase.storage
+        .from("project-media")
+        .upload(path, block.file, { upsert: true });
+
+      if (error) {
+        return fallbackDataUrl;
+      }
+
+      const { data } = supabase.storage.from("project-media").getPublicUrl(path);
+      return data.publicUrl || fallbackDataUrl;
+    } catch {
+      return fallbackDataUrl;
     }
-
-    const { data } = supabase.storage.from("project-media").getPublicUrl(path);
-    return data.publicUrl || block.url;
   }
 
   async function persistProject(status: "draft" | "published") {

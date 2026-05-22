@@ -40,6 +40,21 @@ export type ProfileSummary = {
 
 export const projectStorageKey = "mediahire.jobseeker.projects";
 
+const hiddenScratchProjectTitles = ["qqwq", "lflfl", "lflflf"];
+
+export function isHiddenScratchProjectTitle(title: string) {
+  const normalizedTitle = title.trim().toLowerCase().replace(/\s+/g, " ");
+
+  return hiddenScratchProjectTitles.some(
+    (hiddenTitle) =>
+      normalizedTitle === hiddenTitle || normalizedTitle.includes(hiddenTitle),
+  );
+}
+
+export function isHiddenScratchProject(project: Pick<MediaHireProject, "title">) {
+  return isHiddenScratchProjectTitle(project.title);
+}
+
 export const demoProfile: ProfileSummary = {
   avatarUrl:
     "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=320&q=85",
@@ -101,6 +116,150 @@ export const demoProjects: MediaHireProject[] = [
   },
 ];
 
+export const homeProjectDetails: MediaHireProject[] = [
+  {
+    authorAvatar:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=160&q=85",
+    authorId: "alex-fernandez",
+    authorName: "Alex Fernández",
+    coverUrl: "/projects/image-1.1.png",
+    createdAt: "2025-10-23T00:00:00.000Z",
+    description:
+      "A young woman who dreams, a man who hesitates, and an old man who remembers -- three echoes of a life shaped by time and the quiet pursuit of meaning.",
+    id: "tales-from-the-river",
+    media: [
+      {
+        id: "tales-from-the-river-cover",
+        orderIndex: 0,
+        type: "image",
+        url: "/projects/image-1.1.png",
+      },
+      {
+        id: "tales-from-the-river-scene-2",
+        orderIndex: 1,
+        type: "image",
+        url: "/projects/image-1.2.png",
+      },
+      {
+        id: "tales-from-the-river-scene-3",
+        orderIndex: 2,
+        type: "image",
+        url: "/projects/image-1.3.png",
+      },
+      {
+        id: "tales-from-the-river-scene-4",
+        orderIndex: 3,
+        type: "image",
+        url: "/projects/image-1.4.png",
+      },
+      {
+        id: "tales-from-the-river-poster",
+        orderIndex: 4,
+        type: "image",
+        url: "/projects/image-1.5.png",
+      },
+    ],
+    publishedAt: "2025-10-23T00:00:00.000Z",
+    status: "published",
+    title: "Tales from the River",
+    updatedAt: "2025-10-23T00:00:00.000Z",
+  },
+  {
+    authorAvatar:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=160&q=85",
+    authorId: "alex-fernandez",
+    authorName: "Alex Fernández",
+    coverUrl: "/projects/image-2.1.png",
+    createdAt: "2025-09-18T00:00:00.000Z",
+    description:
+      "A cinematic photography series about reflection, travel, and quiet moments of light across open landscapes.",
+    id: "festival-of-light",
+    media: [
+      {
+        id: "festival-of-light-cover",
+        orderIndex: 0,
+        type: "image",
+        url: "/projects/image-2.1.png",
+      },
+      {
+        id: "festival-of-light-scene-2",
+        orderIndex: 1,
+        type: "image",
+        url: "/projects/image-2.2.png",
+      },
+      {
+        id: "festival-of-light-scene-3",
+        orderIndex: 2,
+        type: "image",
+        url: "/projects/image-2.3.png",
+      },
+      {
+        id: "festival-of-light-scene-4",
+        orderIndex: 3,
+        type: "image",
+        url: "/projects/image-2.4.png",
+      },
+      {
+        id: "festival-of-light-scene-5",
+        orderIndex: 4,
+        type: "image",
+        url: "/projects/image-2.5.png",
+      },
+    ],
+    publishedAt: "2025-09-18T00:00:00.000Z",
+    status: "published",
+    title: "Festival of Light",
+    updatedAt: "2025-09-18T00:00:00.000Z",
+  },
+  {
+    authorAvatar:
+      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=160&q=85",
+    authorId: "dimash-hasenov",
+    authorName: "Dimash Hasenov",
+    coverUrl: "/projects/image-3.1.png",
+    createdAt: "2025-08-05T00:00:00.000Z",
+    description:
+      "A playful 3D character set built around soft shapes, expressive color, and friendly animated details.",
+    id: "chubby-characters",
+    media: [
+      {
+        id: "chubby-characters-cover",
+        orderIndex: 0,
+        type: "image",
+        url: "/projects/image-3.1.png",
+      },
+      {
+        id: "chubby-characters-scene-2",
+        orderIndex: 1,
+        type: "image",
+        url: "/projects/image-3.2.png",
+      },
+      {
+        id: "chubby-characters-scene-3",
+        orderIndex: 2,
+        type: "image",
+        url: "/projects/image-3.3.png",
+      },
+      {
+        id: "chubby-characters-scene-4",
+        orderIndex: 3,
+        type: "image",
+        url: "/projects/image-3.4.png",
+      },
+      {
+        id: "chubby-characters-scene-5",
+        orderIndex: 4,
+        type: "image",
+        url: "/projects/image-3.5.png",
+      },
+    ],
+    publishedAt: "2025-08-05T00:00:00.000Z",
+    status: "published",
+    title: "Chubby Characters",
+    updatedAt: "2025-08-05T00:00:00.000Z",
+  },
+];
+
 export function createProjectId(title: string) {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -142,5 +301,8 @@ export function setStoredProjects(projects: MediaHireProject[]) {
 }
 
 export function getPublishedStoredProjects() {
-  return getStoredProjects().filter((project) => project.status === "published");
+  return getStoredProjects().filter(
+    (project) =>
+      project.status === "published" && !isHiddenScratchProject(project),
+  );
 }

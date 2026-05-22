@@ -43,6 +43,11 @@ import {
   type JobSeekerProfile,
 } from "../account-settings/profile-store";
 import { supabase } from "@/lib/supabase-client";
+import {
+  getResumeData,
+  updateResumeData,
+  type ResumeData,
+} from "../shared/user-state";
 
 type SidebarItem = {
   href: string;
@@ -71,6 +76,33 @@ type ResumeFormState = {
   links: string;
   skills: string;
 };
+
+function resumeDataToFormState(resume: ResumeData): ResumeFormState {
+  return {
+    about: resume.about,
+    benefits: resume.benefits,
+    education: resume.education,
+    experience: resume.experience,
+    jobPreferences: resume.jobPreferences,
+    languages: resume.languages,
+    links: resume.links,
+    skills: resume.skills,
+  };
+}
+
+function formStateToResumeData(formState: ResumeFormState, current: ResumeData) {
+  return {
+    ...current,
+    about: formState.about,
+    benefits: formState.benefits,
+    education: formState.education,
+    experience: formState.experience,
+    jobPreferences: formState.jobPreferences,
+    languages: formState.languages,
+    links: formState.links,
+    skills: formState.skills,
+  } satisfies ResumeData;
+}
 
 const sidebarItems: SidebarItem[] = [
   { href: "/account/jobseeker", icon: LayoutDashboard, label: "Dashboard" },
@@ -481,8 +513,12 @@ export function JobSeekerResumePage() {
   const [profile, setProfile] = useState<JobSeekerProfile>(() =>
     getStoredJobSeekerProfile(),
   );
-  const [formState, setFormState] = useState<ResumeFormState>(initialResumeState);
-  const [savedState, setSavedState] = useState<ResumeFormState>(initialResumeState);
+  const [formState, setFormState] = useState<ResumeFormState>(() =>
+    resumeDataToFormState(getResumeData()),
+  );
+  const [savedState, setSavedState] = useState<ResumeFormState>(() =>
+    resumeDataToFormState(getResumeData()),
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
@@ -494,6 +530,9 @@ export function JobSeekerResumePage() {
   useEffect(() => {
     function handleProfileUpdate() {
       setProfile(getStoredJobSeekerProfile());
+      const storedResume = resumeDataToFormState(getResumeData());
+      setFormState(storedResume);
+      setSavedState(storedResume);
     }
 
     handleProfileUpdate();
@@ -557,9 +596,18 @@ export function JobSeekerResumePage() {
         .eq("user_id", data.user.id);
 
       if (profileError) {
-        throw profileError;
+        // Some projects keep the profile owner in `id` instead of `user_id`.
+        await supabase
+          .from("profiles")
+          .update({
+            bio: formState.about || null,
+            skills: formState.skills || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", data.user.id);
       }
 
+      updateResumeData(formStateToResumeData(formState, getResumeData()));
       const updatedProfile = {
         ...profile,
         bio: formState.about || profile.bio,

@@ -1,19 +1,29 @@
+import { Suspense } from "react";
 import { EmployerCta } from "@/components/mediahire/employer-cta";
-import { FilterSection } from "@/components/mediahire/filter-section";
 import { Footer } from "@/components/mediahire/footer";
 import { Header } from "@/components/mediahire/header";
 import { HeroSection } from "@/components/mediahire/hero-section";
-import { LatestWork } from "@/components/mediahire/latest-work";
+import { PublicWorksSection } from "@/components/mediahire/public/public-works-section";
 
-export default function Home() {
+function HomePageContent() {
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
-      <Header />
-      <HeroSection />
-      <FilterSection />
-      <LatestWork />
+      <div className="bg-[#eaf3ff]">
+        <Header />
+        <HeroSection />
+      </div>
+
+      <PublicWorksSection />
       <EmployerCta />
       <Footer />
     </main>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <HomePageContent />
+    </Suspense>
   );
 }

@@ -524,43 +524,46 @@ export function JobSeekerAccountSettingsPage() {
     setSaveMessage("");
 
     try {
+      const normalizedProfile = buildProfile(profile);
       const { data, error } = await supabase.auth.getUser();
 
-      if (error || !data.user) {
-        throw error || new Error("Please sign in before saving account settings.");
+      if (!error && data.user) {
+        await upsertProfile({
+          avatarUrl: normalizedProfile.avatarPreview,
+          bio: normalizedProfile.bio,
+          city: normalizedProfile.city,
+          country: normalizedProfile.country,
+          email: normalizedProfile.email,
+          expectedSalary: normalizedProfile.expectedSalary,
+          firstName: normalizedProfile.firstName,
+          jobTitle: normalizedProfile.jobTitle,
+          lastName: normalizedProfile.lastName,
+          location: normalizedProfile.location,
+          minimumSalary: normalizedProfile.minimumSalary,
+          paymentPeriod: normalizedProfile.paymentPeriod,
+          postalCode:
+            normalizedProfile.postalCode || normalizedProfile.preferredPostalCode,
+          provider:
+            data.user.app_metadata?.provider === "google" ? "google" : "email",
+          role: "jobseeker",
+          resumeUrl: normalizedProfile.resumeUrl,
+          skills: normalizedProfile.skills,
+          userId: data.user.id,
+        });
       }
-
-      const normalizedProfile = buildProfile(profile);
-
-      await upsertProfile({
-        avatarUrl: normalizedProfile.avatarPreview,
-        bio: normalizedProfile.bio,
-        city: normalizedProfile.city,
-        country: normalizedProfile.country,
-        email: normalizedProfile.email,
-        expectedSalary: normalizedProfile.expectedSalary,
-        firstName: normalizedProfile.firstName,
-        jobTitle: normalizedProfile.jobTitle,
-        lastName: normalizedProfile.lastName,
-        location: normalizedProfile.location,
-        minimumSalary: normalizedProfile.minimumSalary,
-        paymentPeriod: normalizedProfile.paymentPeriod,
-        postalCode:
-          normalizedProfile.postalCode || normalizedProfile.preferredPostalCode,
-        provider:
-          data.user.app_metadata?.provider === "google" ? "google" : "email",
-        role: "jobseeker",
-        resumeUrl: normalizedProfile.resumeUrl,
-        skills: normalizedProfile.skills,
-        userId: data.user.id,
-      });
 
       saveJobSeekerProfile(normalizedProfile);
       setSavedProfile(normalizedProfile);
       setProfile(normalizedProfile);
       setSaveMessage("Account settings saved successfully.");
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : "Could not save profile");
+      const normalizedProfile = buildProfile(profile);
+      saveJobSeekerProfile(normalizedProfile);
+      setSavedProfile(normalizedProfile);
+      setProfile(normalizedProfile);
+      setSaveMessage(
+        "Account settings saved locally. Supabase sync will run when your session is available.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -655,6 +658,13 @@ export function JobSeekerAccountSettingsPage() {
                 required
                 type="email"
                 value={profile.email}
+              />
+              <AccountInput
+                label="Role / Profession"
+                name="jobTitle"
+                onChange={updateField}
+                placeholder="Enter your role"
+                value={profile.jobTitle}
               />
             </AccountFormSection>
 

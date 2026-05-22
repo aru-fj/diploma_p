@@ -7,48 +7,41 @@ import {
   Bookmark,
   BookmarkCheck,
   BriefcaseBusiness,
-  ChevronDown,
   Clock3,
   MapPin,
   Search,
+  UserRound,
 } from "lucide-react";
 
 import type { MediaHireJob } from "../jobs-data";
 import {
   applyJob,
   getApplicationForJob,
-  getCurrentUserProfile,
   isJobSaved,
   toggleSavedJob,
 } from "../shared/user-state";
-import { requireJobSeekerAuth } from "../shared/guest-permissions";
+import { hasMediaHireSession, requireJobSeekerAuth } from "../shared/guest-permissions";
+import { JobSeekerUserMenu } from "../jobseeker-user-menu";
 
 export function JobSeekerNav({ active = "Search Job" }: { active?: string }) {
-  const [profile, setProfile] = useState(() => getCurrentUserProfile());
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const links = [
     { href: "/home/jobseeker", label: "Home" },
     { href: "/search-job", label: "Search Job" },
     { href: "/profile/jobseeker", label: "My Profile" },
     { href: "/community", label: "Community" },
   ];
-  const avatarSrc =
-    profile.avatarPreview ||
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=85";
-
   useEffect(() => {
-    function handleProfileUpdate() {
-      setProfile(getCurrentUserProfile());
-    }
+    let isMounted = true;
 
-    window.addEventListener("mediahire:jobseeker-profile-updated", handleProfileUpdate);
-    window.addEventListener("mediahire:user-state-updated", handleProfileUpdate);
+    void hasMediaHireSession().then((sessionExists) => {
+      if (isMounted) {
+        setIsAuthenticated(sessionExists);
+      }
+    });
 
     return () => {
-      window.removeEventListener(
-        "mediahire:jobseeker-profile-updated",
-        handleProfileUpdate,
-      );
-      window.removeEventListener("mediahire:user-state-updated", handleProfileUpdate);
+      isMounted = false;
     };
   }, []);
 
@@ -80,18 +73,17 @@ export function JobSeekerNav({ active = "Search Job" }: { active?: string }) {
         <span className="hidden text-sm font-black text-slate-600 sm:block">
           Job Seeker
         </span>
-        <span className="relative block h-11 w-11 overflow-hidden rounded-full ring-2 ring-white">
-          <img
-            alt={profile.fullName}
-            className="h-full w-full object-cover"
-            src={avatarSrc}
-          />
-          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
-        </span>
-        <span className="hidden max-w-[150px] text-sm font-black text-slate-700 md:block">
-          {profile.fullName}
-        </span>
-        <ChevronDown className="text-[#0B63E5]" size={16} />
+        {isAuthenticated ? (
+          <JobSeekerUserMenu />
+        ) : (
+          <Link
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0B63E5] px-4 text-sm font-black text-white transition hover:bg-[#0958cc]"
+            href="/signup"
+          >
+            <UserRound size={16} />
+            Sign Up
+          </Link>
+        )}
       </div>
     </nav>
   );
@@ -147,20 +139,36 @@ export function MediaHireFooter() {
 export function JobCard({ job }: { job: MediaHireJob }) {
   const [saved, setSaved] = useState(false);
   const [applied, setApplied] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    setSaved(isJobSaved(job.id));
-    setApplied(Boolean(getApplicationForJob(job.id)));
+    let isMounted = true;
+
+    function syncAuthenticatedState(sessionExists: boolean) {
+      setIsAuthenticated(sessionExists);
+      setSaved(sessionExists ? isJobSaved(job.id) : false);
+      setApplied(sessionExists ? Boolean(getApplicationForJob(job.id)) : false);
+    }
+
+    void hasMediaHireSession().then((sessionExists) => {
+      if (isMounted) {
+        syncAuthenticatedState(sessionExists);
+      }
+    });
 
     function handleUpdate() {
-      setSaved(isJobSaved(job.id));
-      setApplied(Boolean(getApplicationForJob(job.id)));
+      void hasMediaHireSession().then((sessionExists) => {
+        if (isMounted) {
+          syncAuthenticatedState(sessionExists);
+        }
+      });
     }
 
     window.addEventListener("mediahire:saved-jobs-updated", handleUpdate);
     window.addEventListener("mediahire:applications-updated", handleUpdate);
 
     return () => {
+      isMounted = false;
       window.removeEventListener("mediahire:saved-jobs-updated", handleUpdate);
       window.removeEventListener("mediahire:applications-updated", handleUpdate);
     };
@@ -169,9 +177,9 @@ export function JobCard({ job }: { job: MediaHireJob }) {
   return (
     <article className="group relative rounded-2xl border border-slate-200 bg-white p-5 transition duration-300 hover:-translate-y-1 hover:border-[#0B63E5]/40 hover:shadow-[0_22px_55px_rgba(15,23,42,0.08)]">
       <button
-        aria-label={saved ? "Unsave job" : "Save job"}
+        aria-label={isAuthenticated && saved ? "Unsave job" : "Save job"}
         className={`absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full transition ${
-          saved
+          isAuthenticated && saved
             ? "bg-[#0B63E5] text-white"
             : "bg-[#eef4ff] text-[#0B63E5] hover:bg-[#dcecff]"
         }`}
@@ -188,7 +196,7 @@ export function JobCard({ job }: { job: MediaHireJob }) {
         }}
         type="button"
       >
-        {saved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
+        {isAuthenticated && saved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
       </button>
       <Link className="block pr-10" href={`/home/jobseeker/jobs/${job.id}`}>
       <div className="flex gap-4">
@@ -223,7 +231,7 @@ export function JobCard({ job }: { job: MediaHireJob }) {
             </span>
           </div>
           <p className="mt-3 text-sm font-black text-[#0B63E5]">{job.salary}</p>
-          {applied ? (
+          {isAuthenticated && applied ? (
             <span className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-600">
               Applied
             </span>
@@ -234,7 +242,7 @@ export function JobCard({ job }: { job: MediaHireJob }) {
       <div className="mt-4 flex gap-2 pl-20">
         <button
           className={`h-9 rounded-xl px-4 text-xs font-black text-white transition ${
-            applied ? "bg-emerald-600" : "bg-[#0B63E5] hover:bg-[#0958cc]"
+            isAuthenticated && applied ? "bg-emerald-600" : "bg-[#0B63E5] hover:bg-[#0958cc]"
           }`}
           onClick={() => {
             void (async () => {
@@ -248,11 +256,11 @@ export function JobCard({ job }: { job: MediaHireJob }) {
           }}
           type="button"
         >
-          {applied ? "Applied" : "Apply"}
+          {isAuthenticated && applied ? "Applied" : "Apply"}
         </button>
         <Link
-          className="inline-flex h-9 items-center rounded-xl border border-[#0B63E5] px-4 text-xs font-black text-[#0B63E5] transition hover:bg-[#eef4ff]"
-          href={`/home/jobseeker/jobs/${job.id}`}
+          href={`/search-job/${job.id}`}
+          className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 transition hover:border-blue-200 hover:bg-blue-50"
         >
           Details
         </Link>

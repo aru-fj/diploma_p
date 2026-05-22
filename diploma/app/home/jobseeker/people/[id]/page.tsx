@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import {
   Bell,
   Briefcase,
-  ChevronDown,
   Globe2,
   Mail,
   MapPin,
@@ -14,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { specialists } from "@/lib/mediahire/specialists";
+import { JobSeekerUserMenu } from "@/components/mediahire/jobseeker-user-menu";
 
 type PublicSpecialistProfilePageProps = {
   params: Promise<{
@@ -102,19 +102,7 @@ export default async function PublicSpecialistProfilePage({
                 Job Seeker
               </span>
 
-              <div className="flex items-center gap-2 rounded-full px-2 py-1 text-sm font-bold text-slate-600 transition hover:bg-[#eef4ff]">
-                <div className="relative">
-                  <img
-                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=90"
-                    alt="aisha aa"
-                    className="h-10 w-10 rounded-full object-cover"
-                  />
-                  <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-white bg-green-500" />
-                </div>
-
-                <span className="hidden md:inline">aisha aa</span>
-                <ChevronDown size={16} className="text-[#2563ff]" />
-              </div>
+              <JobSeekerUserMenu />
             </div>
           </div>
         </header>

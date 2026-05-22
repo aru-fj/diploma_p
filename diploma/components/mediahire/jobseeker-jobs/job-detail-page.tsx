@@ -21,17 +21,31 @@ import {
   isJobSaved,
   toggleSavedJob,
 } from "../shared/user-state";
-import { requireJobSeekerAuth } from "../shared/guest-permissions";
+import { hasMediaHireSession, requireJobSeekerAuth } from "../shared/guest-permissions";
 
 export function JobDetailPage({ job }: { job: MediaHireJob }) {
   const company = getMediaHireCompany(job.companyId);
   const similarJobs = getSimilarJobs(job.id);
   const [saved, setSaved] = useState(false);
   const [applied, setApplied] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    setSaved(isJobSaved(job.id));
-    setApplied(Boolean(getApplicationForJob(job.id)));
+    let isMounted = true;
+
+    void hasMediaHireSession().then((sessionExists) => {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsAuthenticated(sessionExists);
+      setSaved(sessionExists ? isJobSaved(job.id) : false);
+      setApplied(sessionExists ? Boolean(getApplicationForJob(job.id)) : false);
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, [job.id]);
 
   return (
@@ -65,9 +79,9 @@ export function JobDetailPage({ job }: { job: MediaHireJob }) {
                 {job.title}
               </h1>
               <button
-                aria-label={saved ? "Unsave job" : "Save job"}
+                aria-label={isAuthenticated && saved ? "Unsave job" : "Save job"}
                 className={`grid h-10 w-10 place-items-center rounded-full transition ${
-                  saved
+                  isAuthenticated && saved
                     ? "bg-[#0B63E5] text-white"
                     : "bg-[#eef4ff] text-[#0B63E5] hover:bg-[#dcecff]"
                 }`}
@@ -82,7 +96,10 @@ export function JobDetailPage({ job }: { job: MediaHireJob }) {
                 }}
                 type="button"
               >
-                <Bookmark fill={saved ? "currentColor" : "none"} size={20} />
+                <Bookmark
+                  fill={isAuthenticated && saved ? "currentColor" : "none"}
+                  size={20}
+                />
               </button>
             </div>
             <p className="mt-4 max-w-3xl text-base font-medium leading-7 text-slate-500">
@@ -91,7 +108,7 @@ export function JobDetailPage({ job }: { job: MediaHireJob }) {
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 className={`h-11 rounded-xl px-7 text-sm font-black text-white transition ${
-                  applied
+                  isAuthenticated && applied
                     ? "bg-emerald-600"
                     : "bg-[#0B63E5] hover:bg-[#0958cc]"
                 }`}
@@ -107,7 +124,7 @@ export function JobDetailPage({ job }: { job: MediaHireJob }) {
                 }}
                 type="button"
               >
-                {applied ? "Already Applied" : "Apply Now"}
+                {isAuthenticated && applied ? "Already Applied" : "Apply Now"}
               </button>
               <button
                 className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#0B63E5] px-7 text-sm font-black text-[#0B63E5] transition hover:bg-[#eef4ff]"

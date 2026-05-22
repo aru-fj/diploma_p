@@ -6,7 +6,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   Bell,
   BriefcaseBusiness,
-  ChevronDown,
   Globe2,
   Mail,
   MapPin,
@@ -26,10 +25,18 @@ import {
 import {
   demoProfile,
   getPublishedStoredProjects,
+  isHiddenScratchProject,
+  isHiddenScratchProjectTitle,
   type MediaHireProject,
 } from "../projects-data";
 import { supabase } from "@/lib/supabase-client";
 import { requireJobSeekerAuth } from "../shared/guest-permissions";
+import {
+  isProfileSaved,
+  SAVED_PROFILES_CHANGED_EVENT,
+  toggleSavedProfile,
+} from "../saved-profiles-storage";
+import { JobSeekerUserMenu } from "../jobseeker-user-menu";
 
 const accountAccessKey = "mediahire.jobseeker.accountAccess";
 
@@ -113,7 +120,8 @@ type SpecialistProfile = {
 const specialistProfiles: Record<string, SpecialistProfile> = {
   "dimash-hasenov": {
     avatar:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=320&q=85",
+      
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=90",
     email: "dimashasenov@gmail.com",
     experience: "3+ years of experience",
     id: "dimash-hasenov",
@@ -225,7 +233,7 @@ function normalizePersonName(value: string) {
 function MediaHireProfileNavbar() {
   const navLinks = [
     { href: "/home/jobseeker", label: "Home" },
-    { href: "/search-job", label: "Search Job" },
+    { href: "/home/jobseeker/job-search", label: "Search Job" },
     { href: "/profile/jobseeker", label: "My Profile" },
     { href: "/community", label: "Community" },
   ];
@@ -273,20 +281,7 @@ function MediaHireProfileNavbar() {
         <span className="hidden text-sm font-black text-slate-600 sm:block">
           Job Seeker
         </span>
-        <div className="flex items-center gap-2">
-          <span className="relative block h-11 w-11 overflow-hidden rounded-full ring-2 ring-white">
-            <img
-              alt="Dana Muhtarova"
-              className="h-full w-full object-cover"
-              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=85"
-            />
-            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
-          </span>
-          <span className="hidden max-w-[150px] text-sm font-black text-slate-700 md:block">
-            Dana Muhtarova
-          </span>
-          <ChevronDown className="text-[#0B63E5]" size={16} />
-        </div>
+        <JobSeekerUserMenu />
       </div>
     </nav>
   );
@@ -350,16 +345,32 @@ function SpecialistSidebar({ profile }: { profile: SpecialistProfile }) {
     { icon: Globe2, label: profile.portfolioLink || "Portfolio not added" },
   ];
 
+  useEffect(() => {
+    const syncSavedState = () => {
+      setIsSaved(isProfileSaved(profile.id));
+    };
+
+    syncSavedState();
+
+    window.addEventListener(SAVED_PROFILES_CHANGED_EVENT, syncSavedState);
+    window.addEventListener("storage", syncSavedState);
+
+    return () => {
+      window.removeEventListener(SAVED_PROFILES_CHANGED_EVENT, syncSavedState);
+      window.removeEventListener("storage", syncSavedState);
+    };
+  }, [profile.id]);
+
   return (
     <motion.aside
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-[2rem] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] ring-1 ring-slate-100"
+      className="relative z-20 rounded-[2rem] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] ring-1 ring-slate-100"
       initial={{ opacity: 0, y: 18 }}
       transition={{ duration: 0.45, ease: "easeOut" }}
     >
       <img
         alt={profile.name}
-        className="h-32 w-32 rounded-3xl border-[6px] border-white object-cover shadow-[0_18px_48px_rgba(15,23,42,0.18)]"
+        className="relative z-30 h-32 w-32 rounded-3xl border-[6px] border-white object-cover object-top shadow-[0_18px_48px_rgba(15,23,42,0.18)]"
         src={profile.avatar}
       />
       <h1 className="mt-5 text-3xl font-black leading-tight tracking-tight text-slate-950">
@@ -393,7 +404,7 @@ function SpecialistSidebar({ profile }: { profile: SpecialistProfile }) {
                 return;
               }
 
-              setIsSaved((current) => !current);
+              setIsSaved(toggleSavedProfile(profile.id));
             })();
           }}
           type="button"
@@ -690,7 +701,7 @@ export function SpecialistProfilePage({
         </div>
       </section>
 
-      <section className="mx-auto -mt-20 grid w-[min(1320px,calc(100%-32px))] grid-cols-1 gap-8 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <section className="relative z-20 mx-auto -mt-20 grid w-[min(1320px,calc(100%-32px))] grid-cols-1 gap-8 lg:grid-cols-[320px_minmax(0,1fr)]">
         <SpecialistSidebar profile={selectedProfile} />
 
         <motion.div
@@ -757,7 +768,7 @@ export function JobSeekerDashboardRouteSwitcher({
   useEffect(() => {
     const shouldNormalize =
       pathname.startsWith("/home/jobseeker") ||
-      pathname.startsWith("/search-job") ||
+      pathname.startsWith("/home/jobseeker/job-search") ||
       pathname.startsWith("/community") ||
       pathname.startsWith("/profile/") ||
       pathname.startsWith("/account/jobseeker");
@@ -1620,21 +1631,35 @@ export function JobSeekerDashboardRouteSwitcher({
         return;
       }
 
-      const projects = [...remoteProjects, ...getPublishedStoredProjects()];
+      grid
+        .querySelectorAll<HTMLElement>("[data-mediahire-home-project-id]")
+        .forEach((card) => {
+          if (isHiddenScratchProjectTitle(card.textContent || "")) {
+            card.remove();
+          }
+        });
+
+      const projects = [...remoteProjects, ...getPublishedStoredProjects()].filter(
+        (project) => !isHiddenScratchProject(project),
+      );
 
       projects.forEach((project) => {
         if (grid.querySelector(`[data-mediahire-home-project-id="${project.id}"]`)) {
           return;
         }
 
-        const cover =
-          project.coverUrl ||
-          project.media.find((block) => block.type === "image" && block.url)?.url ||
-          "";
+        const fallbackCover =
+          "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=90";
 
-        if (!cover) {
-          return;
-        }
+        const cover =
+          project.coverUrl && !project.coverUrl.startsWith("blob:")
+            ? project.coverUrl
+            : project.media.find(
+                (block) =>
+                  (block.type === "image" || block.type === "photo_grid") &&
+                  block.url &&
+                  !block.url.startsWith("blob:"),
+              )?.url || fallbackCover;
 
         const card = document.createElement("a");
         card.href = `/home/jobseeker/work/${project.id}`;
@@ -1719,10 +1744,180 @@ export function JobSeekerDashboardRouteSwitcher({
     };
   }, [pathname]);
 
+
+  // mediahire: dynamic stored project click fix
+  useEffect(() => {
+    if (pathname !== "/home/jobseeker") {
+      return;
+    }
+
+    const fallbackCover =
+      "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=90";
+
+    function isUsableImage(url?: string) {
+      return Boolean(
+        url &&
+          !url.startsWith("blob:") &&
+          !url.includes("undefined") &&
+          !url.includes("null"),
+      );
+    }
+
+    function getProjectCover(project: ReturnType<typeof getPublishedStoredProjects>[number]) {
+      const mediaCover = project.media.find(
+        (block) =>
+          (block.type === "image" || block.type === "photo_grid") &&
+          isUsableImage(block.url),
+      )?.url;
+
+      if (isUsableImage(project.coverUrl)) {
+        return project.coverUrl;
+      }
+
+      return mediaCover || fallbackCover;
+    }
+
+    function normalizeText(value: string) {
+      return value.trim().toLowerCase().replace(/\s+/g, " ");
+    }
+
+    function findProjectGrid() {
+      const main = document.querySelector("main");
+
+      if (!main) {
+        return null;
+      }
+
+      const candidates = Array.from(
+        main.querySelectorAll<HTMLElement>("div, section"),
+      );
+
+      return (
+        candidates.find((candidate) => {
+          const imageCount = candidate.querySelectorAll("img").length;
+          const text = candidate.textContent || "";
+
+          return (
+            imageCount >= 3 &&
+            (text.includes("Tales from the River") ||
+              text.includes("Chubby Characters") ||
+              text.includes("Festival of Light"))
+          );
+        }) || null
+      );
+    }
+
+    function injectStoredProjects() {
+      const grid = findProjectGrid();
+      const projects = getPublishedStoredProjects().filter(
+        (project) => !isHiddenScratchProject(project),
+      );
+
+      if (!grid) {
+        return;
+      }
+
+      grid
+        .querySelectorAll<HTMLElement>("[data-mediahire-home-project-id]")
+        .forEach((card) => {
+          if (isHiddenScratchProjectTitle(card.textContent || "")) {
+            card.remove();
+          }
+        });
+
+      if (!projects.length) {
+        return;
+      }
+
+      projects.forEach((project) => {
+        if (grid.querySelector(`[data-mediahire-home-project-id="${project.id}"]`)) {
+          return;
+        }
+
+        const card = document.createElement("a");
+        card.href = `/home/jobseeker/work/${project.id}`;
+        card.dataset.mediahireHomeProjectId = project.id;
+        card.className =
+          "group block rounded-[1.7rem] bg-white p-4 shadow-[0_18px_48px_rgba(15,23,42,0.07)] ring-1 ring-slate-100 transition hover:-translate-y-1";
+        card.innerHTML = `
+          <img alt="${project.title}" class="h-[260px] w-full rounded-[1.25rem] object-cover transition duration-500 group-hover:scale-[1.02]" src="${getProjectCover(project)}" />
+          <h3 class="mt-5 text-xl font-black text-slate-950">${project.title}</h3>
+          <p class="mt-2 text-sm font-black text-slate-500">${project.authorName || "MediaHire creator"}</p>
+        `;
+
+        grid.prepend(card);
+      });
+    }
+
+    function findProjectCardFromClick(target: HTMLElement) {
+      const projects = getPublishedStoredProjects();
+
+      let current: HTMLElement | null = target;
+
+      for (let depth = 0; current && depth < 8; depth += 1) {
+        const projectId = current.dataset.mediahireHomeProjectId;
+
+        if (projectId) {
+          const project = projects.find((item) => item.id === projectId);
+
+          if (project) {
+            return project;
+          }
+        }
+
+        const text = normalizeText(current.textContent || "");
+        const matchedProject = projects.find((project) =>
+          text.includes(normalizeText(project.title)),
+        );
+
+        if (matchedProject) {
+          return matchedProject;
+        }
+
+        current = current.parentElement;
+      }
+
+      return null;
+    }
+
+    function handleProjectClick(event: MouseEvent) {
+      const target = event.target;
+
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const project = findProjectCardFromClick(target);
+
+      if (!project) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      router.push(`/home/jobseeker/work/${project.id}`);
+    }
+
+    injectStoredProjects();
+
+    const observer = new MutationObserver(injectStoredProjects);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    document.addEventListener("click", handleProjectClick, true);
+
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("click", handleProjectClick, true);
+    };
+  }, [pathname, router]);
+
   useEffect(() => {
     const shouldHydrate =
       pathname.startsWith("/home/jobseeker") ||
-      pathname.startsWith("/search-job") ||
+      pathname.startsWith("/home/jobseeker/job-search") ||
       pathname.startsWith("/community") ||
       pathname.startsWith("/profile/jobseeker") ||
       pathname.startsWith("/account/jobseeker") ||

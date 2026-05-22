@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import { Bell, Menu, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 import { mediaHireClassNames } from "../ui/design-system";
+import { getStoredJobSeekerProfile } from "../account-settings/profile-store";
 
 type DashboardTopbarProps = {
   onOpenSidebar: () => void;
@@ -18,6 +20,31 @@ export function DashboardTopbar({
   onSearchChange,
   search,
 }: DashboardTopbarProps) {
+  const [profile, setProfile] = useState(() => getStoredJobSeekerProfile());
+  const fullName =
+    profile.fullName ||
+    [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
+    "Job Seeker";
+  const avatarSrc = profile.avatarPreview || avatar;
+  const email = profile.email || "No email added";
+
+  useEffect(() => {
+    const syncProfile = () => {
+      setProfile(getStoredJobSeekerProfile());
+    };
+
+    syncProfile();
+    window.addEventListener("mediahire:jobseeker-profile-updated", syncProfile);
+    window.addEventListener("mediahire:user-state-updated", syncProfile);
+    window.addEventListener("storage", syncProfile);
+
+    return () => {
+      window.removeEventListener("mediahire:jobseeker-profile-updated", syncProfile);
+      window.removeEventListener("mediahire:user-state-updated", syncProfile);
+      window.removeEventListener("storage", syncProfile);
+    };
+  }, []);
+
   return (
     <header className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
       <div className="flex items-start gap-3">
@@ -67,16 +94,17 @@ export function DashboardTopbar({
 
         <div className="flex items-center gap-3 rounded-2xl bg-white px-3 py-2 shadow-sm">
           <Image
-            alt="Dana Muhtarova"
+            alt={fullName}
             className="h-12 w-12 rounded-xl object-cover"
             height={48}
-            src={avatar}
+            src={avatarSrc}
+            unoptimized={avatarSrc.startsWith("data:")}
             width={48}
           />
           <div>
-            <p className="text-sm font-black text-slate-950">Dana Muhtarova</p>
+            <p className="text-sm font-black text-slate-950">{fullName}</p>
             <p className="text-xs font-medium text-slate-400">
-              danamuhtarova@gmail.com
+              {email}
             </p>
           </div>
         </div>

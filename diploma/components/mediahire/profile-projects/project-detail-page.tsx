@@ -7,6 +7,7 @@ import { Heart, MessageCircle } from "lucide-react";
 import {
   demoProjects,
   getStoredProjects,
+  homeProjectDetails,
   type MediaHireProject,
 } from "../projects-data";
 import { supabase } from "@/lib/supabase-client";
@@ -77,7 +78,11 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
     let isMounted = true;
 
     async function hydrateProject() {
-      const localProjects = [...getStoredProjects(), ...demoProjects];
+      const localProjects = [
+        ...getStoredProjects(),
+        ...homeProjectDetails,
+        ...demoProjects,
+      ];
 
       if (localProjects.some((candidate) => candidate.id === projectId)) {
         if (isMounted) {
