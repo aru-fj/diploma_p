@@ -41,7 +41,7 @@ export function ProfileSidebar() {
     >
       <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
         <Image
-          alt={profileUser.name}
+          alt="Profile avatar"
           className="h-32 w-32 rounded-2xl object-cover ring-4 ring-white"
           height={128}
           src={profileUser.avatar}

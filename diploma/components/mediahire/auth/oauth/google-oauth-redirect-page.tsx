@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import { AlertTriangle, Loader2, ShieldCheck } from "lucide-react";
 import {
-  getGoogleOAuthCallbackUrl,
   normalizeMediaHireOAuthIntent,
   normalizeMediaHireRole,
 } from "@/lib/oauth";
+import { signInWithGoogle } from "@/components/mediahire/supabase-auth/auth-service";
 import { AuthLogo } from "../logo";
 import { GoogleIcon } from "../social-button";
 
@@ -23,10 +22,6 @@ export function GoogleOAuthRedirectPage({
   const role = normalizeMediaHireRole(searchParams.get("role"));
   const intent = normalizeMediaHireOAuthIntent(searchParams.get("intent"));
   const hasOAuthError = Boolean(searchParams.get("error"));
-  const callbackUrl = useMemo(
-    () => getGoogleOAuthCallbackUrl(role, intent),
-    [intent, role],
-  );
 
   useEffect(() => {
     if (!isGoogleOAuthConfigured || hasOAuthError) {
@@ -34,15 +29,11 @@ export function GoogleOAuthRedirectPage({
     }
 
     const redirectTimer = window.setTimeout(() => {
-      void signIn(
-        "google",
-        { callbackUrl },
-        { prompt: "select_account", scope: "openid email profile" },
-      );
+      void signInWithGoogle(role, intent === "signin" ? "login" : "signup");
     }, 650);
 
     return () => window.clearTimeout(redirectTimer);
-  }, [callbackUrl, hasOAuthError, isGoogleOAuthConfigured]);
+  }, [hasOAuthError, intent, isGoogleOAuthConfigured, role]);
 
   const statusTitle =
     isGoogleOAuthConfigured && !hasOAuthError
@@ -88,8 +79,8 @@ export function GoogleOAuthRedirectPage({
             <div className="flex items-start gap-3">
               <AlertTriangle className="mt-0.5 shrink-0" size={18} />
               <span>
-                Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
-                `NEXTAUTH_SECRET`, and `NEXTAUTH_URL` in `.env.local`, then
+                Set `NEXT_PUBLIC_SUPABASE_URL` and
+                `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local`, then
                 restart the dev server.
               </span>
             </div>

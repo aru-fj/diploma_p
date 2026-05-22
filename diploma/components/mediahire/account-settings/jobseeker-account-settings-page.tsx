@@ -255,7 +255,7 @@ function AccountTopbar({
             <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
           </button>
           <Image
-            alt={profile.fullName}
+            alt="Job seeker avatar"
             className="h-11 w-11 rounded-full object-cover"
             height={44}
             src={avatarSrc}

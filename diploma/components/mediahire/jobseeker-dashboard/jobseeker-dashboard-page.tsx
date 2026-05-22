@@ -219,7 +219,7 @@ function DashboardTopbar({
             ) : null}
           </button>
           <Image
-            alt={profile.fullName}
+            alt="Job seeker avatar"
             className="h-11 w-11 rounded-full object-cover"
             height={44}
             src={avatarSrc}
@@ -287,7 +287,7 @@ function ProfileSummaryCard({
     >
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
         <Image
-          alt={profile.fullName}
+          alt="Job seeker avatar"
           className="h-24 w-24 rounded-3xl object-cover ring-4 ring-[#eef4ff]"
           height={96}
           src={avatarSrc}

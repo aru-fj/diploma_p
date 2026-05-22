@@ -267,7 +267,7 @@ function ProfileSidebar({ profile }: { profile: ProfileSummary }) {
   return (
     <aside className="self-start rounded-[2rem] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] ring-1 ring-slate-100">
       <img
-        alt={profile.fullName}
+        alt="Job seeker avatar"
         className="h-32 w-32 rounded-3xl border-[6px] border-white object-cover shadow-[0_18px_48px_rgba(15,23,42,0.18)]"
         src={profile.avatarUrl}
       />

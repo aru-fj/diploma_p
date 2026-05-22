@@ -369,7 +369,7 @@ function SpecialistSidebar({ profile }: { profile: SpecialistProfile }) {
       transition={{ duration: 0.45, ease: "easeOut" }}
     >
       <img
-        alt={profile.name}
+        alt="Job seeker avatar"
         className="relative z-30 h-32 w-32 rounded-3xl border-[6px] border-white object-cover object-top shadow-[0_18px_48px_rgba(15,23,42,0.18)]"
         src={profile.avatar}
       />

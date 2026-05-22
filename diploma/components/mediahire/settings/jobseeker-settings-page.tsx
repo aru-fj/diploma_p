@@ -251,7 +251,7 @@ export function JobSeekerSettingsPage() {
               <div className="flex items-center gap-3 rounded-2xl bg-white p-2 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
                 <Bell className="text-[#0B63E5]" size={18} />
                 <Image
-                  alt={profile.fullName}
+                  alt="Job seeker avatar"
                   className="h-11 w-11 rounded-full object-cover"
                   height={44}
                   src={avatarSrc}

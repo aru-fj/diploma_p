@@ -10,10 +10,8 @@ export const metadata: Metadata = {
 
 export default function GoogleAuthPage() {
   const isGoogleOAuthConfigured = Boolean(
-    process.env.GOOGLE_CLIENT_ID &&
-      process.env.GOOGLE_CLIENT_SECRET &&
-      process.env.NEXTAUTH_SECRET &&
-      process.env.NEXTAUTH_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   );
 
   return (

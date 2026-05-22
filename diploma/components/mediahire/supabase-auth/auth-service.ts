@@ -269,11 +269,36 @@ export async function signInWithGoogle(role: MediaHireRole, mode: "login" | "sig
     return;
   }
 
-  const startUrl = new URL("/api/auth/google/start", window.location.origin);
-  startUrl.searchParams.set("role", role);
-  startUrl.searchParams.set("mode", mode);
+  window.localStorage.setItem(
+    "mediahire.googleOAuth",
+    JSON.stringify({
+      mode,
+      role,
+    }),
+  );
 
-  window.location.assign(startUrl.toString());
+  const callbackUrl = new URL("/auth/callback", window.location.origin);
+  callbackUrl.searchParams.set("role", role);
+  callbackUrl.searchParams.set("mode", mode);
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      queryParams: {
+        access_type: "offline",
+        prompt: "select_account",
+      },
+      redirectTo: callbackUrl.toString(),
+    },
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  if (data.url) {
+    window.location.assign(data.url);
+  }
 }
 
 export async function requireSession(redirectTo: string) {
