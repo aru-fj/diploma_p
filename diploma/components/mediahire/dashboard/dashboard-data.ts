@@ -31,6 +31,7 @@ export type DashboardProject = {
 export type DashboardPerson = {
   avatar: string;
   id: string;
+  profileHref?: string;
   name: string;
   rating: number;
   score: string;
@@ -89,6 +90,7 @@ export const dashboardPeople: DashboardPerson[] = [
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=90",
     id: "alex-fernandez",
     name: "Alex Fernández",
+    profileHref: "/home/jobseeker/people/alex-fernandez",
     rating: 4,
     score: "23,4k",
     skill: "Photographer",
@@ -99,6 +101,7 @@ export const dashboardPeople: DashboardPerson[] = [
       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=160&q=85",
     id: "dimash-hasenov",
     name: "Dimash Hasenov",
+    profileHref: "/home/jobseeker/people/dimash-hasenov",
     rating: 4,
     score: "15,9k",
     skill: "3D Animator",

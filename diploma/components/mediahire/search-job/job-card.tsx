@@ -69,6 +69,9 @@ export function JobCard({ index, job }: JobCardProps) {
           <span className="text-xs font-medium text-slate-400">
             {job.posted}
           </span>
+          <span className="inline-flex h-10 items-center justify-center rounded-xl bg-[#0B63E5] px-4 text-xs font-black text-white transition hover:bg-[#0958cc]">
+            Details
+          </span>
         </div>
       </Link>
     </motion.article>

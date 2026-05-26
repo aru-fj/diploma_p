@@ -93,7 +93,7 @@ export function JobSeekerUserMenu({
         aria-expanded={open}
         className={
           buttonClassName ||
-          "inline-flex items-center gap-2 rounded-full px-2 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          "inline-flex min-h-12 items-center gap-3 rounded-2xl px-2.5 py-1.5 text-sm font-black text-slate-700 transition hover:bg-[#eef4ff]"
         }
         onClick={toggleMenu}
         type="button"

@@ -28,7 +28,7 @@ export function EmployerCta() {
               </p>
               <a
                 className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#2563ff] px-9 py-3.5 text-sm font-black text-white shadow-[0_15px_32px_rgba(37,99,255,0.25)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#0f52f5]"
-                href="#"
+                href="/auth-required?feature=post-job&role=employer"
               >
                 Post a job
                 <ArrowRight size={18} />

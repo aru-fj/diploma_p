@@ -14,6 +14,7 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
+import { Footer } from "@/components/mediahire/footer";
 import { Header } from "@/components/mediahire/header";
 import {
   kazakhstanCities,
@@ -41,7 +42,7 @@ const emptyFilters: FilterState = {
 function SearchJobPageContent() {
   const searchParams = useSearchParams();
 
-  const initialQuery = searchParams.get("q") || "";
+  const initialQuery = searchParams.get("query") || searchParams.get("q") || "";
   const initialLocation = searchParams.get("location") || "All Kazakhstan";
 
   const [query, setQuery] = useState(initialQuery);
@@ -123,7 +124,7 @@ function SearchJobPageContent() {
         </div>
 
         <div className="relative z-10 px-4 pb-24 pt-8 sm:px-6 lg:px-8">
-          <Header />
+          <Header role="jobseeker" />
 
           <div className="mx-auto mt-24 max-w-4xl text-center">
             <h1 className="text-5xl font-black tracking-tight text-white md:text-6xl">
@@ -193,7 +194,7 @@ function SearchJobPageContent() {
               const params = new URLSearchParams();
 
               if (query.trim()) {
-                params.set("q", query.trim());
+                params.set("query", query.trim());
               }
 
               if (location !== "All Kazakhstan") {
@@ -355,6 +356,8 @@ function SearchJobPageContent() {
           </section>
         </div>
       </section>
+
+      <Footer role="jobseeker" />
     </main>
   );
 }

@@ -37,6 +37,8 @@ import {
   toggleSavedProfile,
 } from "../saved-profiles-storage";
 import { JobSeekerUserMenu } from "../jobseeker-user-menu";
+import { publicPeople } from "@/components/mediahire/public/public-people-data";
+import { publicWorks } from "@/components/mediahire/public/public-works-data";
 
 const accountAccessKey = "mediahire.jobseeker.accountAccess";
 
@@ -204,7 +206,7 @@ const specialistProfiles: Record<string, SpecialistProfile> = {
 };
 
 const peopleProfileLinks = new Map([
-  ["alex fernández", "/home/jobseeker/people/alex-fernandez"],
+  ["alex fernández", "/people/alex-fernandez"],
   ["alex fernàndez", "/home/jobseeker/people/alex-fernandez"],
   ["alex fernandez", "/home/jobseeker/people/alex-fernandez"],
   ["dimash hasenov", "/home/jobseeker/people/dimash-hasenov"],
@@ -228,6 +230,48 @@ function normalizePersonName(value: string) {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");
+}
+
+publicPeople.forEach((person) => {
+  peopleProfileLinks.set(
+    normalizePersonName(person.name),
+    `/home/jobseeker/people/${person.slug}`,
+  );
+});
+
+function createPublicSpecialistProfile(slug: string): SpecialistProfile | undefined {
+  const person = publicPeople.find((item) => item.slug === slug);
+
+  if (!person) {
+    return undefined;
+  }
+
+  const featuredWorkSlugs = new Set(person.featuredWorkSlugs ?? []);
+  const works = publicWorks.filter(
+    (work) => work.authorSlug === person.slug || featuredWorkSlugs.has(work.slug),
+  );
+
+  return {
+    avatar: person.avatar,
+    email: "No email added",
+    experience: person.experience,
+    id: person.slug,
+    location: person.location,
+    name: person.name,
+    phone: "No pne added",
+    portfolio: works.map((work) => ({
+      category: work.category,
+      href: `/home/jobseeker/work/${work.slug}`,
+      image: work.coverImage,
+      title: work.title,
+    })),
+    portfolioLink: works.length ? "Portfolio available" : "No portfolio added",
+    reviews: [],
+    role: person.role,
+    skills: person.skills ?? [],
+    software: [],
+    status: person.availability || "Available for Freelance",
+  };
 }
 
 function MediaHireProfileNavbar() {
@@ -558,6 +602,83 @@ function SpecialistReviews({ reviews }: { reviews: SpecialistReview[] }) {
   );
 }
 
+
+function SpecialistResume({ profile }: { profile: SpecialistProfile }) {
+  return (
+    <div className="grid gap-5">
+      <section className="rounded-[1.7rem] bg-white p-7 shadow-[0_18px_48px_rgba(15,23,42,0.07)] ring-1 ring-slate-100">
+        <h3 className="text-2xl font-black text-slate-950">
+          Professional Summary
+        </h3>
+        <p className="mt-4 text-base font-medium leading-7 text-slate-600">
+          {profile.name} is a {profile.role.toLowerCase()} based in {profile.location}.
+          The profile includes creative portfolio work, professional skills, and
+          experience relevant to media production and digital content projects.
+        </p>
+      </section>
+
+      <section className="rounded-[1.7rem] bg-white p-7 shadow-[0_18px_48px_rgba(15,23,42,0.07)] ring-1 ring-slate-100">
+        <h3 className="text-2xl font-black text-slate-950">Experience</h3>
+        <div className="mt-4 grid gap-3 text-sm font-bold text-slate-600">
+          <p>
+            <span className="text-slate-950">Role:</span> {profile.role}
+          </p>
+          <p>
+            <span className="text-slate-950">Experience:</span>{" "}
+            {profile.experience}
+          </p>
+          <p>
+            <span className="text-slate-950">Status:</span> {profile.status}
+          </p>
+          <p>
+            <span className="text-slate-950">Location:</span> {profile.location}
+          </p>
+        </div>
+      </section>
+
+      <section className="rounded-[1.7rem] bg-white p-7 shadow-[0_18px_48px_rgba(15,23,42,0.07)] ring-1 ring-slate-100">
+        <h3 className="text-2xl font-black text-slate-950">Skills</h3>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {profile.skills.length ? (
+            profile.skills.map((skill) => (
+              <span
+                key={skill}
+                className="rounded-full bg-[#eef4ff] px-4 py-2 text-xs font-black text-[#0B63E5]"
+              >
+                {skill}
+              </span>
+            ))
+          ) : (
+            <span className="text-sm font-semibold text-slate-500">
+              No skills added
+            </span>
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-[1.7rem] bg-white p-7 shadow-[0_18px_48px_rgba(15,23,42,0.07)] ring-1 ring-slate-100">
+        <h3 className="text-2xl font-black text-slate-950">Software</h3>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {profile.software.length ? (
+            profile.software.map((software) => (
+              <span
+                key={software}
+                className="rounded-full bg-slate-100 px-4 py-2 text-xs font-black text-slate-600"
+              >
+                {software}
+              </span>
+            ))
+          ) : (
+            <span className="text-sm font-semibold text-slate-500">
+              No software added
+            </span>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function SpecialistProfilePage({
   profile,
   profileId,
@@ -565,7 +686,7 @@ export function SpecialistProfilePage({
   profile?: SpecialistProfile;
   profileId?: string;
 }) {
-  const [activeTab, setActiveTab] = useState<"portfolio" | "reviews">(
+  const [activeTab, setActiveTab] = useState<"portfolio" | "resume" | "reviews">(
     "portfolio",
   );
   const [remoteProfile, setRemoteProfile] = useState<SpecialistProfile | null>(
@@ -711,7 +832,7 @@ export function SpecialistProfilePage({
           transition={{ delay: 0.08, duration: 0.45, ease: "easeOut" }}
         >
           <div className="relative z-10 flex items-center gap-10 border-b border-slate-200">
-            {(["portfolio", "reviews"] as const).map((tab) => (
+            {(["portfolio", "resume", "reviews"] as const).map((tab) => (
               <button
                 className={`relative pb-4 text-base font-black transition ${
                   activeTab === tab ? "text-[#0B63E5]" : "text-slate-400"
@@ -720,7 +841,11 @@ export function SpecialistProfilePage({
                 onClick={() => setActiveTab(tab)}
                 type="button"
               >
-                {tab === "portfolio" ? "Portfolio" : "Reviews"}
+                {tab === "portfolio"
+                  ? "Portfolio"
+                  : tab === "resume"
+                    ? "Resume"
+                    : "Reviews"}
                 {activeTab === tab ? (
                   <motion.span
                     className="absolute bottom-[-1px] left-0 h-[3px] w-full rounded-full bg-[#0B63E5]"
@@ -742,6 +867,8 @@ export function SpecialistProfilePage({
                   />
                 ))}
               </div>
+            ) : activeTab === "resume" ? (
+              <SpecialistResume profile={selectedProfile} />
             ) : (
               <SpecialistReviews reviews={selectedProfile.reviews} />
             )}
@@ -773,7 +900,7 @@ export function JobSeekerDashboardRouteSwitcher({
       pathname.startsWith("/profile/") ||
       pathname.startsWith("/account/jobseeker");
     const isProfilePage = pathname.startsWith("/profile/");
-    const isPeopleProfilePage = pathname.startsWith("/home/jobseeker/people/");
+    const isPeopleProfilePage = false;
     const styleId = "mediahire-consistent-ui";
     let styleTag = document.getElementById(styleId) as HTMLStyleElement | null;
 
@@ -929,9 +1056,7 @@ export function JobSeekerDashboardRouteSwitcher({
       return;
     }
 
-    const isAnyProfilePath =
-      pathname.startsWith("/profile/") ||
-      pathname.startsWith("/home/jobseeker/people/");
+    const isAnyProfilePath = pathname.startsWith("/profile/");
     if (!isAnyProfilePath) {
       return;
     }
@@ -1070,9 +1195,7 @@ export function JobSeekerDashboardRouteSwitcher({
       return;
     }
 
-    const isAnyProfilePath =
-      pathname.startsWith("/profile/") ||
-      pathname.startsWith("/home/jobseeker/people/");
+    const isAnyProfilePath = pathname.startsWith("/profile/");
 
     if (!isAnyProfilePath) {
       return;
@@ -1419,10 +1542,18 @@ export function JobSeekerDashboardRouteSwitcher({
           const card = findPeopleCard(element);
 
           if (card) {
-            card.dataset.mediahirePersonCard = "true";
-            card.dataset.mediahirePersonHref = href;
-            card.style.cursor = "pointer";
-            card.style.pointerEvents = "auto";
+            const cardText = card.textContent?.toLowerCase() || "";
+            const looksLikeProjectCard =
+              cardText.includes("view details") ||
+              cardText.includes("project") ||
+              card.hasAttribute("data-mediahire-home-project-id");
+
+            if (!looksLikeProjectCard) {
+              card.dataset.mediahirePersonCard = "true";
+              card.dataset.mediahirePersonHref = href;
+              card.style.cursor = "pointer";
+              card.style.pointerEvents = "auto";
+            }
           }
         }
       });
@@ -1541,8 +1672,41 @@ export function JobSeekerDashboardRouteSwitcher({
         return;
       }
 
+      const directProfileLink = target.closest<HTMLAnchorElement>(
+        'a[href^="/home/jobseeker/people/"]',
+      );
+
+      if (directProfileLink) {
+        const href = directProfileLink.getAttribute("href");
+
+        if (href) {
+          event.preventDefault();
+          event.stopPropagation();
+          router.push(href);
+          return;
+        }
+      }
+
       const actionControl = target.closest<HTMLElement>("button, a");
       const actionLabel = actionControl?.textContent?.trim().toLowerCase() || "";
+
+      // Не перехватываем кнопку проекта.
+      // Иначе View details может открыть профиль автора, например Alex Fernández.
+      if (actionLabel.includes("view details")) {
+        return;
+      }
+
+      // Не перехватываем View profile.
+      // Пусть обычный Link из PeopleGrid открывает /home/jobseeker/people/[slug].
+      if (actionLabel.includes("view profile")) {
+        return;
+      }
+
+      // Не перехватываем View profile.
+      // Пусть обычный Link из PeopleGrid открывает /home/jobseeker/people/[slug].
+      if (actionLabel.includes("view profile")) {
+        return;
+      }
 
       if (actionLabel === "message") {
         event.preventDefault();
@@ -1554,13 +1718,29 @@ export function JobSeekerDashboardRouteSwitcher({
       const card = target.closest<HTMLElement>(
         "[data-mediahire-person-card='true']",
       );
-      const href = card?.dataset.mediahirePersonHref;
+
+      if (!card) {
+        return;
+      }
+
+      const cardText = card.textContent?.toLowerCase() || "";
+      const looksLikeProjectCard =
+        cardText.includes("view details") ||
+        cardText.includes("project") ||
+        card.hasAttribute("data-mediahire-home-project-id");
+
+      if (looksLikeProjectCard) {
+        return;
+      }
+
+      const href = card.dataset.mediahirePersonHref;
 
       if (!href) {
         return;
       }
 
       event.preventDefault();
+      event.stopPropagation();
       router.push(href);
     }
 
@@ -2070,7 +2250,9 @@ export function JobSeekerDashboardRouteSwitcher({
         }
       });
 
-      if (profile.avatarPreview) {
+      const isProjectDetailPage = pathname.startsWith("/home/jobseeker/work/");
+
+      if (profile.avatarPreview && !isProjectDetailPage) {
         document.querySelectorAll("img").forEach((image) => {
           const alt = image.getAttribute("alt") || "";
           const src = image.getAttribute("src") || "";
@@ -2183,14 +2365,63 @@ export function JobSeekerDashboardRouteSwitcher({
     };
   }, [pathname]);
 
+
+  useEffect(() => {
+    if (pathname !== "/home/jobseeker") {
+      return;
+    }
+
+    function handleJobSeekerHomeInternalLinks(event: MouseEvent) {
+      const target = event.target;
+
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const anchor = target.closest<HTMLAnchorElement>(
+        'a[href^="/people/"], a[href^="/work/"]',
+      );
+
+      if (!anchor) {
+        return;
+      }
+
+      const href = anchor.getAttribute("href") || "";
+
+      if (
+        href.startsWith("/home/jobseeker/") ||
+        href.startsWith("http") ||
+        href.startsWith("#")
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      router.push(`/home/jobseeker${href}`);
+    }
+
+    document.addEventListener("click", handleJobSeekerHomeInternalLinks, true);
+
+    return () => {
+      document.removeEventListener(
+        "click",
+        handleJobSeekerHomeInternalLinks,
+        true,
+      );
+    };
+  }, [pathname, router]);
+
   if (pathname === "/dashboard/jobseeker") {
     return null;
   }
 
   if (isSpecialistProfilePath) {
     const slug = pathname.split("/").filter(Boolean).pop() || "";
+    const selectedProfile =
+      specialistProfiles[slug] || createPublicSpecialistProfile(slug);
 
-    return <SpecialistProfilePage profile={specialistProfiles[slug]} />;
+    return <SpecialistProfilePage profile={selectedProfile} profileId={slug} />;
   }
 
   return <>{children}</>;

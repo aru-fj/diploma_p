@@ -7,9 +7,28 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Briefcase, ChevronDown, MapPin, Search, Sparkles } from "lucide-react";
 import { kazakhstanCities } from "@/components/mediahire/public/public-jobs-data";
+import type { PublicRole } from "@/components/mediahire/header";
 
-export function HeroSection() {
+type HeroSectionProps = {
+  role?: PublicRole;
+};
+
+const suggestionsByRole = {
+  jobseeker: ["Graphic Designer", "Photographer", "Videographer", "Animator"],
+  employer: [
+    "Graphic Designer",
+    "Photographer",
+    "Videographer",
+    "Animator",
+    "3D Artist",
+    "Screenwriter",
+    "Marketer",
+  ],
+};
+
+export function HeroSection({ role = "jobseeker" }: HeroSectionProps) {
   const router = useRouter();
+  const isEmployer = role === "employer";
 
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState("All Kazakhstan");
@@ -18,7 +37,7 @@ export function HeroSection() {
     const params = new URLSearchParams();
 
     if (query.trim()) {
-      params.set("q", query.trim());
+      params.set("query", query.trim());
     }
 
     if (location !== "All Kazakhstan") {
@@ -26,7 +45,11 @@ export function HeroSection() {
     }
 
     router.push(
-      params.toString() ? `/search-job?${params.toString()}` : "/search-job",
+      params.toString()
+        ? `${isEmployer ? "/search-cv" : "/search-job"}?${params.toString()}`
+        : isEmployer
+          ? "/search-cv"
+          : "/search-job",
     );
   }
 
@@ -46,7 +69,7 @@ export function HeroSection() {
             className="mb-7 inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-5 py-3 text-base font-black text-blue-600 shadow-md"
           >
             <Sparkles className="h-5 w-5" />
-            Creative careers, curated
+            {isEmployer ? "Creative hiring, curated" : "Creative careers, curated"}
           </motion.div>
 
           <motion.h1
@@ -55,9 +78,19 @@ export function HeroSection() {
             transition={{ duration: 0.65, delay: 0.2 }}
             className="max-w-[600px] text-[58px] font-black leading-[0.97] tracking-tight text-slate-950 md:text-[70px]"
           >
-            <span className="block">Your Future</span>
-            <span className="block">Starts with</span>
-            <span className="block text-blue-600">MEDIAHIRE!</span>
+            {isEmployer ? (
+              <>
+                <span className="block">Hire Creative</span>
+                <span className="block">Talent with</span>
+                <span className="block text-blue-600">MEDIAHIRE!</span>
+              </>
+            ) : (
+              <>
+                <span className="block">Your Future</span>
+                <span className="block">Starts with</span>
+                <span className="block text-blue-600">MEDIAHIRE!</span>
+              </>
+            )}
           </motion.h1>
 
           <motion.p
@@ -66,8 +99,9 @@ export function HeroSection() {
             transition={{ duration: 0.65, delay: 0.3 }}
             className="mt-7 max-w-[620px] text-lg font-medium leading-8 text-slate-600 md:text-xl"
           >
-            Discover jobs that match your skills and passion. Explore media
-            projects, creative teams, and portfolio opportunities in one place.
+            {isEmployer
+              ? "Find designers, photographers, videographers, and media specialists. Review public portfolios before creating your employer account."
+              : "Discover jobs that match your skills and passion. Explore media projects, creative teams, and portfolio opportunities in one place."}
           </motion.p>
 
           <motion.div
@@ -87,9 +121,28 @@ export function HeroSection() {
                     handleSearch();
                   }
                 }}
-                placeholder="Job title or keywords"
+                placeholder={
+                  isEmployer
+                    ? "Profession and position"
+                    : "Job title or keywords"
+                }
+                list={
+                  isEmployer ? "employer-search-suggestions" : "job-search-suggestions"
+                }
                 className="h-full min-w-0 flex-1 bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
               />
+
+              <datalist
+                id={
+                  isEmployer
+                    ? "employer-search-suggestions"
+                    : "job-search-suggestions"
+                }
+              >
+                {suggestionsByRole[role].map((suggestion) => (
+                  <option key={suggestion} value={suggestion} />
+                ))}
+              </datalist>
             </div>
 
             <div className="relative flex h-11 w-full items-center gap-2 rounded-xl bg-slate-50 px-3 md:w-[170px] md:shrink-0">
@@ -116,7 +169,7 @@ export function HeroSection() {
               className="flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700"
             >
               <Search className="h-5 w-5" />
-              Search
+              {isEmployer ? "Consideration of the candidate" : "Search"}
             </button>
           </motion.div>
 
@@ -147,8 +200,17 @@ export function HeroSection() {
             </div>
 
             <p className="text-base font-bold text-slate-600">
-              Over <span className="text-blue-600">100k</span> jobseekers are
-              successfully hired
+              {isEmployer ? (
+                <>
+                  Over <span className="text-blue-600">12k</span> creative
+                  specialists are ready to collaborate
+                </>
+              ) : (
+                <>
+                  Over <span className="text-blue-600">100k</span> jobseekers are
+                  successfully hired
+                </>
+              )}
             </p>
           </motion.div>
         </motion.div>

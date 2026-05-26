@@ -22,7 +22,7 @@ function Logo({ compact = false }: { compact?: boolean }) {
     <Link
       aria-label="MediaHire home"
       className={`font-black tracking-tight ${compact ? "text-sm" : "text-xl"}`}
-      href="/dashboard/jobseeker"
+      href="/home/jobseeker"
     >
       <span className="text-[#0B63E5]">Media</span>
       <span className="text-slate-950">Hire</span>
@@ -41,15 +41,15 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
   return (
     <header
-      className={`relative z-40 mx-auto w-full ${
+      className={`relative z-50 mx-auto w-full ${
         wide ? "max-w-[1540px]" : "max-w-6xl"
       }`}
     >
       <nav
-        className={`flex items-center justify-between rounded-xl border border-slate-200 bg-white shadow-[0_10px_35px_rgba(15,23,42,0.05)] ${
+        className={`flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_16px_45px_rgba(15,23,42,0.08)] backdrop-blur ${
           compact
-            ? "min-h-10 gap-2 px-3 sm:px-4"
-            : "min-h-16 gap-4 px-4 sm:px-5"
+            ? "min-h-11 gap-2 px-3 sm:px-4"
+            : "min-h-[68px] gap-4 px-4 py-3 sm:px-6"
         }`}
       >
         <Logo compact={compact} />
