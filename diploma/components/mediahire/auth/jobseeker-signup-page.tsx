@@ -263,6 +263,16 @@ export function JobSeekerSignupPage() {
                 Login
               </Link>
             </p>
+
+            <p className="mt-4 text-center text-sm font-medium text-slate-500">
+              <Link
+                className="font-black text-[#0B63E5] underline-offset-4 transition hover:underline"
+                href="/signup/employer"
+              >
+                Sign up
+              </Link>{" "}
+              as Employer
+            </p>
           </div>
         </motion.section>
 

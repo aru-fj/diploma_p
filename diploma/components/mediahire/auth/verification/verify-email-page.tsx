@@ -199,14 +199,14 @@ export function VerifyEmailPage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="w-full max-w-[430px] text-center">
+          <div className="w-full max-w-[360px] text-center">
             <AuthLogo />
             <RoleSwitchText role={role} />
 
-            <h1 className="mt-8 text-3xl font-black tracking-tight text-[#252525]">
+            <h1 className="mt-6 text-2xl font-black tracking-tight text-[#252525]">
               Verify your email address
             </h1>
-            <p className="mx-auto mt-4 max-w-[360px] text-base leading-7 text-slate-400">
+            <p className="mx-auto mt-3 max-w-[310px] text-sm leading-6 text-slate-400">
               We&apos;ve sent a verification code to your email. Please enter
               the code in the box below to verify your account.
             </p>
@@ -237,7 +237,7 @@ export function VerifyEmailPage() {
               ) : null}
 
               <PrimaryButton
-                className={`mt-8 ${verifyButtonClass}`}
+                className={`mt-6 ${verifyButtonClass}`}
                 disabled={!isComplete || isExpired}
                 isLoading={isLoading}
                 type="submit"
@@ -246,7 +246,7 @@ export function VerifyEmailPage() {
               </PrimaryButton>
             </form>
 
-            <p className="mt-6 text-sm font-medium text-slate-500">
+            <p className="mt-4 text-sm font-medium text-slate-500">
               Didn&apos;t receive the code?{" "}
               <button
                 className="font-black text-[#0B63E5] underline-offset-4 transition hover:underline disabled:text-slate-400"

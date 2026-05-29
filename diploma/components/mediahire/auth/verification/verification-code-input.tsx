@@ -81,13 +81,13 @@ export function VerificationCodeInput({
   return (
     <div
       aria-label="Verification code"
-      className="mt-8 flex justify-center gap-2 sm:gap-4"
+      className="mt-6 flex justify-center gap-1.5 sm:gap-2"
       role="group"
     >
       {inputIndexes.map((index) => (
         <motion.input
           aria-label={`Verification digit ${index + 1}`}
-          className="h-14 w-12 rounded-xl border border-slate-300 bg-white text-center text-xl font-black text-slate-950 outline-none transition focus:border-[#0B63E5] focus:ring-4 focus:ring-[#0B63E5]/10 disabled:bg-slate-100 sm:h-[4.25rem] sm:w-[4.25rem] sm:text-2xl"
+          className="h-10 w-8 rounded-lg border border-slate-300 bg-white text-center text-base font-black text-slate-950 outline-none transition focus:border-[#0B63E5] focus:ring-4 focus:ring-[#0B63E5]/10 disabled:bg-slate-100 sm:h-12 sm:w-10 sm:text-lg"
           disabled={disabled}
           inputMode="numeric"
           key={index}
@@ -101,7 +101,7 @@ export function VerificationCodeInput({
           }}
           type="text"
           value={code[index] || ""}
-          whileFocus={{ scale: 1.04 }}
+          whileFocus={{ scale: 1.03 }}
         />
       ))}
     </div>

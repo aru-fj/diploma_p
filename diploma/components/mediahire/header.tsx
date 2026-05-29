@@ -32,9 +32,14 @@ const publicNavByRole: Record<
 type HeaderProps = {
   role?: PublicRole;
   onRoleChange?: (role: PublicRole) => void;
+  activeItem?: string;
 };
 
-export function Header({ role = "jobseeker", onRoleChange }: HeaderProps) {
+export function Header({
+  role = "jobseeker",
+  onRoleChange,
+  activeItem,
+}: HeaderProps) {
   const navLinks = publicNavByRole[role];
   const loginHref = role === "employer" ? "/login/employer" : "/login/jobseeker";
   const signupHref =
@@ -62,7 +67,9 @@ export function Header({ role = "jobseeker", onRoleChange }: HeaderProps) {
         <nav className="hidden items-center gap-7 text-sm font-semibold text-slate-600 lg:flex">
           {navLinks.map((link) => (
             <Link
-              className="transition duration-200 hover:-translate-y-0.5 hover:text-[#2563ff]"
+              className={`transition duration-200 hover:-translate-y-0.5 hover:text-[#2563ff] ${
+                activeItem === link.label ? "text-[#2563ff]" : ""
+              }`}
               href={link.href}
               key={link.label}
             >
@@ -118,6 +125,7 @@ export function Header({ role = "jobseeker", onRoleChange }: HeaderProps) {
           >
             Sign Up
           </Link>
+
           <button
             aria-label="Open menu"
             className="grid h-10 w-10 place-items-center rounded-full text-slate-600 transition hover:bg-[#eef4ff] lg:hidden"

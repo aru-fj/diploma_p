@@ -11,7 +11,6 @@ import {
 } from "@/lib/oauth";
 import { signInWithGoogle } from "@/components/mediahire/supabase-auth/auth-service";
 import { AuthLogo } from "../logo";
-import { GoogleIcon } from "../social-button";
 
 export function GoogleOAuthRedirectPage({
   isGoogleOAuthConfigured,
@@ -55,11 +54,11 @@ export function GoogleOAuthRedirectPage({
         <AuthLogo />
 
         <motion.div
-          className="mx-auto mt-8 grid h-20 w-20 place-items-center rounded-3xl bg-[#f7faff] shadow-inner"
+          className="mx-auto mt-8 grid h-20 w-20 place-items-center rounded-3xl bg-[#f7faff] text-[#0B63E5] shadow-inner"
           animate={{ y: [0, -4, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         >
-          <GoogleIcon />
+          <ShieldCheck size={34} />
         </motion.div>
 
         <h1 className="mt-8 text-3xl font-black tracking-tight text-slate-900">

@@ -9,7 +9,7 @@ const verificationLength = 6;
 
 function Logo() {
   return (
-    <Link className="inline-flex items-center text-4xl font-black" href="/">
+    <Link className="inline-flex items-center text-2xl font-black" href="/">
       <span className="text-[#0B63E5]">Media</span>
       <span className="text-slate-950">Hire</span>
     </Link>
@@ -62,34 +62,34 @@ export function StableVerifyEmailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f7fb] px-4 py-8 text-slate-950">
+    <main className="min-h-screen bg-[#f5f7fb] px-4 py-3 text-slate-950">
       <motion.section
         animate={{ opacity: 1, y: 0 }}
-        className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-center justify-center"
+        className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-[460px] items-center justify-center"
         initial={{ opacity: 0, y: 16 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="w-full max-w-2xl rounded-[2rem] border border-blue-100 bg-white px-5 py-10 text-center shadow-[0_24px_90px_rgba(11,99,229,0.10)] sm:px-10 lg:px-14">
-          <div className="mx-auto mb-7 grid h-20 w-20 place-items-center rounded-[1.5rem] bg-[#eef4ff] text-[#0B63E5]">
-            <Mail size={34} />
+        <div className="w-full max-w-[360px] rounded-2xl border border-blue-100 bg-white px-4 py-5 text-center shadow-[0_14px_40px_rgba(11,99,229,0.10)]">
+          <div className="mx-auto mb-4 grid h-11 w-11 place-items-center rounded-xl bg-[#eef4ff] text-[#0B63E5]">
+            <Mail size={20} />
           </div>
 
           <Logo />
 
-          <h1 className="mt-8 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+          <h1 className="mt-4 text-lg font-black tracking-tight text-slate-950 sm:text-xl">
             Verify your email address
           </h1>
-          <p className="mx-auto mt-4 max-w-xl text-sm font-semibold leading-7 text-slate-500 sm:text-base">
+          <p className="mx-auto mt-2 max-w-[300px] text-[11px] font-semibold leading-5 text-slate-500 sm:text-xs">
             We sent a 6-digit verification code to your email. Please enter the
             code below to verify your account.
           </p>
 
-          <div className="mt-8 flex justify-center gap-2 sm:gap-4">
+          <div className="mt-5 flex justify-center gap-1.5">
             {digits.map((digit, index) => (
               <input
                 aria-label={`Verification digit ${index + 1}`}
                 autoComplete="one-time-code"
-                className="h-14 w-12 rounded-2xl border border-slate-200 bg-white text-center text-xl font-black text-slate-950 outline-none transition focus:border-[#0B63E5] focus:ring-4 focus:ring-blue-100 sm:h-16 sm:w-14"
+                className="h-9 w-7 rounded-lg border border-slate-200 bg-white text-center text-base font-black text-slate-950 outline-none transition focus:border-[#0B63E5] focus:ring-4 focus:ring-blue-100 sm:h-10 sm:w-8"
                 inputMode="numeric"
                 key={index}
                 maxLength={1}
@@ -109,20 +109,20 @@ export function StableVerifyEmailPage() {
             ))}
           </div>
 
-          <p className="mt-5 text-xs font-bold text-slate-400">
+          <p className="mt-3 text-[11px] font-bold text-slate-400">
             Your verification code expires in 5 minutes.
           </p>
 
           <button
-            className="mt-8 inline-flex h-14 w-full max-w-sm items-center justify-center gap-2 rounded-2xl bg-[#0B63E5] px-8 text-sm font-black text-white shadow-[0_18px_38px_rgba(11,99,229,0.24)] transition hover:bg-[#0957ca] disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-5 inline-flex h-10 w-full max-w-[220px] items-center justify-center gap-2 rounded-xl bg-[#0B63E5] px-5 text-xs font-black text-white shadow-[0_12px_24px_rgba(11,99,229,0.18)] transition hover:bg-[#0957ca] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={digits.join("").length !== verificationLength}
             type="button"
           >
-            <ShieldCheck size={18} />
+            <ShieldCheck size={14} />
             Verify
           </button>
 
-          <p className="mt-5 text-sm font-semibold text-slate-500">
+          <p className="mt-3 text-xs font-semibold text-slate-500">
             Didn't receive the code?{" "}
             <button
               className="inline-flex items-center gap-1 font-black text-[#0B63E5] transition hover:text-[#094fb9]"
@@ -133,8 +133,8 @@ export function StableVerifyEmailPage() {
             </button>
           </p>
 
-          <div className="mx-auto mt-8 inline-flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-xs font-black text-emerald-700">
-            <CheckCircle2 size={16} />
+          <div className="mx-auto mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-black text-emerald-700">
+            <CheckCircle2 size={14} />
             MediaHire never asks for your email password.
           </div>
         </div>

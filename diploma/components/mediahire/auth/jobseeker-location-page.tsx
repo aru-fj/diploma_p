@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabase-client";
 import { AuthImagePanel } from "./auth-image-panel";
 import { AuthInput } from "./auth-input";
 import { AuthLogo } from "./logo";
@@ -28,20 +29,18 @@ export function JobSeekerLocationPage() {
   const router = useRouter();
   const [form, setForm] = useState<LocationForm>(initialForm);
   const [errors, setErrors] = useState<LocationErrors>({});
+  const [submitError, setSubmitError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   function updateField(field: keyof LocationForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
+    setSubmitError("");
   }
 
   function validate() {
     const nextErrors: LocationErrors = {};
     const postalPattern = /^[a-zA-Z0-9\s-]+$/;
-
-    if (!form.location.trim()) {
-      nextErrors.location = "Location is required";
-    }
 
     if (form.postalCode.trim() && !postalPattern.test(form.postalCode)) {
       nextErrors.postalCode = "Postal code can contain only letters and numbers";
@@ -51,23 +50,72 @@ export function JobSeekerLocationPage() {
     return Object.keys(nextErrors).length === 0;
   }
 
+  async function saveLocation() {
+    const location = form.location.trim();
+    const postalCode = form.postalCode.trim();
+
+    if (!location && !postalCode) {
+      return;
+    }
+
+    window.localStorage.setItem(
+      "mediahire.jobseeker.location",
+      JSON.stringify({ location, postalCode }),
+    );
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        city: location || null,
+        location: location || null,
+        postal_code: postalCode || null,
+      })
+      .eq("user_id", user.id);
+
+    if (error) {
+      throw error;
+    }
+  }
+
   function goToNextStep() {
     setIsLoading(true);
     router.push(nextStepRoute);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!validate()) {
       return;
     }
 
-    goToNextStep();
+    setIsLoading(true);
+    setSubmitError("");
+
+    try {
+      await saveLocation();
+      router.push(nextStepRoute);
+    } catch (error) {
+      setIsLoading(false);
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Could not save location. Please try again.",
+      );
+    }
   }
 
   function handleSkip() {
     setErrors({});
+    setSubmitError("");
     goToNextStep();
   }
 
@@ -118,6 +166,12 @@ export function JobSeekerLocationPage() {
                 type="text"
                 value={form.postalCode}
               />
+
+              {submitError ? (
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">
+                  {submitError}
+                </p>
+              ) : null}
 
               <PrimaryButton className="mt-4" isLoading={isLoading} type="submit">
                 Continue

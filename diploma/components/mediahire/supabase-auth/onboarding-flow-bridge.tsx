@@ -230,7 +230,7 @@ export function OnboardingFlowBridge({
         return;
       }
 
-      if (label === "skip") {
+      if (label === "skip" && completionMode === "complete") {
         void markSkipped(event, control);
         return;
       }

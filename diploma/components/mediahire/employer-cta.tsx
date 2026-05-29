@@ -28,20 +28,20 @@ export function EmployerCta() {
               </p>
               <a
                 className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#2563ff] px-9 py-3.5 text-sm font-black text-white shadow-[0_15px_32px_rgba(37,99,255,0.25)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#0f52f5]"
-                href="/auth-required?feature=post-job&role=employer"
+                href="/?role=employer"
               >
                 Post a job
                 <ArrowRight size={18} />
               </a>
             </div>
 
-            <div className="relative mx-auto h-[360px] w-full max-w-md self-end">
+            <div className="relative mx-auto h-[360px] w-full max-w-md self-center">
               <Image
-                alt="Employer holding a tablet"
-                className="object-contain object-bottom drop-shadow-[0_26px_40px_rgba(15,23,42,0.16)]"
+                alt="Employer representative"
+                className="object-contain object-center drop-shadow-[0_26px_40px_rgba(15,23,42,0.16)]"
                 fill
                 sizes="(max-width: 1024px) 80vw, 36vw"
-                src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=900&q=90"
+                src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=900&q=90"
               />
             </div>
           </div>

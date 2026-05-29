@@ -1,12 +1,11 @@
 import {
   Camera,
-  MapPin,
+  GraduationCap,
+  Mail,
   MessageCircle,
   Phone,
-  Send,
 } from "lucide-react";
 import Link from "next/link";
-import { footerLinks } from "./data";
 import type { PublicRole } from "./header";
 
 const servicesByRole: Record<
@@ -19,14 +18,17 @@ const servicesByRole: Record<
   jobseeker: [
     { label: "Search Job", href: "/search-job" },
     { label: "Create Resume", href: "/auth-required?feature=create-resume" },
-    { label: "Find Projects", href: "/?section=projects" },
+    { label: "Find Projects", href: "/?section=people#public-projects" },
     {
       label: "Track Applications",
       href: "/auth-required?feature=track-applications",
     },
   ],
   employer: [
-    { label: "Post a Job", href: "/auth-required?feature=post-job&role=employer" },
+    {
+      label: "Post a Job",
+      href: "/auth-required?feature=post-job&role=employer",
+    },
     { label: "Search CV", href: "/search-cv" },
     {
       label: "Review Applications",
@@ -41,65 +43,85 @@ const servicesByRole: Record<
 
 export function Footer({ role = "jobseeker" }: { role?: PublicRole }) {
   return (
-    <footer className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="grid gap-10 rounded-2xl border border-slate-200 bg-white p-8 shadow-[0_18px_60px_rgba(15,23,42,0.05)] sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1.25fr] lg:p-12">
-        <div>
-          <Link
-            className="text-2xl font-black tracking-tight text-slate-950"
-            href={role === "employer" ? "/?role=employer" : "/"}
-          >
-            <span className="text-[#2563ff]">Media</span>Hire
-          </Link>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-slate-500">
-            MediaHire is a modern marketplace where creative professionals find
-            meaningful work, showcase portfolios, and connect with media teams
-            faster.
-          </p>
-          <div className="mt-6 flex gap-3">
-            {[
-              { icon: Camera, label: "Instagram" },
-              { icon: MessageCircle, label: "Facebook" },
-              { icon: Send, label: "Twitter" },
-            ].map(({ icon: Icon, label }) => (
+    <footer className="bg-white px-2 py-0 sm:px-4">
+      <div className="mx-auto max-w-7xl rounded-t-lg border border-slate-200 bg-white px-8 py-12 sm:px-12 lg:px-[116px]">
+        <div className="grid gap-10 md:grid-cols-3">
+          <div>
+            <Link
+              className="text-3xl font-black tracking-tight text-slate-950"
+              href={role === "employer" ? "/?role=employer" : "/"}
+            >
+              <span className="text-[#2563ff]">Media</span>Hire
+            </Link>
+            <p className="mt-6 max-w-sm text-sm leading-6 text-slate-600">
+              MediaHire is a smart job search and recruitment platform that
+              connects job seekers with employers. With fast search,
+              professional resume building, and intelligent matching, MediaHire
+              makes hiring and job hunting easy and efficient.
+            </p>
+            <p className="mt-6 text-sm font-semibold text-slate-800">
+              Diploma Project:{" "}
+              <span className="font-medium">
+                Zh. Aishat, K. Aruzhan, A. Zhanel
+              </span>
+            </p>
+          </div>
+
+          <FooterColumn title="Our services" links={servicesByRole[role]} />
+
+          <div>
+            <h3 className="text-base font-semibold text-slate-950">
+              Contact Us
+            </h3>
+            <div className="mt-5 flex items-center gap-3">
               <a
-                aria-label={label}
-                className="grid h-10 w-10 place-items-center rounded-full border border-slate-200 text-slate-500 transition hover:border-[#2563ff] hover:bg-[#eef4ff] hover:text-[#2563ff]"
-                href={
-                  label === "Instagram"
-                    ? "https://instagram.com"
-                    : label === "Facebook"
-                      ? "https://wa.me/77714048137"
-                      : "https://t.me"
-                }
-                key={label}
+                aria-label="Instagram"
+                className="grid h-9 w-9 place-items-center rounded-lg bg-[#fff2f6] text-[#ff3b6b] transition hover:-translate-y-0.5"
+                href="https://instagram.com/astana_it_university"
                 rel="noreferrer"
                 target="_blank"
               >
-                <Icon size={17} />
+                <Camera size={18} />
               </a>
-            ))}
+              <a
+                aria-label="WhatsApp"
+                className="grid h-9 w-9 place-items-center rounded-lg bg-[#ecfff3] text-[#22c55e] transition hover:-translate-y-0.5"
+                href="https://wa.me/77714048137"
+                rel="noreferrer"
+                target="_blank"
+              >
+                <MessageCircle size={18} />
+              </a>
+              <span className="grid h-9 w-9 place-items-center rounded-lg bg-slate-100 text-slate-700">
+                <GraduationCap size={18} />
+              </span>
+            </div>
+
+            <ul className="mt-7 space-y-4 text-sm text-slate-700">
+              <li className="flex items-center gap-3">
+                <GraduationCap size={18} className="text-slate-600" />
+                Developed at Astana IT University
+              </li>
+              <li className="flex items-center gap-3">
+                <Phone size={18} className="text-slate-600" />
+                <a
+                  className="transition hover:text-[#2563ff]"
+                  href="tel:+77714048137"
+                >
+                  8(771)404-8137
+                </a>
+              </li>
+              <li className="flex items-center gap-3">
+                <Mail size={18} className="text-slate-600" />
+                <a
+                  className="transition hover:text-[#2563ff]"
+                  href="mailto:aitumedia7@gmail.com"
+                >
+                  aitumedia7@gmail.com
+                </a>
+              </li>
+            </ul>
           </div>
-        </div>
-
-        <FooterColumn title="Services" links={servicesByRole[role]} />
-        <FooterColumn title="Links" links={footerLinks} />
-
-        <div>
-          <h3 className="text-sm font-black text-slate-950">Contact info</h3>
-          <ul className="mt-5 space-y-4 text-sm font-semibold text-slate-500">
-            <li className="flex items-center gap-3">
-              <Camera size={16} className="text-[#2563ff]" />
-              Instagram
-            </li>
-            <li className="flex items-center gap-3">
-              <MapPin size={16} className="text-[#2563ff]" />
-              Astana IT University
-            </li>
-            <li className="flex items-center gap-3">
-              <Phone size={16} className="text-[#2563ff]" />
-              8(771)404-8137
-            </li>
-          </ul>
         </div>
       </div>
     </footer>
@@ -111,24 +133,22 @@ function FooterColumn({
   links,
 }: {
   title: string;
-  links:
-    | string[]
-    | {
-        label: string;
-        href: string;
-      }[];
+  links: {
+    label: string;
+    href: string;
+  }[];
 }) {
   return (
     <div>
-      <h3 className="text-sm font-black text-slate-950">{title}</h3>
-      <ul className="mt-5 space-y-3 text-sm font-semibold text-slate-500">
+      <h3 className="text-base font-semibold text-slate-950">{title}</h3>
+      <ul className="mt-6 space-y-4 text-sm text-slate-700">
         {links.map((item) => (
-          <li key={typeof item === "string" ? item : item.label}>
+          <li key={item.label}>
             <Link
               className="transition hover:text-[#2563ff]"
-              href={typeof item === "string" ? "#" : item.href}
+              href={item.href}
             >
-              {typeof item === "string" ? item : item.label}
+              {item.label}
             </Link>
           </li>
         ))}

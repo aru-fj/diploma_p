@@ -1,8 +1,10 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabase-client";
+import { upsertProfile } from "@/components/mediahire/supabase-auth/auth-service";
 import { AuthImagePanel } from "./auth-image-panel";
 import { AuthInput } from "./auth-input";
 import { AuthLogo } from "./logo";
@@ -39,13 +41,18 @@ function getNameParts(name: string | null) {
 export function JobSeekerGoogleDetailsPage({
   googleUser,
 }: {
-  googleUser: GoogleUser;
+  googleUser?: GoogleUser;
 }) {
   const router = useRouter();
   const prefilledName = useMemo(
-    () => getNameParts(googleUser.name),
-    [googleUser.name],
+    () => getNameParts(googleUser?.name ?? null),
+    [googleUser?.name],
   );
+  const [googleProfile, setGoogleProfile] = useState<GoogleUser>({
+    avatar: googleUser?.avatar ?? null,
+    email: googleUser?.email ?? "",
+    name: googleUser?.name ?? null,
+  });
   const [form, setForm] = useState<GoogleDetailsForm>({
     confirmPassword: "",
     firstName: prefilledName.firstName,
@@ -56,10 +63,47 @@ export function JobSeekerGoogleDetailsPage({
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadGoogleProfile() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!isMounted || !user) {
+        return;
+      }
+
+      const fullName =
+        user.user_metadata?.full_name || user.user_metadata?.name || null;
+      const nameParts = getNameParts(fullName);
+
+      setGoogleProfile({
+        avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+        email: user.email || "",
+        name: fullName,
+      });
+      setForm((current) => ({
+        ...current,
+        firstName: current.firstName || nameParts.firstName,
+        lastName: current.lastName || nameParts.lastName,
+      }));
+    }
+
+    void loadGoogleProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   function updateField(field: keyof GoogleDetailsForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
+    setSubmitError("");
   }
 
   function validate() {
@@ -89,7 +133,7 @@ export function JobSeekerGoogleDetailsPage({
     return Object.keys(nextErrors).length === 0;
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!validate()) {
@@ -97,18 +141,74 @@ export function JobSeekerGoogleDetailsPage({
     }
 
     setIsLoading(true);
-    window.localStorage.setItem(
-      "mediahire.jobseeker.googleProfile",
-      JSON.stringify({
-        avatar: googleUser.avatar,
-        email: googleUser.email,
-        firstName: form.firstName.trim(),
-        lastName: form.lastName.trim(),
-        name: googleUser.name,
+    setSubmitError("");
+
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw userError || new Error("Please choose your Google account again.");
+      }
+
+      const email = user.email || googleProfile.email;
+      const avatar =
+        user.user_metadata?.avatar_url ||
+        user.user_metadata?.picture ||
+        googleProfile.avatar ||
+        "";
+      const firstName = form.firstName.trim();
+      const lastName = form.lastName.trim();
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          first_name: firstName,
+          full_name: [firstName, lastName].filter(Boolean).join(" "),
+          last_name: lastName,
+          provider: "google",
+          role: "jobseeker",
+        },
+        password: form.password,
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      await upsertProfile({
+        avatarUrl: avatar,
+        email,
+        firstName,
+        jobTitle: "Creative Specialist",
+        lastName,
         provider: "google",
-      }),
-    );
-    router.push("/signup/jobseeker/location");
+        role: "jobseeker",
+        userId: user.id,
+      });
+
+      window.localStorage.setItem(
+        "mediahire.jobseeker.googleProfile",
+        JSON.stringify({
+          avatar,
+          email,
+          firstName,
+          lastName,
+          name: googleProfile.name,
+          provider: "google",
+        }),
+      );
+      router.push("/signup/jobseeker/location");
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Could not complete Google registration.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -133,7 +233,8 @@ export function JobSeekerGoogleDetailsPage({
                 personalize your experience
               </p>
               <p className="mt-4 rounded-xl bg-[#eef4ff] px-4 py-3 text-sm font-bold text-[#0B63E5]">
-                Signed in with Google as {googleUser.email}
+                Signed in with Google as{" "}
+                {googleProfile.email || "your selected Google account"}
               </p>
             </div>
 
@@ -189,6 +290,12 @@ export function JobSeekerGoogleDetailsPage({
                 placeholder="Confirmed your Password"
                 value={form.confirmPassword}
               />
+
+              {submitError ? (
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">
+                  {submitError}
+                </p>
+              ) : null}
 
               <PrimaryButton className="mt-2" isLoading={isLoading} type="submit">
                 Sign up
