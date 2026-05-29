@@ -26,7 +26,7 @@ function callbackPath(role: OAuthRole, mode: OAuthMode) {
     return `/verify-email?${params.toString()}`;
   }
 
-  return role === "jobseeker" ? "/home/jobseeker" : "/account/employer";
+  return role === "jobseeker" ? "/home/jobseeker" : "/home/employer";
 }
 
 export function GET(request: Request) {

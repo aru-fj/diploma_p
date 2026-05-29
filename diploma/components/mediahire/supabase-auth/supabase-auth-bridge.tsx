@@ -193,7 +193,7 @@ export function SupabaseAuthBridge({
         }
 
         await loginWithEmail(values);
-        router.push(role === "jobseeker" ? "/home/jobseeker" : "/account/employer");
+        router.push(role === "jobseeker" ? "/home/jobseeker" : "/home/employer");
       } catch (error) {
         if (mode === "login") {
           const message = error instanceof Error ? error.message : "";

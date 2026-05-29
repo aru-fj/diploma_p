@@ -167,7 +167,7 @@ export function JobSeekerLoginPage() {
             </div>
 
             <SocialButton compact icon={<GoogleIcon />} onClick={handleGoogleSignin}>
-              Sign in with Google
+              Log in with Google
             </SocialButton>
 
             <p className="mt-4 text-center text-sm font-medium text-slate-500">

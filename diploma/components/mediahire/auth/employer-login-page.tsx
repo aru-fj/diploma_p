@@ -167,7 +167,7 @@ export function EmployerLoginPage() {
               onClick={handleGoogleSignin}
               tone="dark"
             >
-              Sign in with Google
+              Log in with Google
             </SocialButton>
 
             <p className="mt-4 text-center text-sm font-medium text-slate-500">
@@ -178,6 +178,16 @@ export function EmployerLoginPage() {
               >
                 Sign Up
               </Link>
+            </p>
+
+            <p className="mt-3 text-center text-sm font-medium text-slate-500">
+              <Link
+                className="font-black text-[#0B63E5] underline-offset-4 transition hover:underline"
+                href="/login/jobseeker"
+              >
+                Log In
+              </Link>{" "}
+              as Job Seeker
             </p>
           </div>
         </motion.section>

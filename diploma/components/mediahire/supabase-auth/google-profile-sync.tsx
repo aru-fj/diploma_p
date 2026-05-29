@@ -5,6 +5,39 @@ import { useEffect, type ReactNode } from "react";
 import { supabase } from "@/lib/supabase-client";
 import { upsertProfile, type MediaHireRole } from "./auth-service";
 
+function isMediaHireRole(value: unknown): value is MediaHireRole {
+  return value === "jobseeker" || value === "employer";
+}
+
+async function getAuthoritativeRole() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    return null;
+  }
+
+  try {
+    const response = await fetch("/api/auth/google-role", {
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = (await response.json()) as { role?: unknown };
+
+    return isMediaHireRole(result.role) ? result.role : null;
+  } catch {
+    return null;
+  }
+}
+
 export function GoogleProfileSync({
   children,
   role,
@@ -18,6 +51,12 @@ export function GoogleProfileSync({
       const user = data.user;
 
       if (!user) {
+        return;
+      }
+
+      const authoritativeRole = await getAuthoritativeRole();
+
+      if (authoritativeRole && authoritativeRole !== role) {
         return;
       }
 

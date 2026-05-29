@@ -1,15 +1,9 @@
 import type { ReactNode } from "react";
 
-import { SupabaseAuthBridge } from "@/components/mediahire/supabase-auth/supabase-auth-bridge";
-
 export default function JobSeekerLoginLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  return (
-    <SupabaseAuthBridge mode="login" role="jobseeker">
-      {children}
-    </SupabaseAuthBridge>
-  );
+  return <>{children}</>;
 }

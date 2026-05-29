@@ -17,6 +17,39 @@ function loginPath(role: MediaHireRole) {
   return role === "jobseeker" ? "/login/jobseeker" : "/login/employer";
 }
 
+function homePath(role: MediaHireRole) {
+  return role === "jobseeker" ? "/home/jobseeker" : "/home/employer";
+}
+
+function isMediaHireRole(value: unknown): value is MediaHireRole {
+  return value === "jobseeker" || value === "employer";
+}
+
+async function getAuthoritativeRole(accessToken?: string) {
+  if (!accessToken) {
+    return null;
+  }
+
+  try {
+    const response = await fetch("/api/auth/google-role", {
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = (await response.json()) as { role?: unknown };
+
+    return isMediaHireRole(result.role) ? result.role : null;
+  } catch {
+    return null;
+  }
+}
+
 export function FullAuthorizationGuard({
   children,
   role,
@@ -35,6 +68,9 @@ export function FullAuthorizationGuard({
       const user = sessionData.session?.user;
       const nextAuthSession = user ? null : await getNextAuthSession();
       const nextAuthUser = nextAuthSession?.user;
+      const authoritativeRole = await getAuthoritativeRole(
+        sessionData.session?.access_token,
+      );
 
       if (!user && !nextAuthUser) {
         window.location.replace(
@@ -58,9 +94,11 @@ export function FullAuthorizationGuard({
               .eq("email", nextAuthUser?.email || "")
               .limit(1);
       const profile = profileRows?.[0];
+      const actualRole =
+        authoritativeRole || (isMediaHireRole(profile?.role) ? profile.role : null);
 
-      if (profile?.role && profile.role !== role) {
-        window.location.replace(loginPath(role));
+      if (actualRole && actualRole !== role) {
+        window.location.replace(homePath(actualRole));
         return;
       }
 

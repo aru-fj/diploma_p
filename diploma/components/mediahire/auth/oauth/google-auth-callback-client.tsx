@@ -25,6 +25,32 @@ function normalizeMode(value: string | null): OAuthMode {
   return value === "login" ? "login" : "signup";
 }
 
+function getStoredOAuthIntent() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem("mediahire.googleOAuth");
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as {
+      mode?: unknown;
+      role?: unknown;
+    };
+
+    return {
+      mode: parsed.mode === "login" ? "login" : "signup",
+      role: parsed.role === "employer" ? "employer" : "jobseeker",
+    } satisfies { mode: OAuthMode; role: MediaHireRole };
+  } catch {
+    return null;
+  }
+}
+
 function splitName(fullName: string) {
   const [firstName = "", ...rest] = fullName.trim().split(/\s+/);
 
@@ -36,12 +62,83 @@ function splitName(fullName: string) {
 
 function nextPath(role: MediaHireRole, mode: OAuthMode) {
   if (mode === "login") {
-    return role === "employer" ? "/account/employer" : "/home/jobseeker";
+    return role === "employer" ? "/home/employer" : "/home/jobseeker";
   }
 
   return role === "employer"
     ? "/signup/employer/google-details"
     : "/signup/jobseeker/google-details";
+}
+
+function isMediaHireRole(value: unknown): value is MediaHireRole {
+  return value === "employer" || value === "jobseeker";
+}
+
+async function getRegisteredRole(userId: string, email: string) {
+  const { data: employerProfile } = await supabase
+    .from("employer_profiles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (employerProfile?.user_id) {
+    return "employer";
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (isMediaHireRole(profile?.role)) {
+    return profile.role;
+  }
+
+  if (!email) {
+    return null;
+  }
+
+  const { data: emailProfiles } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("email", email)
+    .limit(10);
+
+  const roles = (emailProfiles || [])
+    .map((emailProfile) => emailProfile.role)
+    .filter(isMediaHireRole);
+
+  if (roles.includes("employer")) {
+    return "employer";
+  }
+
+  return roles.includes("jobseeker") ? "jobseeker" : null;
+}
+
+async function getServerRegisteredRole() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    return null;
+  }
+
+  const response = await fetch("/api/auth/google-role", {
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const result = (await response.json()) as { role?: unknown };
+
+  return isMediaHireRole(result.role) ? result.role : null;
 }
 
 export function GoogleAuthCallbackClient() {
@@ -53,14 +150,13 @@ export function GoogleAuthCallbackClient() {
     let isMounted = true;
 
     async function completeGoogleAuth() {
-      const role = normalizeRole(searchParams.get("role"));
-      const mode = normalizeMode(searchParams.get("mode"));
+      const storedOAuth = getStoredOAuthIntent();
+      const role = normalizeRole(searchParams.get("role") || storedOAuth?.role || null);
+      const mode = normalizeMode(searchParams.get("mode") || storedOAuth?.mode || null);
       const code = searchParams.get("code");
 
       try {
-        const { data: initialSession } = await supabase.auth.getSession();
-
-        if (!initialSession.session && code) {
+        if (code) {
           const { error: exchangeError } =
             await supabase.auth.exchangeCodeForSession(code);
 
@@ -88,6 +184,38 @@ export function GoogleAuthCallbackClient() {
         const avatarUrl =
           user.user_metadata?.avatar_url || user.user_metadata?.picture || "";
 
+        if (mode === "login") {
+          const metadataRole = user.user_metadata?.role;
+          const registeredRole =
+            (await getServerRegisteredRole()) ||
+            (await getRegisteredRole(user.id, email)) ||
+            (isMediaHireRole(metadataRole) ? metadataRole : null);
+
+          if (!registeredRole) {
+            await supabase.auth.signOut();
+            throw new Error(
+              "This Google account is not registered yet. Please sign up first.",
+            );
+          }
+
+          router.replace(nextPath(registeredRole, mode));
+          window.localStorage.removeItem("mediahire.googleOAuth");
+          return;
+        }
+
+        const existingRole =
+          (await getServerRegisteredRole()) ||
+          (await getRegisteredRole(user.id, email));
+
+        if (existingRole && existingRole !== role) {
+          await supabase.auth.signOut();
+          throw new Error(
+            existingRole === "employer"
+              ? "This Google account is already registered as an employer. Please log in as Employer."
+              : "This Google account is already registered as a job seeker. Please log in as Job Seeker.",
+          );
+        }
+
         await upsertProfile({
           avatarUrl,
           email,
@@ -99,25 +227,21 @@ export function GoogleAuthCallbackClient() {
           userId: user.id,
         });
 
-        if (mode === "signup") {
-          await requestVerificationCode({
-            email,
-            provider: "google",
-            role,
-            userId: user.id,
-          });
+        await requestVerificationCode({
+          email,
+          provider: "google",
+          role,
+          userId: user.id,
+        });
 
-          const verifyUrl = new URL("/verify-email", window.location.origin);
-          verifyUrl.searchParams.set("role", role);
-          verifyUrl.searchParams.set("email", email);
-          verifyUrl.searchParams.set("provider", "google");
-          verifyUrl.searchParams.set("next", nextPath(role, mode));
+        const verifyUrl = new URL("/verify-email", window.location.origin);
+        verifyUrl.searchParams.set("role", role);
+        verifyUrl.searchParams.set("email", email);
+        verifyUrl.searchParams.set("provider", "google");
+        verifyUrl.searchParams.set("next", nextPath(role, mode));
 
-          router.replace(verifyUrl.pathname + verifyUrl.search);
-          return;
-        }
-
-        router.replace(nextPath(role, mode));
+        router.replace(verifyUrl.pathname + verifyUrl.search);
+        window.localStorage.removeItem("mediahire.googleOAuth");
       } catch (authError) {
         if (isMounted) {
           setError(
