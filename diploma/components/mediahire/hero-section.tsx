@@ -278,7 +278,7 @@ export function HeroSection({ role = "jobseeker" }: HeroSectionProps) {
             transition={{ duration: 0.55, delay: 0.8 }}
             className={`absolute bg-white shadow-xl ${
               isEmployer
-                ? "-right-[13px] top-[38px] flex w-[265px] items-center gap-3 rounded-[1.5rem] px-4 py-3"
+                ? "-right-[5px] top-[38px] flex w-[265px] items-center gap-3 rounded-[1.5rem] px-4 py-3"
                 : "right-0 top-9 rounded-2xl px-6 py-4"
             }`}
           >

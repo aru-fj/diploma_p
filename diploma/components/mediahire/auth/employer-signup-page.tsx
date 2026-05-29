@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { signUpWithEmail } from "@/components/mediahire/supabase-auth/auth-service";
 import { AuthInput } from "./auth-input";
 import { AuthLogo } from "./logo";
 import { PasswordInput } from "./password-input";
@@ -34,12 +35,15 @@ export function EmployerSignupPage() {
   const router = useRouter();
   const [form, setForm] = useState<EmployerSignupForm>(initialForm);
   const [errors, setErrors] = useState<EmployerSignupErrors>({});
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
 
   function updateField(field: keyof EmployerSignupForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
+    setSubmitError("");
   }
 
   function validate() {
@@ -76,25 +80,63 @@ export function EmployerSignupPage() {
     return Object.keys(nextErrors).length === 0;
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!validate()) {
       return;
     }
 
-    window.localStorage.setItem(
-      "mediahire.pendingProfile",
-      JSON.stringify({
-        email: form.email.trim(),
-        fullName: form.fullName.trim(),
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    const email = form.email.trim();
+    const fullName = form.fullName.trim();
+    const [firstName = "", ...lastNameParts] = fullName.split(/\s+/);
+    const lastName = lastNameParts.join(" ");
+
+    try {
+      await signUpWithEmail({
+        email,
+        firstName,
+        lastName,
+        password: form.password,
         role: "employer",
-        title: form.role.trim(),
-      }),
-    );
-    router.push(
-      `/verify-email?role=employer&email=${encodeURIComponent(form.email.trim())}`,
-    );
+      });
+
+      window.localStorage.setItem(
+        "mediahire.pendingProfile",
+        JSON.stringify({
+          email,
+          firstName,
+          fullName,
+          lastName,
+          role: "employer",
+          title: form.role.trim(),
+        }),
+      );
+
+      window.sessionStorage.setItem(
+        "mediahire.pendingEmailSignup",
+        JSON.stringify({
+          email,
+          password: form.password,
+          role: "employer",
+        }),
+      );
+
+      window.location.href = `/verify-email?role=employer&email=${encodeURIComponent(
+        email,
+      )}&provider=email&next=${encodeURIComponent("/signup/employer/company-details")}`;
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function handleGoogleSignup() {
@@ -133,6 +175,7 @@ export function EmployerSignupPage() {
                 error={errors.fullName}
                 id="employerFullName"
                 label="Full Name*"
+                name="fullName"
                 onChange={(event) => updateField("fullName", event.target.value)}
                 placeholder="Enter your Full Name"
                 type="text"
@@ -145,6 +188,7 @@ export function EmployerSignupPage() {
                 error={errors.role}
                 id="employerRole"
                 label="Role*"
+                name="role"
                 onChange={(event) => updateField("role", event.target.value)}
                 placeholder="Enter your role"
                 type="text"
@@ -157,6 +201,7 @@ export function EmployerSignupPage() {
                 error={errors.email}
                 id="employerEmail"
                 label="Email*"
+                name="email"
                 onChange={(event) => updateField("email", event.target.value)}
                 placeholder="Enter your Business Email"
                 type="email"
@@ -170,6 +215,7 @@ export function EmployerSignupPage() {
                 id="employerPassword"
                 isVisible={isPasswordVisible}
                 label="Password*"
+                name="password"
                 onChange={(event) => updateField("password", event.target.value)}
                 onToggleVisibility={() =>
                   setIsPasswordVisible((current) => !current)
@@ -185,6 +231,7 @@ export function EmployerSignupPage() {
                 id="employerConfirmPassword"
                 isVisible={isConfirmVisible}
                 label="Confirm Password*"
+                name="confirmPassword"
                 onChange={(event) =>
                   updateField("confirmPassword", event.target.value)
                 }
@@ -195,13 +242,20 @@ export function EmployerSignupPage() {
                 value={form.confirmPassword}
               />
 
+              {submitError ? (
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">
+                  {submitError}
+                </p>
+              ) : null}
+
               <motion.button
-                className="mt-1 h-12 w-full rounded-lg bg-[#252525] text-base font-black text-white shadow-[0_12px_28px_rgba(37,37,37,0.18)] transition hover:bg-black focus:outline-none focus:ring-4 focus:ring-[#252525]/15"
+                className="mt-1 h-12 w-full rounded-lg bg-[#252525] text-base font-black text-white shadow-[0_12px_28px_rgba(37,37,37,0.18)] transition hover:bg-black focus:outline-none focus:ring-4 focus:ring-[#252525]/15 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isSubmitting}
                 type="submit"
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.985 }}
+                whileHover={{ y: isSubmitting ? 0 : -2 }}
+                whileTap={{ scale: isSubmitting ? 1 : 0.985 }}
               >
-                Sign up
+                {isSubmitting ? "Creating account..." : "Sign up"}
               </motion.button>
             </form>
 
@@ -228,6 +282,16 @@ export function EmployerSignupPage() {
               >
                 Login
               </Link>
+            </p>
+
+            <p className="mt-3 text-center text-sm font-medium text-slate-500">
+              <Link
+                className="font-black text-[#0B63E5] underline-offset-4 transition hover:underline"
+                href="/signup/jobseeker"
+              >
+                Sign up
+              </Link>{" "}
+              as Job Seeker
             </p>
           </div>
         </motion.section>

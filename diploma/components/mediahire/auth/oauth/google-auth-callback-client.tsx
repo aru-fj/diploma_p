@@ -40,7 +40,7 @@ function nextPath(role: MediaHireRole, mode: OAuthMode) {
   }
 
   return role === "employer"
-    ? "/signup/employer/company-details"
+    ? "/signup/employer/google-details"
     : "/signup/jobseeker/google-details";
 }
 

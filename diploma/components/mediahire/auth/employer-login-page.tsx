@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { loginWithEmail } from "@/components/mediahire/supabase-auth/auth-service";
 import { AuthInput } from "./auth-input";
 import { AuthLogo } from "./logo";
 import { PasswordInput } from "./password-input";
@@ -21,6 +22,8 @@ export function EmployerLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<EmployerLoginErrors>({});
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   function validate() {
@@ -48,21 +51,28 @@ export function EmployerLoginPage() {
       return;
     }
 
-    const businessEmail = email.trim();
+    setIsSubmitting(true);
+    setSubmitError("");
 
-    window.localStorage.setItem(
-      "mediahire.pendingProfile",
-      JSON.stringify({
-        email: businessEmail,
-        role: "employer",
-      }),
-    );
-
-    router.push(
-      `/verify-email?role=employer&email=${encodeURIComponent(
-        businessEmail,
-      )}&next=${encodeURIComponent("/dashboard/employer")}`,
-    );
+    loginWithEmail({
+      email: email.trim(),
+      password,
+      role: "employer",
+    })
+      .then(() => {
+        router.push("/home/employer");
+      })
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : "";
+        setSubmitError(
+          message.includes("registered as")
+            ? message
+            : "Incorrect email or password",
+        );
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   }
 
   function handleGoogleSignin() {
@@ -97,9 +107,11 @@ export function EmployerLoginPage() {
                 error={errors.email}
                 id="employerEmail"
                 label="Email*"
+                name="email"
                 onChange={(event) => {
                   setEmail(event.target.value);
                   setErrors((current) => ({ ...current, email: undefined }));
+                  setSubmitError("");
                 }}
                 placeholder="Enter your Business Email"
                 type="email"
@@ -113,9 +125,11 @@ export function EmployerLoginPage() {
                 id="employerPassword"
                 isVisible={isPasswordVisible}
                 label="Password*"
+                name="password"
                 onChange={(event) => {
                   setPassword(event.target.value);
                   setErrors((current) => ({ ...current, password: undefined }));
+                  setSubmitError("");
                 }}
                 onToggleVisibility={() =>
                   setIsPasswordVisible((current) => !current)
@@ -124,13 +138,20 @@ export function EmployerLoginPage() {
                 value={password}
               />
 
+              {submitError ? (
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">
+                  {submitError}
+                </p>
+              ) : null}
+
               <motion.button
-                className="h-12 w-full rounded-lg bg-[#252525] text-base font-black text-white shadow-[0_12px_28px_rgba(37,37,37,0.18)] transition hover:bg-black focus:outline-none focus:ring-4 focus:ring-[#252525]/15"
+                className="h-12 w-full rounded-lg bg-[#252525] text-base font-black text-white shadow-[0_12px_28px_rgba(37,37,37,0.18)] transition hover:bg-black focus:outline-none focus:ring-4 focus:ring-[#252525]/15 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isSubmitting}
                 type="submit"
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.985 }}
+                whileHover={{ y: isSubmitting ? 0 : -2 }}
+                whileTap={{ scale: isSubmitting ? 1 : 0.985 }}
               >
-                Log In
+                {isSubmitting ? "Logging in..." : "Log In"}
               </motion.button>
             </form>
 

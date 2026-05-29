@@ -11,7 +11,7 @@ import { ProgressSteps } from "./progress-steps";
 import { ResumeUploadBox } from "./resume-upload-box";
 import { TestimonialCard } from "./testimonial-card";
 
-const dashboardRoute = "/dashboard/jobseeker";
+const jobSeekerHomeRoute = "/home/jobseeker";
 const maxResumeSize = 10 * 1024 * 1024;
 
 export function JobSeekerResumePage() {
@@ -60,9 +60,9 @@ export function JobSeekerResumePage() {
     setIsUploadConfirmed(true);
   }
 
-  function goToDashboard() {
+  function goToJobSeekerHome() {
     setIsLoading(true);
-    router.push(dashboardRoute);
+    router.push(jobSeekerHomeRoute);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -73,12 +73,12 @@ export function JobSeekerResumePage() {
       return;
     }
 
-    goToDashboard();
+    goToJobSeekerHome();
   }
 
   function handleSkip() {
     setError("");
-    goToDashboard();
+    goToJobSeekerHome();
   }
 
   return (

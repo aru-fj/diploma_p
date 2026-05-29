@@ -88,25 +88,25 @@ export function JobSeekerSalaryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white px-4 py-4 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-7xl gap-7 lg:grid-cols-[0.78fr_1.35fr] lg:items-start">
+    <main className="min-h-screen bg-white px-4 py-3 text-slate-950 sm:px-6 lg:px-8">
+      <div className="mx-auto grid min-h-[calc(100vh-1.5rem)] max-w-7xl gap-6 lg:grid-cols-[0.72fr_1.3fr] lg:items-start">
         <motion.section
-          className="flex items-start justify-center py-5 lg:py-4"
+          className="flex items-start justify-center py-3 lg:py-3"
           initial={{ opacity: 0, x: -24 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="w-full max-w-[305px]">
+          <div className="w-full max-w-[285px]">
             <ProgressSteps activeStep={2} />
 
-            <div className="mt-10 text-center max-lg:mt-8">
+            <div className="mt-7 text-center max-lg:mt-6">
               <AuthLogo compact />
-              <h1 className="mx-auto mt-5 max-w-[285px] text-[1.35rem] font-black leading-tight tracking-tight text-slate-900">
+              <h1 className="mx-auto mt-4 max-w-[270px] text-[1.25rem] font-black leading-tight tracking-tight text-slate-900">
                 How much is the minimum salary You want?
               </h1>
-              <p className="mx-auto mt-2 max-w-[285px] text-xs leading-5 text-slate-400">
-                We use this to match you nearby offers that approximately pay
-                this amount or more.
+              <p className="mx-auto mt-1.5 max-w-[260px] text-[11px] leading-5 text-slate-400">
+                Add your expected minimum salary and payment period to match
+                better job offers. You can skip this step.
               </p>
             </div>
 
@@ -121,7 +121,7 @@ export function JobSeekerSalaryPage() {
                   </label>
                   <div className="relative">
                     <input
-                      className={`h-12 w-full rounded-lg border bg-white px-3 pr-20 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0B63E5] focus:ring-4 focus:ring-[#0B63E5]/10 ${
+                    className={`h-11 w-full rounded-lg border bg-white px-3 pr-20 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0B63E5] focus:ring-4 focus:ring-[#0B63E5]/10 ${
                         errors.amount ? "border-red-400" : "border-slate-300"
                       }`}
                       id="minimumSalary"
@@ -209,6 +209,7 @@ export function JobSeekerSalaryPage() {
           <AuthImagePanel
             alt="Media creator holding a tablet and filming setup"
             imageClassName="object-center"
+            panelClassName="max-lg:min-h-[460px] lg:h-[calc(100vh-1.5rem)] lg:min-h-[460px]"
             src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=1500&q=90"
           >
             <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent" />

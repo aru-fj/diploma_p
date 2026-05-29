@@ -4,13 +4,17 @@ import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
 import { supabase } from "@/lib/supabase-client";
+import {
+  getEmployerProfile,
+  saveEmployerProfile,
+} from "@/components/mediahire/employer/employer-store";
 import type { MediaHireRole } from "./auth-service";
 import { getNextAuthSession } from "./nextauth-session";
 
 type CompletionMode = "none" | "complete";
 
 function homePath(role: MediaHireRole) {
-  return role === "jobseeker" ? "/home/jobseeker" : "/account/employer";
+  return role === "jobseeker" ? "/home/jobseeker" : "/home/employer";
 }
 
 async function updateOnboardingState(
@@ -94,6 +98,15 @@ async function upsertEmployerCompanyDetails() {
   }
 
   const details = collectEmployerCompanyDetails();
+  const currentProfile = getEmployerProfile();
+
+  saveEmployerProfile({
+    ...currentProfile,
+    companyDescription:
+      details.companyDescription || currentProfile.companyDescription,
+    companyField: details.companyField || currentProfile.companyField,
+    companyName: details.companyName || currentProfile.companyName,
+  });
 
   if (!data.user && nextAuthSession?.user?.supabaseUserId) {
     const response = await fetch("/api/employer/profile", {

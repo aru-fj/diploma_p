@@ -92,6 +92,10 @@ function isPrimaryAuthSubmit(element: HTMLElement | null, mode: AuthMode) {
     return false;
   }
 
+  if (element instanceof HTMLAnchorElement && element.getAttribute("href")) {
+    return false;
+  }
+
   return mode === "signup"
     ? label === "sign up" || label === "signup"
     : label === "log in" || label === "login";

@@ -7,6 +7,10 @@ import { AuthInput } from "./auth-input";
 import { AuthLogo } from "./logo";
 import { CompanyLogoUpload } from "./company-logo-upload";
 import { EmployerAuthImagePanel } from "./employer-auth-image-panel";
+import {
+  getEmployerProfile,
+  saveEmployerProfile,
+} from "../employer/employer-store";
 import { PrimaryButton } from "./primary-button";
 import { ProgressSteps } from "./progress-steps";
 import { TestimonialCard } from "./testimonial-card";
@@ -110,6 +114,8 @@ export function EmployerCompanyDetailsPage() {
   }
 
   function finishRegistration() {
+    const currentProfile = getEmployerProfile();
+
     window.localStorage.setItem(
       "mediahire.employer.companyDetails",
       JSON.stringify({
@@ -119,7 +125,14 @@ export function EmployerCompanyDetailsPage() {
         logoName: logoFile?.name ?? null,
       }),
     );
-    router.push("/dashboard/employer");
+    saveEmployerProfile({
+      ...currentProfile,
+      companyDescription:
+        form.companyDescription.trim() || currentProfile.companyDescription,
+      companyField: form.companyField.trim() || currentProfile.companyField,
+      companyName: form.companyName.trim() || currentProfile.companyName,
+    });
+    router.push("/home/employer");
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -134,7 +147,7 @@ export function EmployerCompanyDetailsPage() {
   }
 
   function handleSkip() {
-    router.push("/dashboard/employer");
+    router.push("/home/employer");
   }
 
   return (
@@ -175,6 +188,7 @@ export function EmployerCompanyDetailsPage() {
                 error={errors.companyName}
                 id="companyName"
                 label="Company name*"
+                name="companyName"
                 onChange={(event) =>
                   updateField("companyName", event.target.value)
                 }
@@ -189,6 +203,7 @@ export function EmployerCompanyDetailsPage() {
                 error={errors.companyField}
                 id="companyField"
                 label="Company Field"
+                name="companyField"
                 onChange={(event) =>
                   updateField("companyField", event.target.value)
                 }
@@ -204,6 +219,7 @@ export function EmployerCompanyDetailsPage() {
                 id="companyDescription"
                 label="Company description*"
                 maxLength={descriptionLimit}
+                name="companyDescription"
                 onChange={(event) =>
                   updateField("companyDescription", event.target.value)
                 }
