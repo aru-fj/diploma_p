@@ -141,6 +141,20 @@ async function getServerRegisteredRole() {
   return isMediaHireRole(result.role) ? result.role : null;
 }
 
+async function waitForOAuthSession() {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const { data } = await supabase.auth.getSession();
+
+    if (data.session) {
+      return data.session;
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, 150));
+  }
+
+  return null;
+}
+
 export function GoogleAuthCallbackClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -161,8 +175,14 @@ export function GoogleAuthCallbackClient() {
             await supabase.auth.exchangeCodeForSession(code);
 
           if (exchangeError) {
-            throw exchangeError;
+            const recoveredSession = await waitForOAuthSession();
+
+            if (!recoveredSession) {
+              throw exchangeError;
+            }
           }
+        } else {
+          await waitForOAuthSession();
         }
 
         const {
