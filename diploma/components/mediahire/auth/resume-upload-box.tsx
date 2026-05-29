@@ -53,16 +53,16 @@ export function ResumeUploadBox({
   }
 
   return (
-    <div className="mt-12 text-center">
-      <h2 className="text-xl font-black tracking-tight text-slate-900">
+    <div className="mt-5 text-center">
+      <h2 className="text-base font-black tracking-tight text-slate-900">
         Upload your resume
       </h2>
-      <p className="mt-2 text-xs font-medium leading-5 text-slate-400">
+      <p className="mt-1.5 text-[11px] font-medium leading-5 text-slate-400">
         You can attach a separate resume file here.
       </p>
 
       <motion.label
-        className={`mt-6 flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-5 py-7 text-center transition ${
+        className={`mt-3 flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed px-4 py-4 text-center transition ${
           isDragActive
             ? "border-[#0B63E5] bg-[#eef4ff] shadow-[0_18px_36px_rgba(11,99,229,0.12)]"
             : "border-slate-300 bg-white hover:border-[#0B63E5]/60 hover:bg-[#f8fbff]"
@@ -80,23 +80,23 @@ export function ResumeUploadBox({
           onChange={handleFileChange}
           type="file"
         />
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#eef4ff] text-[#0B63E5]">
-          {fileName ? <FileText size={24} /> : <UploadCloud size={25} />}
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#eef4ff] text-[#0B63E5]">
+          {fileName ? <FileText size={18} /> : <UploadCloud size={19} />}
         </span>
-        <span className="mt-4 text-sm font-bold text-slate-400">
+        <span className="mt-2.5 text-xs font-bold text-slate-400">
           {fileName ?? "Drag & Drop or Choose file"}
         </span>
-        <span className="mt-1 text-xs font-semibold text-slate-300">
+        <span className="mt-1 text-[11px] font-semibold text-slate-300">
           To upload PDF MAX 10 MB.
         </span>
       </motion.label>
 
       {error ? (
-        <p className="mt-2 text-sm font-semibold text-red-500">{error}</p>
+        <p className="mt-1.5 text-xs font-semibold text-red-500">{error}</p>
       ) : null}
 
       <motion.button
-        className="mt-4 inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-xl border border-[#0B63E5] bg-white text-sm font-black text-[#0B63E5] transition hover:-translate-y-0.5 hover:bg-[#eef4ff] focus-within:ring-4 focus-within:ring-[#0B63E5]/10"
+        className="mt-2.5 inline-flex h-9 w-full cursor-pointer items-center justify-center rounded-lg border border-[#0B63E5] bg-white text-xs font-black text-[#0B63E5] transition hover:-translate-y-0.5 hover:bg-[#eef4ff] focus-within:ring-4 focus-within:ring-[#0B63E5]/10"
         onClick={onUploadConfirm}
         type="button"
         whileHover={{ y: -2 }}

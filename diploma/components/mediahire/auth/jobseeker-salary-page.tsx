@@ -88,40 +88,40 @@ export function JobSeekerSalaryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white px-4 py-5 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] max-w-7xl gap-8 lg:grid-cols-[0.82fr_1.35fr] lg:items-start">
+    <main className="min-h-screen bg-white px-4 py-4 text-slate-950 sm:px-6 lg:px-8">
+      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-7xl gap-7 lg:grid-cols-[0.78fr_1.35fr] lg:items-start">
         <motion.section
-          className="flex items-start justify-center py-8 lg:py-8"
+          className="flex items-start justify-center py-5 lg:py-4"
           initial={{ opacity: 0, x: -24 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="w-full max-w-[360px]">
+          <div className="w-full max-w-[305px]">
             <ProgressSteps activeStep={2} />
 
-            <div className="mt-24 text-center max-lg:mt-12">
-              <AuthLogo />
-              <h1 className="mx-auto mt-8 max-w-[330px] text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-3xl">
+            <div className="mt-10 text-center max-lg:mt-8">
+              <AuthLogo compact />
+              <h1 className="mx-auto mt-5 max-w-[285px] text-[1.35rem] font-black leading-tight tracking-tight text-slate-900">
                 How much is the minimum salary You want?
               </h1>
-              <p className="mx-auto mt-4 max-w-[310px] text-sm leading-6 text-slate-400">
+              <p className="mx-auto mt-2 max-w-[285px] text-xs leading-5 text-slate-400">
                 We use this to match you nearby offers that approximately pay
                 this amount or more.
               </p>
             </div>
 
-            <form className="mt-7 space-y-4" onSubmit={handleSubmit} noValidate>
+            <form className="mt-4 space-y-3" onSubmit={handleSubmit} noValidate>
               <div>
                 <div>
                   <label
-                    className="mb-2 ml-4 block text-sm font-bold text-slate-800"
+                    className="mb-1.5 ml-3 block text-xs font-bold text-slate-800"
                     htmlFor="minimumSalary"
                   >
                     Minimum Salary Amount
                   </label>
                   <div className="relative">
                     <input
-                      className={`h-14 w-full rounded-xl border bg-white px-4 pr-24 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0B63E5] focus:ring-4 focus:ring-[#0B63E5]/10 ${
+                      className={`h-12 w-full rounded-lg border bg-white px-3 pr-20 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0B63E5] focus:ring-4 focus:ring-[#0B63E5]/10 ${
                         errors.amount ? "border-red-400" : "border-slate-300"
                       }`}
                       id="minimumSalary"
@@ -134,7 +134,7 @@ export function JobSeekerSalaryPage() {
                       type="text"
                       value={form.amount}
                     />
-                    <div className="absolute right-2 top-1/2 flex h-10 min-w-16 -translate-y-1/2 items-center justify-center rounded-lg border border-slate-200 bg-[#f8fbff] px-3 text-sm font-black text-slate-700 transition hover:border-[#0B63E5]/40 hover:bg-[#eef4ff]">
+                    <div className="absolute right-2 top-1/2 flex h-8 min-w-14 -translate-y-1/2 items-center justify-center rounded-md border border-slate-200 bg-[#f8fbff] px-2 text-xs font-black text-slate-700 transition hover:border-[#0B63E5]/40 hover:bg-[#eef4ff]">
                       <span aria-hidden="true">{selectedCurrency.symbol}</span>
                       <ChevronDown
                         aria-hidden="true"
@@ -158,7 +158,7 @@ export function JobSeekerSalaryPage() {
                     </div>
                   </div>
                   {errors.amount ? (
-                    <p className="mt-2 text-sm font-semibold text-red-500">
+                    <p className="mt-1.5 text-xs font-semibold text-red-500">
                       {errors.amount}
                     </p>
                   ) : null}
@@ -167,6 +167,7 @@ export function JobSeekerSalaryPage() {
 
               <AuthInput
                 autoComplete="off"
+                compact
                 error={errors.paymentPeriod}
                 id="paymentPeriod"
                 label="Payment Period"
@@ -185,13 +186,13 @@ export function JobSeekerSalaryPage() {
                 <option value="project-based" />
               </datalist>
 
-              <PrimaryButton className="mt-4" isLoading={isLoading} type="submit">
+              <PrimaryButton compact className="mt-1" isLoading={isLoading} type="submit">
                 Continue
               </PrimaryButton>
             </form>
 
             <button
-              className="mx-auto mt-6 block rounded-full px-6 py-2 text-sm font-bold text-slate-500 transition hover:bg-[#eef4ff] hover:text-[#0B63E5] focus:outline-none focus:ring-4 focus:ring-[#0B63E5]/10"
+              className="mx-auto mt-3 block rounded-full px-6 py-2 text-xs font-bold text-slate-500 transition hover:bg-[#eef4ff] hover:text-[#0B63E5] focus:outline-none focus:ring-4 focus:ring-[#0B63E5]/10"
               onClick={handleSkip}
               type="button"
             >

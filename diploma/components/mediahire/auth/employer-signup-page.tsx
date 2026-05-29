@@ -110,25 +110,26 @@ export function EmployerSignupPage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="w-full max-w-[380px]">
-            <div className="mx-auto max-w-[190px]">
+          <div className="w-full max-w-[335px]">
+            <div className="mx-auto max-w-[175px]">
               <ProgressSteps activeStep={0} total={2} />
             </div>
 
-            <div className="mt-8 text-center">
-              <AuthLogo />
-              <h1 className="mx-auto mt-8 max-w-[330px] text-3xl font-black leading-tight tracking-tight text-[#252525]">
+            <div className="mt-6 text-center">
+              <AuthLogo compact />
+              <h1 className="mx-auto mt-6 max-w-[300px] text-2xl font-black leading-tight tracking-tight text-[#252525]">
                 Give us your company information
               </h1>
-              <p className="mx-auto mt-4 max-w-[330px] text-base leading-7 text-slate-400">
+              <p className="mx-auto mt-3 max-w-[300px] text-sm leading-6 text-slate-400">
                 Please enter your personal details to set up your account and
                 personalize your experience
               </p>
             </div>
 
-            <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
+            <form className="mt-5 space-y-3.5" onSubmit={handleSubmit} noValidate>
               <AuthInput
                 autoComplete="name"
+                compact
                 error={errors.fullName}
                 id="employerFullName"
                 label="Full Name*"
@@ -140,6 +141,7 @@ export function EmployerSignupPage() {
 
               <AuthInput
                 autoComplete="organization-title"
+                compact
                 error={errors.role}
                 id="employerRole"
                 label="Role*"
@@ -151,6 +153,7 @@ export function EmployerSignupPage() {
 
               <AuthInput
                 autoComplete="email"
+                compact
                 error={errors.email}
                 id="employerEmail"
                 label="Email*"
@@ -162,6 +165,7 @@ export function EmployerSignupPage() {
 
               <PasswordInput
                 autoComplete="new-password"
+                compact
                 error={errors.password}
                 id="employerPassword"
                 isVisible={isPasswordVisible}
@@ -176,6 +180,7 @@ export function EmployerSignupPage() {
 
               <PasswordInput
                 autoComplete="new-password"
+                compact
                 error={errors.confirmPassword}
                 id="employerConfirmPassword"
                 isVisible={isConfirmVisible}
@@ -191,7 +196,7 @@ export function EmployerSignupPage() {
               />
 
               <motion.button
-                className="mt-2 h-14 w-full rounded-xl bg-[#252525] text-lg font-black text-white shadow-[0_16px_36px_rgba(37,37,37,0.20)] transition hover:bg-black focus:outline-none focus:ring-4 focus:ring-[#252525]/15"
+                className="mt-1 h-12 w-full rounded-lg bg-[#252525] text-base font-black text-white shadow-[0_12px_28px_rgba(37,37,37,0.18)] transition hover:bg-black focus:outline-none focus:ring-4 focus:ring-[#252525]/15"
                 type="submit"
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.985 }}
@@ -200,13 +205,14 @@ export function EmployerSignupPage() {
               </motion.button>
             </form>
 
-            <div className="my-6 flex items-center gap-5 text-sm font-semibold text-slate-400">
+            <div className="my-4 flex items-center gap-5 text-sm font-semibold text-slate-400">
               <span className="h-px flex-1 bg-slate-300" />
               OR
               <span className="h-px flex-1 bg-slate-300" />
             </div>
 
             <SocialButton
+              compact
               icon={<GoogleIcon />}
               onClick={handleGoogleSignup}
               tone="dark"
@@ -214,7 +220,7 @@ export function EmployerSignupPage() {
               Sign up with Google
             </SocialButton>
 
-            <p className="mt-5 text-center text-sm font-medium text-slate-500">
+            <p className="mt-4 text-center text-sm font-medium text-slate-500">
               Do you already have an account?{" "}
               <Link
                 className="font-black text-[#0B63E5] underline-offset-4 transition hover:underline"

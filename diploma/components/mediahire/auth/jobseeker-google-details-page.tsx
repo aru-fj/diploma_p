@@ -212,35 +212,36 @@ export function JobSeekerGoogleDetailsPage({
   }
 
   return (
-    <main className="min-h-screen bg-white px-4 py-5 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] max-w-7xl gap-8 lg:grid-cols-[0.82fr_1.35fr] lg:items-start">
+    <main className="min-h-screen bg-white px-4 py-4 text-slate-950 sm:px-6 lg:px-8">
+      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-7xl gap-7 lg:grid-cols-[0.78fr_1.35fr] lg:items-start">
         <motion.section
-          className="flex items-center justify-center py-8 lg:py-6"
+          className="flex items-center justify-center py-5 lg:py-4"
           initial={{ opacity: 0, x: -24 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="w-full max-w-[360px]">
+          <div className="w-full max-w-[305px]">
             <ProgressSteps activeStep={0} />
 
-            <div className="mt-8 text-center">
-              <AuthLogo />
-              <h1 className="mt-8 text-3xl font-black tracking-tight text-slate-900">
+            <div className="mt-5 text-center">
+              <AuthLogo compact />
+              <h1 className="mt-5 text-[1.35rem] font-black tracking-tight text-slate-900">
                 Give us your information
               </h1>
-              <p className="mt-4 text-base leading-7 text-slate-400">
+              <p className="mt-2 text-xs leading-5 text-slate-400">
                 Please enter your personal details to set up your account and
                 personalize your experience
               </p>
-              <p className="mt-4 rounded-xl bg-[#eef4ff] px-4 py-3 text-sm font-bold text-[#0B63E5]">
+              <p className="mt-2 rounded-lg bg-[#eef4ff] px-2.5 py-1.5 text-[11px] font-bold leading-5 text-[#0B63E5]">
                 Signed in with Google as{" "}
                 {googleProfile.email || "your selected Google account"}
               </p>
             </div>
 
-            <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
+            <form className="mt-4 space-y-3" onSubmit={handleSubmit} noValidate>
               <AuthInput
                 autoComplete="given-name"
+                compact
                 error={errors.firstName}
                 id="firstName"
                 label="First Name*"
@@ -252,6 +253,7 @@ export function JobSeekerGoogleDetailsPage({
 
               <AuthInput
                 autoComplete="family-name"
+                compact
                 error={errors.lastName}
                 id="lastName"
                 label="Last Name*"
@@ -263,6 +265,7 @@ export function JobSeekerGoogleDetailsPage({
 
               <PasswordInput
                 autoComplete="new-password"
+                compact
                 error={errors.password}
                 id="password"
                 isVisible={isPasswordVisible}
@@ -277,6 +280,7 @@ export function JobSeekerGoogleDetailsPage({
 
               <PasswordInput
                 autoComplete="new-password"
+                compact
                 error={errors.confirmPassword}
                 id="confirmPassword"
                 isVisible={isConfirmVisible}
@@ -292,12 +296,12 @@ export function JobSeekerGoogleDetailsPage({
               />
 
               {submitError ? (
-                <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
                   {submitError}
                 </p>
               ) : null}
 
-              <PrimaryButton className="mt-2" isLoading={isLoading} type="submit">
+              <PrimaryButton compact className="mt-0.5" isLoading={isLoading} type="submit">
                 Sign up
               </PrimaryButton>
             </form>

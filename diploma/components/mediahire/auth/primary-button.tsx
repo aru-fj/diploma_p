@@ -10,19 +10,26 @@ type PrimaryButtonProps = Omit<
   "onAnimationStart" | "onDrag" | "onDragEnd" | "onDragStart"
 > & {
   children: ReactNode;
+  compact?: boolean;
   isLoading?: boolean;
 };
 
 export function PrimaryButton({
   children,
   className = "",
+  compact = false,
   disabled,
   isLoading = false,
   ...props
 }: PrimaryButtonProps) {
+  const compactClass =
+    "h-12 rounded-lg text-base shadow-[0_12px_28px_rgba(11,99,229,0.20)]";
+
   return (
     <motion.button
-      className={`w-full ${mediaHireClassNames.primaryButton} ${className}`}
+      className={`w-full ${mediaHireClassNames.primaryButton} ${
+        compact ? compactClass : ""
+      } ${className}`}
       disabled={disabled || isLoading}
       type="button"
       whileHover={

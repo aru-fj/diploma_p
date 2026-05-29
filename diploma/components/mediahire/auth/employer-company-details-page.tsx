@@ -146,23 +146,23 @@ export function EmployerCompanyDetailsPage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="w-full max-w-[390px]">
-            <div className="mx-auto max-w-[170px]">
+          <div className="w-full max-w-[335px]">
+            <div className="mx-auto max-w-[160px]">
               <ProgressSteps activeStep={1} total={2} />
             </div>
 
-            <div className="mt-8 text-center">
-              <AuthLogo />
-              <h1 className="mx-auto mt-8 max-w-[360px] text-3xl font-black leading-tight tracking-tight text-[#252525]">
+            <div className="mt-6 text-center">
+              <AuthLogo compact />
+              <h1 className="mx-auto mt-6 max-w-[300px] text-2xl font-black leading-tight tracking-tight text-[#252525]">
                 Give us your company information
               </h1>
-              <p className="mx-auto mt-4 max-w-[360px] text-base leading-7 text-slate-400">
+              <p className="mx-auto mt-3 max-w-[300px] text-sm leading-6 text-slate-400">
                 Please provide your company details to complete your profile and
                 access all features
               </p>
             </div>
 
-            <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
+            <form className="mt-5 space-y-3.5" onSubmit={handleSubmit} noValidate>
               <CompanyLogoUpload
                 error={errors.logo}
                 onChange={handleLogoChange}
@@ -171,6 +171,7 @@ export function EmployerCompanyDetailsPage() {
 
               <AuthInput
                 autoComplete="organization"
+                compact
                 error={errors.companyName}
                 id="companyName"
                 label="Company name*"
@@ -184,6 +185,7 @@ export function EmployerCompanyDetailsPage() {
 
               <AuthInput
                 autoComplete="organization-title"
+                compact
                 error={errors.companyField}
                 id="companyField"
                 label="Company Field"
@@ -210,7 +212,8 @@ export function EmployerCompanyDetailsPage() {
               />
 
               <PrimaryButton
-                className="mt-5 bg-[#252525] text-lg shadow-[0_16px_36px_rgba(37,37,37,0.20)] hover:bg-black focus:ring-[#252525]/15"
+                compact
+                className="mt-3 bg-[#252525] shadow-[0_12px_28px_rgba(37,37,37,0.18)] hover:bg-black focus:ring-[#252525]/15"
                 isLoading={isLoading}
                 type="submit"
               >
@@ -218,7 +221,7 @@ export function EmployerCompanyDetailsPage() {
               </PrimaryButton>
 
               <button
-                className="mx-auto block px-4 py-2 text-base font-semibold text-[#252525] transition hover:text-[#0B63E5] disabled:cursor-not-allowed disabled:text-slate-400"
+                className="mx-auto block px-4 py-2 text-sm font-semibold text-[#252525] transition hover:text-[#0B63E5] disabled:cursor-not-allowed disabled:text-slate-400"
                 disabled={isLoading}
                 onClick={handleSkip}
                 type="button"

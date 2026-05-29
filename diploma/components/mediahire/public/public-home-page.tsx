@@ -14,6 +14,46 @@ export function PublicHomePage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
+    const oauthCode = params.get("code");
+    const oauthError = params.get("error");
+
+    if (oauthCode && !oauthError) {
+      let storedRole: PublicRole = "jobseeker";
+      let storedMode: "login" | "signup" = "signup";
+
+      try {
+        const storedOAuth = window.localStorage.getItem("mediahire.googleOAuth");
+
+        if (storedOAuth) {
+          const parsed = JSON.parse(storedOAuth) as {
+            mode?: unknown;
+            role?: unknown;
+          };
+
+          storedRole = parsed.role === "employer" ? "employer" : "jobseeker";
+          storedMode = parsed.mode === "login" ? "login" : "signup";
+        }
+      } catch {
+        storedRole = "jobseeker";
+        storedMode = "signup";
+      }
+
+      const callbackUrl = new URL("/auth/callback", window.location.origin);
+      callbackUrl.searchParams.set("code", oauthCode);
+      callbackUrl.searchParams.set("role", storedRole);
+      callbackUrl.searchParams.set("mode", storedMode);
+
+      const oauthState = params.get("state");
+
+      if (oauthState) {
+        callbackUrl.searchParams.set("state", oauthState);
+      }
+
+      window.location.replace(callbackUrl.pathname + callbackUrl.search);
+      return;
+    }
+
     setRole(params.get("role") === "employer" ? "employer" : "jobseeker");
   }, []);
 

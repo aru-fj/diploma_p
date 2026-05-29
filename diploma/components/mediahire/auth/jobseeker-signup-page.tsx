@@ -149,23 +149,24 @@ export function JobSeekerSignupPage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="w-full max-w-[360px]">
+          <div className="w-full max-w-[335px]">
             <ProgressSteps activeStep={0} />
 
-            <div className="mt-8 text-center">
-              <AuthLogo />
-              <h1 className="mt-8 text-3xl font-black tracking-tight text-slate-900">
+            <div className="mt-6 text-center">
+              <AuthLogo compact />
+              <h1 className="mt-6 text-2xl font-black tracking-tight text-slate-900">
                 Give us your information
               </h1>
-              <p className="mt-4 text-base leading-7 text-slate-400">
+              <p className="mt-3 text-sm leading-6 text-slate-400">
                 Please enter your personal details to set up your account and
                 personalize your experience
               </p>
             </div>
 
-            <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
+            <form className="mt-5 space-y-3.5" onSubmit={handleSubmit} noValidate>
               <AuthInput
                 autoComplete="given-name"
+                compact
                 error={errors.firstName}
                 id="firstName"
                 label="First Name*"
@@ -177,6 +178,7 @@ export function JobSeekerSignupPage() {
 
               <AuthInput
                 autoComplete="family-name"
+                compact
                 error={errors.lastName}
                 id="lastName"
                 label="Last Name*"
@@ -188,6 +190,7 @@ export function JobSeekerSignupPage() {
 
               <AuthInput
                 autoComplete="email"
+                compact
                 error={errors.email}
                 id="email"
                 label="Email*"
@@ -199,6 +202,7 @@ export function JobSeekerSignupPage() {
 
               <PasswordInput
                 autoComplete="new-password"
+                compact
                 error={errors.password}
                 id="password"
                 isVisible={isPasswordVisible}
@@ -213,6 +217,7 @@ export function JobSeekerSignupPage() {
 
               <PasswordInput
                 autoComplete="new-password"
+                compact
                 error={errors.confirmPassword}
                 id="confirmPassword"
                 isVisible={isConfirmVisible}
@@ -234,7 +239,7 @@ export function JobSeekerSignupPage() {
               ) : null}
 
               <motion.button
-                className="mt-2 h-14 w-full rounded-xl bg-[#0B63E5] text-lg font-black text-white shadow-[0_16px_36px_rgba(11,99,229,0.24)] transition hover:bg-[#0758cf] focus:outline-none focus:ring-4 focus:ring-[#0B63E5]/20 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-1 h-12 w-full rounded-lg bg-[#0B63E5] text-base font-black text-white shadow-[0_12px_28px_rgba(11,99,229,0.20)] transition hover:bg-[#0758cf] focus:outline-none focus:ring-4 focus:ring-[#0B63E5]/20 disabled:cursor-not-allowed disabled:opacity-60"
                 type="submit"
                 disabled={isSubmitting}
                 whileHover={{ y: isSubmitting ? 0 : -2 }}
@@ -244,17 +249,17 @@ export function JobSeekerSignupPage() {
               </motion.button>
             </form>
 
-            <div className="my-6 flex items-center gap-5 text-sm font-semibold text-slate-400">
+            <div className="my-4 flex items-center gap-5 text-sm font-semibold text-slate-400">
               <span className="h-px flex-1 bg-slate-300" />
               OR
               <span className="h-px flex-1 bg-slate-300" />
             </div>
 
-            <SocialButton icon={<GoogleIcon />} onClick={handleGoogleSignup}>
+            <SocialButton compact icon={<GoogleIcon />} onClick={handleGoogleSignup}>
               Sign up with Google
             </SocialButton>
 
-            <p className="mt-5 text-center text-sm font-medium text-slate-500">
+            <p className="mt-4 text-center text-sm font-medium text-slate-500">
               Do you already have an account?{" "}
               <Link
                 className="font-black text-[#0B63E5] underline-offset-4 transition hover:underline"
@@ -264,7 +269,7 @@ export function JobSeekerSignupPage() {
               </Link>
             </p>
 
-            <p className="mt-4 text-center text-sm font-medium text-slate-500">
+            <p className="mt-3 text-center text-sm font-medium text-slate-500">
               <Link
                 className="font-black text-[#0B63E5] underline-offset-4 transition hover:underline"
                 href="/signup/employer"

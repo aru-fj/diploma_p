@@ -120,30 +120,31 @@ export function JobSeekerLocationPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white px-4 py-5 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] max-w-7xl gap-8 lg:grid-cols-[0.82fr_1.35fr] lg:items-start">
+    <main className="min-h-screen bg-white px-4 py-4 text-slate-950 sm:px-6 lg:px-8">
+      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-7xl gap-7 lg:grid-cols-[0.78fr_1.35fr] lg:items-start">
         <motion.section
-          className="flex items-start justify-center py-8 lg:py-8"
+          className="flex items-start justify-center py-5 lg:py-4"
           initial={{ opacity: 0, x: -24 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="w-full max-w-[360px]">
+          <div className="w-full max-w-[305px]">
             <ProgressSteps activeStep={1} />
 
-            <div className="mt-24 text-center max-lg:mt-12">
-              <AuthLogo />
-              <h1 className="mt-8 text-3xl font-black tracking-tight text-slate-900">
+            <div className="mt-10 text-center max-lg:mt-8">
+              <AuthLogo compact />
+              <h1 className="mt-5 text-[1.35rem] font-black tracking-tight text-slate-900">
                 What is your location?
               </h1>
-              <p className="mt-4 text-sm leading-6 text-slate-400">
+              <p className="mt-2 text-xs leading-5 text-slate-400">
                 We use this to match you nearby offers.
               </p>
             </div>
 
-            <form className="mt-7 space-y-4" onSubmit={handleSubmit} noValidate>
+            <form className="mt-4 space-y-3" onSubmit={handleSubmit} noValidate>
               <AuthInput
                 autoComplete="address-level2"
+                compact
                 error={errors.location}
                 id="location"
                 label="Location"
@@ -155,6 +156,7 @@ export function JobSeekerLocationPage() {
 
               <AuthInput
                 autoComplete="postal-code"
+                compact
                 error={errors.postalCode}
                 id="postalCode"
                 inputMode="text"
@@ -168,18 +170,18 @@ export function JobSeekerLocationPage() {
               />
 
               {submitError ? (
-                <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
                   {submitError}
                 </p>
               ) : null}
 
-              <PrimaryButton className="mt-4" isLoading={isLoading} type="submit">
+              <PrimaryButton compact className="mt-1" isLoading={isLoading} type="submit">
                 Continue
               </PrimaryButton>
             </form>
 
             <button
-              className="mx-auto mt-6 block rounded-full px-6 py-2 text-sm font-bold text-slate-500 transition hover:bg-[#eef4ff] hover:text-[#0B63E5] focus:outline-none focus:ring-4 focus:ring-[#0B63E5]/10"
+              className="mx-auto mt-3 block rounded-full px-6 py-2 text-xs font-bold text-slate-500 transition hover:bg-[#eef4ff] hover:text-[#0B63E5] focus:outline-none focus:ring-4 focus:ring-[#0B63E5]/10"
               onClick={handleSkip}
               type="button"
             >

@@ -78,21 +78,22 @@ export function EmployerLoginPage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="w-full max-w-[360px]">
+          <div className="w-full max-w-[335px]">
             <div className="text-center">
-              <AuthLogo />
-              <h1 className="mt-10 text-3xl font-black tracking-tight text-[#252525]">
+              <AuthLogo compact />
+              <h1 className="mt-6 text-2xl font-black tracking-tight text-[#252525]">
                 Welcome Back
               </h1>
-              <p className="mx-auto mt-4 max-w-[320px] text-base leading-7 text-slate-400">
+              <p className="mx-auto mt-3 max-w-[300px] text-sm leading-6 text-slate-400">
                 Find talented media professionals and build your creative team
                 faster
               </p>
             </div>
 
-            <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
+            <form className="mt-5 space-y-3.5" onSubmit={handleSubmit} noValidate>
               <AuthInput
                 autoComplete="email"
+                compact
                 error={errors.email}
                 id="employerEmail"
                 label="Email*"
@@ -107,6 +108,7 @@ export function EmployerLoginPage() {
 
               <PasswordInput
                 autoComplete="current-password"
+                compact
                 error={errors.password}
                 id="employerPassword"
                 isVisible={isPasswordVisible}
@@ -123,7 +125,7 @@ export function EmployerLoginPage() {
               />
 
               <motion.button
-                className="h-14 w-full rounded-xl bg-[#252525] text-lg font-black text-white shadow-[0_16px_36px_rgba(37,37,37,0.20)] transition hover:bg-black focus:outline-none focus:ring-4 focus:ring-[#252525]/15"
+                className="h-12 w-full rounded-lg bg-[#252525] text-base font-black text-white shadow-[0_12px_28px_rgba(37,37,37,0.18)] transition hover:bg-black focus:outline-none focus:ring-4 focus:ring-[#252525]/15"
                 type="submit"
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.985 }}
@@ -132,13 +134,14 @@ export function EmployerLoginPage() {
               </motion.button>
             </form>
 
-            <div className="my-7 flex items-center gap-5 text-sm font-semibold text-slate-400">
+            <div className="my-4 flex items-center gap-5 text-sm font-semibold text-slate-400">
               <span className="h-px flex-1 bg-slate-300" />
               OR
               <span className="h-px flex-1 bg-slate-300" />
             </div>
 
             <SocialButton
+              compact
               icon={<GoogleIcon />}
               onClick={handleGoogleSignin}
               tone="dark"
@@ -146,7 +149,7 @@ export function EmployerLoginPage() {
               Sign in with Google
             </SocialButton>
 
-            <p className="mt-5 text-center text-sm font-medium text-slate-500">
+            <p className="mt-4 text-center text-sm font-medium text-slate-500">
               Don&apos;t have an account?{" "}
               <Link
                 className="font-black text-[#0B63E5] underline-offset-4 transition hover:underline"

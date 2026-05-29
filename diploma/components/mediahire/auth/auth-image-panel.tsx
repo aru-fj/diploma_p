@@ -6,6 +6,7 @@ type AuthImagePanelProps = {
   children?: ReactNode;
   className?: string;
   imageClassName?: string;
+  panelClassName?: string;
   priority?: boolean;
   src: string;
 };
@@ -15,6 +16,7 @@ export function AuthImagePanel({
   children,
   className = "",
   imageClassName = "object-center",
+  panelClassName = "",
   priority = true,
   src,
 }: AuthImagePanelProps) {
@@ -22,7 +24,9 @@ export function AuthImagePanel({
     <div
       className={`max-sm:hidden lg:sticky lg:top-5 lg:self-start ${className}`}
     >
-      <div className="relative overflow-hidden rounded-2xl bg-slate-200 shadow-[0_24px_80px_rgba(15,23,42,0.14)] max-lg:min-h-[520px] lg:h-[calc(100vh-2.5rem)] lg:min-h-[520px]">
+      <div
+        className={`relative overflow-hidden rounded-2xl bg-slate-200 shadow-[0_24px_80px_rgba(15,23,42,0.14)] max-lg:min-h-[520px] lg:h-[calc(100vh-2.5rem)] lg:min-h-[520px] ${panelClassName}`}
+      >
         <Image
           alt={alt}
           className={`object-cover ${imageClassName}`}

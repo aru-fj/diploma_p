@@ -82,39 +82,39 @@ export function JobSeekerResumePage() {
   }
 
   return (
-    <main className="min-h-screen bg-white px-4 py-5 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] max-w-7xl gap-8 lg:grid-cols-[0.82fr_1.35fr] lg:items-start">
+    <main className="min-h-screen bg-white px-4 py-3 text-slate-950 sm:px-6 lg:px-8">
+      <div className="mx-auto grid min-h-[calc(100vh-1.5rem)] max-w-7xl gap-6 lg:grid-cols-[0.72fr_1.3fr] lg:items-start">
         <motion.section
-          className="flex items-start justify-center py-8 lg:py-8"
+          className="flex items-start justify-center py-3 lg:py-3"
           initial={{ opacity: 0, x: -24 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="w-full max-w-[380px]">
+          <div className="w-full max-w-[285px]">
             <ProgressSteps activeStep={3} />
 
             {isUploadConfirmed ? (
               <motion.div
-                className="mt-14 flex items-center gap-3 rounded-xl bg-[#ecfff1] px-6 py-5 text-left text-lg font-black text-[#006b16] shadow-[0_14px_36px_rgba(16,185,129,0.12)]"
+                className="mt-5 flex items-center gap-2.5 rounded-lg bg-[#ecfff1] px-3.5 py-2.5 text-left text-xs font-black text-[#006b16] shadow-[0_14px_36px_rgba(16,185,129,0.12)]"
                 initial={{ opacity: 0, y: -12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
               >
-                <CheckCircle2 aria-hidden="true" className="shrink-0" size={28} />
+                <CheckCircle2 aria-hidden="true" className="shrink-0" size={20} />
                 Data received successfully
               </motion.div>
             ) : null}
 
             <div
               className={`text-center max-lg:mt-12 ${
-                isUploadConfirmed ? "mt-16" : "mt-24"
+                isUploadConfirmed ? "mt-6" : "mt-7"
               }`}
             >
-              <AuthLogo />
-              <h1 className="mt-8 text-3xl font-black tracking-tight text-slate-900">
+              <AuthLogo compact />
+              <h1 className="mt-4 text-[1.25rem] font-black tracking-tight text-slate-900">
                 Upload your resume
               </h1>
-              <p className="mx-auto mt-4 max-w-[330px] text-sm leading-6 text-slate-400">
+              <p className="mx-auto mt-1.5 max-w-[260px] text-[11px] leading-5 text-slate-400">
                 Upload your resume to find the best job opportunities based on
                 your experience.
               </p>
@@ -130,13 +130,13 @@ export function JobSeekerResumePage() {
                 onUploadConfirm={handleUploadConfirm}
               />
 
-              <PrimaryButton className="mt-12" isLoading={isLoading} type="submit">
+              <PrimaryButton compact className="mt-4" isLoading={isLoading} type="submit">
                 Finish Up
               </PrimaryButton>
             </form>
 
             <button
-              className="mx-auto mt-6 block rounded-full px-6 py-2 text-sm font-bold text-slate-500 transition hover:bg-[#eef4ff] hover:text-[#0B63E5] focus:outline-none focus:ring-4 focus:ring-[#0B63E5]/10"
+              className="mx-auto mt-2.5 block rounded-full px-6 py-1.5 text-xs font-bold text-slate-500 transition hover:bg-[#eef4ff] hover:text-[#0B63E5] focus:outline-none focus:ring-4 focus:ring-[#0B63E5]/10"
               onClick={handleSkip}
               type="button"
             >
@@ -153,6 +153,7 @@ export function JobSeekerResumePage() {
           <AuthImagePanel
             alt="Media creator holding a tablet and filming setup"
             imageClassName="object-center"
+            panelClassName="max-lg:min-h-[460px] lg:h-[calc(100vh-1.5rem)] lg:min-h-[460px]"
             src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=1500&q=90"
           >
             <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent" />
