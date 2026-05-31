@@ -117,7 +117,7 @@ function filterProjects(query: string, category: string, saved: string[]) {
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm font-bold text-slate-500">
+    <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-bold text-slate-500">
       {text}
     </div>
   );
@@ -159,15 +159,15 @@ export function EmployerHomePage() {
 
   return (
     <EmployerShell active="Home">
-      <section className="mx-auto mt-10 w-[min(1320px,calc(100%-32px))]">
-        <div className="rounded-[32px] bg-white p-6 shadow-[0_22px_70px_rgba(15,23,42,0.08)]">
+      <section className="mx-auto mt-8 w-[min(1320px,calc(100%-32px))]">
+        <div className="rounded-[32px] bg-white p-5 shadow-[0_22px_70px_rgba(15,23,42,0.08)]">
           <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
             <label className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm font-bold outline-none focus:border-[#0B63E5]" onChange={(event) => setQuery(event.target.value)} placeholder="Profession or position" value={query} />
+              <input className="h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm font-bold outline-none focus:border-[#0B63E5]" onChange={(event) => setQuery(event.target.value)} placeholder="Profession or position" value={query} />
             </label>
-            <input className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none focus:border-[#0B63E5]" onChange={(event) => setCity(event.target.value)} placeholder="City" value={city} />
-            <button className="h-14 rounded-2xl bg-[#0B63E5] px-6 text-sm font-black text-white transition hover:bg-[#0958cc]" type="button">
+            <input className="h-10 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none focus:border-[#0B63E5]" onChange={(event) => setCity(event.target.value)} placeholder="City" value={city} />
+            <button className="h-10 rounded-2xl bg-[#0B63E5] px-6 text-sm font-black text-white transition hover:bg-[#0958cc]" type="button">
               Consideration of the candidate
             </button>
           </div>
@@ -180,16 +180,16 @@ export function EmployerHomePage() {
           </div>
           <div className="mt-5 inline-flex rounded-2xl bg-slate-100 p-1">
             {(["projects", "people"] as const).map((item) => (
-              <button className={`h-11 rounded-xl px-8 text-sm font-black capitalize ${tab === item ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`} key={item} onClick={() => setTab(item)} type="button">
+              <button className={`h-11 rounded-xl px-5 text-sm font-black capitalize ${tab === item ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`} key={item} onClick={() => setTab(item)} type="button">
                 {item}
               </button>
             ))}
           </div>
         </div>
       </section>
-      <section className="mx-auto mt-10 w-[min(1320px,calc(100%-32px))]">
+      <section className="mx-auto mt-8 w-[min(1320px,calc(100%-32px))]">
         <h1 className="text-center text-3xl font-black">{tab === "projects" ? "Creative projects" : "Creative specialists"}</h1>
-        <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {tab === "projects"
             ? projects.map((project, index) => (
                 <motion.div key={project.id} {...cardMotion(index)}>
@@ -221,9 +221,9 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
   if (!project) {
     return (
       <EmployerShell active="Home">
-        <div className="mx-auto mt-14 w-[min(760px,calc(100%-32px))] rounded-3xl bg-white p-10 text-center shadow-sm">
+        <div className="mx-auto mt-8 w-[min(760px,calc(100%-32px))] rounded-2xl bg-white p-5 text-center shadow-sm">
           <h1 className="text-3xl font-black">Project not found</h1>
-          <Link className="mt-6 inline-flex h-12 items-center rounded-2xl bg-[#0B63E5] px-6 text-sm font-black text-white" href="/home/employer">Back Home</Link>
+          <Link className="mt-6 inline-flex h-10 items-center rounded-2xl bg-[#0B63E5] px-6 text-sm font-black text-white" href="/home/employer">Back Home</Link>
         </div>
       </EmployerShell>
     );
@@ -238,15 +238,15 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
 
   return (
     <EmployerShell active="Home">
-      <section className="mx-auto mt-10 w-[min(980px,calc(100%-32px))]">
+      <section className="mx-auto mt-8 w-[min(980px,calc(100%-32px))]">
         <button className="mb-5 inline-flex items-center gap-2 text-sm font-black text-slate-500 hover:text-[#0B63E5]" onClick={() => router.back()} type="button">
           <ArrowLeft size={18} />
           Back
         </button>
-        <article className="rounded-[32px] bg-white p-6 shadow-sm md:p-10">
+        <article className="rounded-[32px] bg-white p-5 shadow-sm md:p-5">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <Link className="flex items-center gap-4" href={`/home/employer/people/${project.authorId}`}>
-              <Image alt={project.authorName} className="h-16 w-16 rounded-2xl object-cover" height={64} src={project.authorAvatar} width={64} />
+              <Image alt={project.authorName} className="h-12 w-12 rounded-2xl object-cover" height={64} src={project.authorAvatar} width={64} />
               <div>
                 <p className="text-sm font-black text-[#0B63E5]">{project.category}</p>
                 <h1 className="text-3xl font-black">{project.title}</h1>
@@ -256,10 +256,10 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
             <OutlineButton onClick={() => toggleSavedProject(project.id)}>{savedProjects.includes(project.id) ? "Saved" : "Save"}</OutlineButton>
           </div>
           <p className="mt-8 max-w-3xl text-base font-semibold leading-8 text-slate-600">{project.description}</p>
-          <div className="mt-8 grid gap-6">
+          <div className="mt-8 grid gap-5">
             {(project.media || [{ type: "image", url: project.image }]).map((media, index) => {
               if (media.type === "video" && media.url) {
-                return <iframe className="aspect-video w-full rounded-3xl border border-slate-200" key={`${media.type}-${index}`} src={media.url} title={project.title} />;
+                return <iframe className="aspect-video w-full rounded-2xl border border-slate-200" key={`${media.type}-${index}`} src={media.url} title={project.title} />;
               }
               if (media.type === "pdf") {
                 return <a className="flex items-center gap-3 rounded-2xl border border-slate-200 p-5 font-black text-[#0B63E5]" href={media.url || "#"} key={`${media.type}-${index}`}><FileText />{media.fileName || "Project PDF"}</a>;
@@ -267,14 +267,14 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
               if (media.type === "text") {
                 return <p className="rounded-2xl bg-slate-50 p-5 text-sm font-semibold leading-7 text-slate-600" key={`${media.type}-${index}`}>{media.text}</p>;
               }
-              return <Image alt={project.title} className="w-full rounded-3xl object-cover" height={680} key={`${media.type}-${index}`} src={media.url || project.image} width={980} />;
+              return <Image alt={project.title} className="w-full rounded-2xl object-cover" height={680} key={`${media.type}-${index}`} src={media.url || project.image} width={980} />;
             })}
           </div>
         </article>
-        <section className="mt-8 rounded-[32px] bg-white p-6 shadow-sm">
+        <section className="mt-8 rounded-[32px] bg-white p-5 shadow-sm">
           <h2 className="text-xl font-black">Comments</h2>
           <div className="mt-5 flex gap-3">
-            <textarea className="min-h-24 flex-1 resize-none rounded-2xl border border-slate-200 p-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" onChange={(event) => setComment(event.target.value)} placeholder="Write a comment as employer..." value={comment} />
+            <textarea className="min-h-20 flex-1 resize-none rounded-2xl border border-slate-200 p-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" onChange={(event) => setComment(event.target.value)} placeholder="Write a comment as employer..." value={comment} />
             <PrimaryButton className="self-end" onClick={postComment}>Post</PrimaryButton>
           </div>
           <div className="mt-6 grid gap-4">
@@ -302,9 +302,9 @@ export function EmployerPeopleProfilePage({ slug }: { slug: string }) {
   if (!candidate) {
     return (
       <EmployerShell active="Search CV">
-        <div className="mx-auto mt-14 w-[min(760px,calc(100%-32px))] rounded-3xl bg-white p-10 text-center shadow-sm">
+        <div className="mx-auto mt-8 w-[min(760px,calc(100%-32px))] rounded-2xl bg-white p-5 text-center shadow-sm">
           <h1 className="text-3xl font-black">Specialist not found</h1>
-          <Link className="mt-6 inline-flex h-12 items-center rounded-2xl bg-[#0B63E5] px-6 text-sm font-black text-white" href="/home/employer/search-cv">Back to Search CV</Link>
+          <Link className="mt-6 inline-flex h-10 items-center rounded-2xl bg-[#0B63E5] px-6 text-sm font-black text-white" href="/home/employer/search-cv">Back to Search CV</Link>
         </div>
       </EmployerShell>
     );
@@ -317,9 +317,9 @@ export function EmployerPeopleProfilePage({ slug }: { slug: string }) {
       <section className="mt-[-96px]">
         <div className="h-64 bg-[linear-gradient(120deg,#80d8e8,#2563eb,#1f1b5f)] pt-32" />
       </section>
-      <section className="mx-auto -mt-20 grid w-[min(1320px,calc(100%-32px))] gap-8 lg:grid-cols-[320px_1fr]">
-        <aside className="rounded-[32px] bg-white p-6 shadow-xl">
-          <Image alt={candidate.name} className="h-32 w-32 rounded-3xl object-cover ring-4 ring-white" height={128} src={candidate.avatar} width={128} />
+      <section className="mx-auto -mt-20 grid w-[min(1320px,calc(100%-32px))] gap-5 lg:grid-cols-[320px_1fr]">
+        <aside className="rounded-[32px] bg-white p-5 shadow-xl">
+          <Image alt={candidate.name} className="h-28 w-28 rounded-2xl object-cover ring-4 ring-white" height={128} src={candidate.avatar} width={128} />
           <h1 className="mt-5 text-3xl font-black">{candidate.name}</h1>
           <p className="mt-1 text-sm font-bold text-slate-500">{candidate.role}</p>
           <div className="mt-4"><StarRating value={candidate.rating} /></div>
@@ -335,7 +335,7 @@ export function EmployerPeopleProfilePage({ slug }: { slug: string }) {
           <ProfileChips title="Skills" values={candidate.skills} />
           <ProfileChips title="Software" values={candidate.software} />
         </aside>
-        <div className="rounded-[32px] bg-white p-6 shadow-sm">
+        <div className="rounded-[32px] bg-white p-5 shadow-sm">
           <div className="flex border-b border-slate-200">
             {(["portfolio", "resume", "reviews"] as const).map((item) => (
               <button className={`px-6 pb-4 text-sm font-black capitalize ${tab === item ? "border-b-2 border-[#0B63E5] text-[#0B63E5]" : "text-slate-400"}`} key={item} onClick={() => setTab(item)} type="button">
@@ -344,7 +344,7 @@ export function EmployerPeopleProfilePage({ slug }: { slug: string }) {
             ))}
           </div>
           {tab === "portfolio" ? (
-            <div className="mt-8 grid gap-6 md:grid-cols-2">
+            <div className="mt-8 grid gap-5 md:grid-cols-2">
               {candidate.portfolio.map((project, index) => (
                 <motion.div key={project.id} {...cardMotion(index)}>
                   <ProjectCard onSave={() => toggleSavedProject(project.id)} project={project} saved={getSavedProjects().includes(project.id)} />
@@ -409,22 +409,22 @@ export function EmployerPostedJobsPage() {
 
   return (
     <EmployerShell active="Posted Jobs">
-      <section className="mx-auto mt-10 w-[min(1320px,calc(100%-32px))]">
+      <section className="mx-auto mt-8 w-[min(1320px,calc(100%-32px))]">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-black">Activity / Posted Jobs</h1>
+            <h1 className="text-2xl font-black">Activity / Posted Jobs</h1>
             <p className="mt-2 text-sm font-semibold text-slate-500">Track posted jobs, applicants, interviews, and messages.</p>
           </div>
-          <Link className="inline-flex h-12 items-center rounded-2xl bg-[#0B63E5] px-6 text-sm font-black text-white" href="/home/employer/post-job">Post a Job</Link>
+          <Link className="inline-flex h-10 items-center rounded-2xl bg-[#0B63E5] px-6 text-sm font-black text-white" href="/home/employer/post-job">Post a Job</Link>
         </div>
         <div className="mt-8 grid gap-5 md:grid-cols-3">
           {[
             ["Candidates to review", applications.filter((item) => item.status === "Applied").length],
             ["Messages received", chats.reduce((sum, chat) => sum + chat.unread, 0)],
             ["Interviews", applications.filter((item) => item.status === "Interview").length],
-          ].map(([label, value]) => <div className="rounded-3xl bg-white p-6 shadow-sm" key={label}><p className="text-sm font-bold text-slate-500">{label}</p><p className="mt-3 text-4xl font-black">{value}</p></div>)}
+          ].map(([label, value]) => <div className="rounded-2xl bg-white p-5 shadow-sm" key={label}><p className="text-sm font-bold text-slate-500">{label}</p><p className="mt-3 text-2xl font-black">{value}</p></div>)}
         </div>
-        <div className="mt-8 rounded-[32px] bg-white p-6 shadow-sm">
+        <div className="mt-8 rounded-[32px] bg-white p-5 shadow-sm">
           <h2 className="text-2xl font-black">Recently Posted Jobs</h2>
           <div className="mt-5 grid gap-4">
             {jobs.map((job) => (
@@ -457,14 +457,14 @@ export function EmployerApplicationsPage({ jobId }: { jobId: string }) {
   const applications = useMemo(() => getApplicationsForJob(jobId), [jobId, version]);
 
   if (!job) {
-    return <EmployerShell active="Posted Jobs"><div className="mx-auto mt-12 w-[min(760px,calc(100%-32px))] rounded-3xl bg-white p-10 text-center"><h1 className="text-3xl font-black">Job not found</h1></div></EmployerShell>;
+    return <EmployerShell active="Posted Jobs"><div className="mx-auto mt-8 w-[min(760px,calc(100%-32px))] rounded-2xl bg-white p-5 text-center"><h1 className="text-3xl font-black">Job not found</h1></div></EmployerShell>;
   }
 
   return (
     <EmployerShell active="Posted Jobs">
-      <section className="mx-auto mt-10 w-[min(1120px,calc(100%-32px))]">
+      <section className="mx-auto mt-8 w-[min(1120px,calc(100%-32px))]">
         <Link className="inline-flex items-center gap-2 text-sm font-black text-slate-500 hover:text-[#0B63E5]" href="/home/employer/posted-jobs"><ArrowLeft size={18} />Back to Posted Jobs</Link>
-        <h1 className="mt-5 text-4xl font-black">{job.title} Applications</h1>
+        <h1 className="mt-5 text-2xl font-black">{job.title} Applications</h1>
         <div className="mt-8 grid gap-5">
           {applications.map((application) => {
             const candidate = employerCandidates.find((item) => item.id === application.candidateId);
@@ -480,9 +480,9 @@ export function EmployerApplicationsPage({ jobId }: { jobId: string }) {
 
 function ApplicantCard({ applicationStatus, candidate, jobId, onMessage }: { applicationStatus: ApplicationStatus; candidate: EmployerCandidate; jobId: string; onMessage: () => void }) {
   return (
-    <article className="rounded-3xl bg-white p-6 shadow-sm">
+    <article className="rounded-2xl bg-white p-5 shadow-sm">
       <div className="grid gap-5 lg:grid-cols-[auto_1fr_auto] lg:items-center">
-        <Link href={`/home/employer/people/${candidate.id}`}><Image alt={candidate.name} className="h-24 w-24 rounded-3xl object-cover" height={96} src={candidate.avatar} width={96} /></Link>
+        <Link href={`/home/employer/people/${candidate.id}`}><Image alt={candidate.name} className="h-20 w-20 rounded-2xl object-cover" height={96} src={candidate.avatar} width={96} /></Link>
         <div>
           <Link className="text-2xl font-black hover:text-[#0B63E5]" href={`/home/employer/people/${candidate.id}`}>{candidate.name}</Link>
           <p className="text-sm font-bold text-slate-500">{candidate.role}</p>
@@ -566,11 +566,11 @@ export function EmployerPostJobPage() {
 
   return (
     <EmployerShell active="Posted Jobs">
-      <section className="mx-auto mt-10 w-[min(980px,calc(100%-32px))] rounded-[32px] bg-white p-6 shadow-sm md:p-10">
-        <h1 className="text-4xl font-black">Post a Job</h1>
+      <section className="mx-auto mt-8 w-[min(980px,calc(100%-32px))] rounded-[32px] bg-white p-5 shadow-sm md:p-5">
+        <h1 className="text-2xl font-black">Post a Job</h1>
         <p className="mt-2 text-sm font-semibold text-slate-500">Create a job post and start reviewing creative candidates.</p>
         {error ? <p className="mt-5 rounded-2xl bg-red-50 p-4 text-sm font-black text-red-600">{error}</p> : null}
-        <div className="mt-8 grid gap-8">
+        <div className="mt-8 grid gap-5">
           <FormSection title="Job Introduction">
             <Input label="Job title*" onChange={(value) => setValue("title", value)} value={form.title} />
             <Input label="Job category*" onChange={(value) => setValue("category", value)} value={form.category} />
@@ -624,7 +624,7 @@ export function EmployerPostJobPage() {
 
 function FormSection({ children, title }: { children: React.ReactNode; title: string }) {
   return (
-    <section className="rounded-3xl border border-slate-200 p-5">
+    <section className="rounded-2xl border border-slate-200 p-5">
       <h2 className="text-xl font-black">{title}</h2>
       <div className="mt-5 grid gap-4 md:grid-cols-2">{children}</div>
     </section>
@@ -635,7 +635,7 @@ function Input({ label, onChange, value }: { label: string; onChange: (value: st
   return (
     <label className="block">
       <span className="text-sm font-black">{label}</span>
-      <input className="mt-2 h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" onChange={(event) => onChange(event.target.value)} value={value} />
+      <input className="mt-2 h-10 w-full rounded-2xl border border-slate-200 px-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" onChange={(event) => onChange(event.target.value)} value={value} />
     </label>
   );
 }
@@ -663,16 +663,16 @@ export function EmployerSearchCvPage() {
 
   return (
     <EmployerShell active="Search CV">
-      <section className="mx-auto mt-10 w-[min(1320px,calc(100%-32px))] rounded-[32px] bg-white p-8 shadow-sm">
-        <h1 className="text-4xl font-black">Want to hire a creative professional?</h1>
+      <section className="mx-auto mt-8 w-[min(1320px,calc(100%-32px))] rounded-[32px] bg-white p-5 shadow-sm">
+        <h1 className="text-2xl font-black">Want to hire a creative professional?</h1>
         <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
-          <input className="h-14 rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-[#0B63E5]" onChange={(event) => setQuery(event.target.value)} placeholder="Profession and position" value={query} />
-          <input className="h-14 rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-[#0B63E5]" onChange={(event) => setCity(event.target.value)} placeholder="City" value={city} />
+          <input className="h-10 rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-[#0B63E5]" onChange={(event) => setQuery(event.target.value)} placeholder="Profession and position" value={query} />
+          <input className="h-10 rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-[#0B63E5]" onChange={(event) => setCity(event.target.value)} placeholder="City" value={city} />
           <PrimaryButton>Consideration of the candidate</PrimaryButton>
         </div>
         <div className="mt-6 flex flex-wrap gap-3">{categories.map((item) => <button className={`rounded-2xl px-5 py-3 text-sm font-black ${category === item ? "bg-[#0B63E5] text-white" : "bg-slate-50 text-slate-500 ring-1 ring-slate-200"}`} key={item} onClick={() => setCategory(item)} type="button">{item}</button>)}</div>
       </section>
-      <section className="mx-auto mt-8 grid w-[min(1320px,calc(100%-32px))] gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <section className="mx-auto mt-8 grid w-[min(1320px,calc(100%-32px))] gap-5 md:grid-cols-2 xl:grid-cols-3">
         {candidates.map((candidate, index) => <motion.div key={candidate.id} {...cardMotion(index)}><CandidateCard candidate={candidate} onMessage={() => openChat(router, candidate.id)} onSave={() => toggleSavedCandidate(candidate.id)} saved={saved.includes(candidate.id)} /></motion.div>)}
       </section>
     </EmployerShell>
@@ -713,14 +713,14 @@ export function EmployerCommunityPage() {
 
   return (
     <EmployerShell active="Community">
-      <section className="mx-auto mt-10 w-[min(1320px,calc(100%-32px))]">
-        <h1 className="text-4xl font-black">Message</h1>
+      <section className="mx-auto mt-8 w-[min(1320px,calc(100%-32px))]">
+        <h1 className="text-2xl font-black">Message</h1>
         <p className="mt-2 text-sm font-semibold text-slate-500">Communicate with candidates and keep hiring updates in one place.</p>
         <div className="mt-8 grid min-h-[680px] gap-5 lg:grid-cols-[360px_1fr]">
           <aside className="rounded-[32px] bg-white p-5 shadow-sm">
             <label className="relative block">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
-              <input className="h-12 w-full rounded-2xl border border-slate-200 pl-11 pr-4 text-sm font-bold outline-none focus:border-[#0B63E5]" onChange={(event) => setQuery(event.target.value)} placeholder="Search" value={query} />
+              <input className="h-10 w-full rounded-2xl border border-slate-200 pl-11 pr-4 text-sm font-bold outline-none focus:border-[#0B63E5]" onChange={(event) => setQuery(event.target.value)} placeholder="Search" value={query} />
             </label>
             <div className="mt-4 grid gap-2">
               {filtered.map((chat) => {
@@ -730,7 +730,7 @@ export function EmployerCommunityPage() {
                 return (
                   <button className={`rounded-2xl p-3 text-left transition ${active?.id === chat.id ? "bg-[#eef4ff]" : "hover:bg-slate-50"}`} key={chat.id} onClick={() => setActiveId(chat.id)} type="button">
                     <div className="flex gap-3">
-                      <Image alt={candidate.name} className="h-12 w-12 rounded-2xl object-cover" height={48} src={candidate.avatar} width={48} />
+                      <Image alt={candidate.name} className="h-10 w-10 rounded-2xl object-cover" height={48} src={candidate.avatar} width={48} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <p className="truncate text-sm font-black">{candidate.name}</p>
@@ -749,14 +749,14 @@ export function EmployerCommunityPage() {
             {active && activeCandidate ? (
               <div className="flex w-full flex-col">
                 <header className="flex items-center gap-4 border-b border-slate-100 p-5">
-                  <Image alt={activeCandidate.name} className="h-12 w-12 rounded-2xl object-cover" height={48} src={activeCandidate.avatar} width={48} />
+                  <Image alt={activeCandidate.name} className="h-10 w-10 rounded-2xl object-cover" height={48} src={activeCandidate.avatar} width={48} />
                   <div>
                     <h2 className="font-black">{activeCandidate.name}</h2>
                     <p className="text-xs font-bold text-slate-400">Last seen 2 minutes ago</p>
                   </div>
                   {active.status ? <span className="ml-auto rounded-full bg-[#eef4ff] px-3 py-1 text-xs font-black text-[#0B63E5]">{active.status}</span> : null}
                 </header>
-                <div className="flex-1 space-y-4 overflow-y-auto p-6">
+                <div className="flex-1 space-y-4 overflow-y-auto p-5">
                   {active.messages.map((item) => (
                     <div className={`flex ${item.sender === "employer" ? "justify-end" : "justify-start"}`} key={item.id}>
                       <div className={`max-w-[70%] rounded-2xl px-4 py-3 text-sm font-semibold ${item.sender === "employer" ? "bg-[#0B63E5] text-white" : "bg-slate-100 text-slate-600"}`}>
@@ -770,7 +770,7 @@ export function EmployerCommunityPage() {
                 <footer className="flex items-center gap-3 border-t border-slate-100 p-5">
                   <input className="hidden" onChange={(event) => send("file", event.target.files?.[0]?.name)} ref={fileRef} type="file" />
                   <button className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 text-slate-500" onClick={() => fileRef.current?.click()} type="button"><Paperclip size={18} /></button>
-                  <input className="h-12 flex-1 rounded-2xl border border-slate-200 px-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" onChange={(event) => setMessage(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") send(); }} placeholder="Write a message..." value={message} />
+                  <input className="h-10 flex-1 rounded-2xl border border-slate-200 px-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" onChange={(event) => setMessage(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") send(); }} placeholder="Write a message..." value={message} />
                   <button className="grid h-11 w-11 place-items-center rounded-full bg-[#0B63E5] text-white" onClick={() => send()} type="button"><Send size={18} /></button>
                 </footer>
               </div>
@@ -809,9 +809,9 @@ function HiredSpecialistCard({ candidate, expanded, onToggle }: { candidate: Emp
   }
 
   return (
-    <article className="rounded-3xl bg-white p-6 shadow-sm">
+    <article className="rounded-2xl bg-white p-5 shadow-sm">
       <button className="flex w-full items-center gap-4 text-left" onClick={onToggle} type="button">
-        <Image alt={candidate.name} className="h-20 w-20 rounded-3xl object-cover" height={80} src={candidate.avatar} width={80} />
+        <Image alt={candidate.name} className="h-16 w-16 rounded-2xl object-cover" height={80} src={candidate.avatar} width={80} />
         <div className="flex-1">
           <h3 className="text-xl font-black">{candidate.name}</h3>
           <p className="text-sm font-bold text-slate-500">{candidate.role}</p>
@@ -824,7 +824,7 @@ function HiredSpecialistCard({ candidate, expanded, onToggle }: { candidate: Emp
         <div className="mt-5 rounded-2xl bg-slate-50 p-5">
           <p className="font-black">{submitted ? "Review Submitted" : "Write Review"}</p>
           <div className="mt-3 flex gap-1">{[1, 2, 3, 4, 5].map((star) => <button className={star <= rating ? "text-amber-400" : "text-slate-300"} key={star} onClick={() => setRating(star)} type="button"><Star className="fill-current" size={20} /></button>)}</div>
-          <textarea className="mt-3 min-h-24 w-full resize-none rounded-2xl border border-slate-200 p-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" onChange={(event) => setText(event.target.value)} placeholder="Share your hiring experience..." value={text} />
+          <textarea className="mt-3 min-h-20 w-full resize-none rounded-2xl border border-slate-200 p-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" onChange={(event) => setText(event.target.value)} placeholder="Share your hiring experience..." value={text} />
           <PrimaryButton className="mt-3" onClick={submit}>Save review</PrimaryButton>
         </div>
       ) : null}
@@ -844,7 +844,7 @@ export function EmployerFavoritesPage() {
   return (
     <EmployerDashboardShell active="Favorites" subtitle="Saved candidates and creative posts." title="Favorites">
       <div className="mb-6 inline-flex rounded-2xl bg-slate-100 p-1">
-        {(["candidates", "projects"] as const).map((item) => <button className={`h-11 rounded-xl px-8 text-sm font-black capitalize ${tab === item ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`} key={item} onClick={() => setTab(item)} type="button">{item === "projects" ? "Posts / Projects" : item}</button>)}
+        {(["candidates", "projects"] as const).map((item) => <button className={`h-11 rounded-xl px-5 text-sm font-black capitalize ${tab === item ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`} key={item} onClick={() => setTab(item)} type="button">{item === "projects" ? "Posts / Projects" : item}</button>)}
       </div>
       {tab === "candidates" ? (
         <div className="grid gap-5 md:grid-cols-2">
@@ -904,9 +904,9 @@ export function EmployerAccountSettingsPage() {
 
   return (
     <EmployerDashboardShell active="Account Setting" subtitle="Update your company and account settings." title="Account Setting">
-      <div className="rounded-[32px] bg-white p-6 shadow-sm md:p-10">
+      <div className="rounded-[32px] bg-white p-5 shadow-sm md:p-5">
         <div className="flex flex-col gap-5 border-b border-slate-100 pb-8 md:flex-row md:items-center">
-          <label className="grid h-32 w-32 cursor-pointer place-items-center overflow-hidden rounded-3xl border border-dashed border-slate-300 bg-slate-50">
+          <label className="grid h-28 w-28 cursor-pointer place-items-center overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-slate-50">
             {profile.avatar ? <Image alt={profile.companyName} className="h-full w-full object-cover" height={128} src={profile.avatar} unoptimized={profile.avatar.startsWith("data:")} width={128} /> : <ImageIcon className="text-slate-400" />}
             <input className="hidden" onChange={(event) => upload(event.target.files?.[0])} type="file" />
           </label>
@@ -966,9 +966,9 @@ export function EmployerSettingsPage() {
 
   return (
     <EmployerDashboardShell active="Settings" subtitle="Manage employer notifications, privacy, integrations, and security." title="Settings">
-      <div className="rounded-[32px] bg-white p-6 shadow-sm md:p-10">
+      <div className="rounded-[32px] bg-white p-5 shadow-sm md:p-5">
         {message ? <p className="mb-6 rounded-2xl bg-[#eef4ff] p-4 text-sm font-black text-[#0B63E5]">{message}</p> : null}
-        <div className="grid gap-8">
+        <div className="grid gap-5">
           <SettingsSection title="Notification">
             <Toggle checked={settings.messages} label="Messages" onChange={(value) => update("messages", value)} />
             <Toggle checked={settings.interviewUpdates} label="Interview Updates" onChange={(value) => update("interviewUpdates", value)} />
@@ -1000,13 +1000,13 @@ export function EmployerSettingsPage() {
 }
 
 function SettingsSection({ children, title }: { children: React.ReactNode; title: string }) {
-  return <section className="rounded-3xl border border-slate-200 p-5"><h2 className="text-xl font-black">{title}</h2><div className="mt-5 grid gap-4 md:grid-cols-2">{children}</div></section>;
+  return <section className="rounded-2xl border border-slate-200 p-5"><h2 className="text-xl font-black">{title}</h2><div className="mt-5 grid gap-4 md:grid-cols-2">{children}</div></section>;
 }
 
 function Toggle({ checked, label, onChange }: { checked: boolean; label: string; onChange: (value: boolean) => void }) {
-  return <button className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 text-sm font-black" onClick={() => onChange(!checked)} type="button"><span>{label}</span><span className={`relative h-7 w-12 rounded-full transition ${checked ? "bg-[#0B63E5]" : "bg-slate-300"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${checked ? "left-6" : "left-1"}`} /></span></button>;
+  return <button className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 text-sm font-black" onClick={() => onChange(!checked)} type="button"><span>{label}</span><span className={`relative h-7 w-10 rounded-full transition ${checked ? "bg-[#0B63E5]" : "bg-slate-300"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${checked ? "left-6" : "left-1"}`} /></span></button>;
 }
 
 function Select({ label, onChange, options, value }: { label: string; onChange: (value: string) => void; options: string[]; value: string }) {
-  return <label className="block"><span className="text-sm font-black">{label}</span><select className="mt-2 h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" onChange={(event) => onChange(event.target.value)} value={value}>{options.map((option) => <option key={option}>{option}</option>)}</select></label>;
+  return <label className="block"><span className="text-sm font-black">{label}</span><select className="mt-2 h-10 w-full rounded-2xl border border-slate-200 px-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" onChange={(event) => onChange(event.target.value)} value={value}>{options.map((option) => <option key={option}>{option}</option>)}</select></label>;
 }

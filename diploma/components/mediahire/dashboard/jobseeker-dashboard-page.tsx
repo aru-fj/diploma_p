@@ -6,7 +6,11 @@ import { CategoryPills } from "./category-pills";
 import { DashboardFooter } from "./dashboard-footer";
 import type { DashboardPerson } from "./dashboard-data";
 import { DashboardHeader } from "./dashboard-header";
-import { FilterModal, type SortOption } from "./filter-modal";
+import {
+  peopleSortOptions,
+  projectSortOptions,
+  type SortOption,
+} from "./filter-modal";
 import { MessageModal } from "./message-modal";
 import { PeopleGrid } from "./people-grid";
 import { ProjectGrid } from "./project-grid";
@@ -41,6 +45,7 @@ export function JobSeekerDashboardPage({
   function handleModeChange(nextMode: DashboardMode) {
     setMode(nextMode);
     setActiveSort("Recommended");
+    setSearch("");
 
     const url = new URL(window.location.href);
 
@@ -57,7 +62,7 @@ export function JobSeekerDashboardPage({
     <main className={mediaHireClassNames.appShell}>
       <motion.div
         animate="show"
-        className="mx-auto min-h-screen w-full px-4 py-8 sm:px-8 lg:px-12"
+        className="mx-auto min-h-screen w-full px-4 py-6 sm:px-5 lg:px-12"
         initial="hidden"
         transition={mediaHireMotion.page}
         variants={fadeInUp}
@@ -70,15 +75,23 @@ export function JobSeekerDashboardPage({
         />
 
         <section
-          className={`mx-auto mt-10 w-full max-w-6xl p-5 sm:p-6 ${mediaHireClassNames.sectionCard}`}
+          className={`mx-auto mt-8 w-full max-w-5xl p-4 sm:p-5 ${mediaHireClassNames.sectionCard}`}
         >
           <SearchFilterBar
             mode={mode}
             onModeChange={handleModeChange}
-            onOpenFilter={() => setIsFilterOpen(true)}
+            onOpenFilter={() => setIsFilterOpen((current) => !current)}
             onSearchChange={setSearch}
             search={search}
           />
+
+          {isFilterOpen ? (
+            <SortPills
+              activeSort={activeSort}
+              mode={mode}
+              onSortChange={setActiveSort}
+            />
+          ) : null}
 
           <CategoryPills
             activeCategory={activeCategory}
@@ -104,18 +117,45 @@ export function JobSeekerDashboardPage({
 
       <DashboardFooter />
 
-      <FilterModal
-        activeSort={activeSort}
-        isOpen={isFilterOpen}
-        mode={mode}
-        onClose={() => setIsFilterOpen(false)}
-        onSortChange={setActiveSort}
-      />
-
       <MessageModal
         onClose={() => setMessagePerson(null)}
         person={messagePerson}
       />
     </main>
+  );
+}
+
+function SortPills({
+  activeSort,
+  mode,
+  onSortChange,
+}: {
+  activeSort: SortOption;
+  mode: DashboardMode;
+  onSortChange: (sort: SortOption) => void;
+}) {
+  const sortOptions = mode === "People" ? peopleSortOptions : projectSortOptions;
+
+  return (
+    <div className="mt-4 flex flex-wrap justify-center gap-2 rounded-2xl bg-slate-50 p-2.5">
+      {sortOptions.map((option) => {
+        const isActive = activeSort === option;
+
+        return (
+          <button
+            key={option}
+            type="button"
+            onClick={() => onSortChange(option)}
+            className={`h-8 rounded-full px-3.5 text-[11px] font-black transition hover:-translate-y-0.5 ${
+              isActive
+                ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                : "bg-white text-slate-600 hover:text-blue-600"
+            }`}
+          >
+            {option}
+          </button>
+        );
+      })}
+    </div>
   );
 }

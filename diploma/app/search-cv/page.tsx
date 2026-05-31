@@ -83,88 +83,94 @@ function SearchCvPageContent() {
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
-      <section className="bg-[#eaf3ff] px-4 pb-16 pt-8 sm:px-6 lg:px-8">
-        <Header role="employer" />
+      <div className="bg-[#eaf3ff]">
+        <Header role="employer" activeItem="Search CV" />
 
-        <div className="mx-auto mt-16 max-w-5xl text-center">
-          <p className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-blue-600 shadow-sm">
+        <section className="mx-auto w-full max-w-6xl px-4 pb-10 pt-10 text-center sm:px-6 lg:px-10">
+          <p className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-black text-blue-600 shadow-md">
             <Sparkles className="h-4 w-4" />
             Search CV
           </p>
 
-          <h1 className="text-4xl font-black tracking-tight text-slate-950 md:text-6xl">
+          <h1 className="mx-auto max-w-3xl text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
             Want to hire a creative professional?
           </h1>
 
-          <p className="mx-auto mt-5 max-w-3xl text-lg font-semibold leading-8 text-slate-600">
+          <p className="mx-auto mt-3 max-w-2xl text-sm font-semibold text-slate-600 md:text-base">
             You are in the right place. Tell us who and where you are looking
             for — we will show the candidates.
           </p>
-        </div>
 
-        <div className="mx-auto mt-9 flex max-w-5xl flex-col gap-3 rounded-[1.5rem] bg-white p-3 shadow-[0_24px_80px_rgba(37,99,235,0.12)] md:flex-row">
-          <div className="flex h-14 flex-1 items-center gap-3 rounded-2xl bg-slate-50 px-5">
-            <Search className="h-5 w-5 text-slate-400" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  handleSearch();
-                }
-              }}
-              list="search-cv-suggestions"
-              placeholder="Profession and position"
-              className="h-full flex-1 bg-transparent text-sm font-bold text-slate-900 outline-none placeholder:text-slate-400"
-            />
-            <datalist id="search-cv-suggestions">
-              {[
-                "Graphic Designer",
-                "Photographer",
-                "Videographer",
-                "Animator",
-                "3D Artist",
-                "Screenwriter",
-                "Marketer",
-              ].map((item) => (
-                <option key={item} value={item} />
-              ))}
-            </datalist>
+          <div className="mx-auto mt-6 flex max-w-3xl flex-col gap-2 rounded-2xl bg-white p-2 shadow-[0_16px_50px_rgba(15,23,42,0.08)] md:flex-row">
+            <div className="flex h-10 flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3">
+              <Search className="h-4 w-4 text-slate-400" />
+
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    handleSearch();
+                  }
+                }}
+                list="search-cv-suggestions"
+                placeholder="Profession and position"
+                className="h-full min-w-0 flex-1 bg-transparent text-xs font-bold text-slate-900 outline-none placeholder:text-slate-400"
+              />
+              <datalist id="search-cv-suggestions">
+                {[
+                  "Graphic Designer",
+                  "Photographer",
+                  "Videographer",
+                  "Animator",
+                  "3D Artist",
+                  "Screenwriter",
+                  "Marketer",
+                ].map((item) => (
+                  <option key={item} value={item} />
+                ))}
+              </datalist>
+            </div>
+
+            <div className="flex h-10 flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3 md:max-w-[250px]">
+              <MapPin className="h-4 w-4 text-slate-400" />
+
+              <select
+                value={location}
+                onChange={(event) => setLocation(event.target.value)}
+                className="h-full flex-1 bg-transparent text-xs font-black text-slate-700 outline-none"
+              >
+                {kazakhstanCities.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSearch}
+              className="flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-blue-600 px-5 text-sm font-black text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700"
+            >
+              <Search className="h-4 w-4" />
+              Search CV
+            </button>
           </div>
+        </section>
+      </div>
 
-          <select
-            value={location}
-            onChange={(event) => setLocation(event.target.value)}
-            className="h-14 rounded-2xl bg-slate-50 px-5 text-sm font-black text-slate-700 outline-none md:w-[260px]"
-          >
-            {kazakhstanCities.map((city) => (
-              <option key={city} value={city}>
-                {city}
-              </option>
-            ))}
-          </select>
-
-          <button
-            type="button"
-            onClick={handleSearch}
-            className="h-14 rounded-2xl bg-blue-600 px-8 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700"
-          >
-            Consideration of the candidate
-          </button>
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="flex flex-wrap justify-center gap-3">
+      <section className="mx-auto w-full max-w-none px-4 py-6 sm:px-6 lg:px-10">
+        <div className="flex flex-wrap justify-center gap-2">
           {candidateCategories.map((item) => (
             <button
               key={item}
               type="button"
               onClick={() => setCategory(item)}
-              className={`h-11 rounded-xl px-5 text-sm font-black transition hover:-translate-y-0.5 ${
+              className={`h-8 rounded-lg px-3 text-[11px] font-black shadow-sm transition hover:-translate-y-0.5 ${
                 category === item
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-                  : "bg-white text-slate-600 shadow-sm hover:text-blue-600"
+                  ? "bg-blue-700 text-white shadow-blue-600/20"
+                  : "bg-white text-slate-600 hover:text-blue-600"
               }`}
             >
               {item}
@@ -172,33 +178,33 @@ function SearchCvPageContent() {
           ))}
         </div>
 
-        <div className="mt-10 flex items-end justify-between gap-4">
+        <div className="mt-6 flex items-end justify-between gap-4">
           <div>
-            <p className="text-sm font-black text-blue-600">
+            <p className="text-[11px] font-black text-blue-600">
               Public candidate search
             </p>
-            <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
+            <h2 className="mt-1.5 text-xl font-black tracking-tight text-slate-950 md:text-2xl">
               {candidates.length} candidates found
             </h2>
           </div>
 
           <Link
             href="/auth-required?feature=saved-candidates&role=employer"
-            className="hidden h-11 items-center justify-center rounded-2xl border border-blue-600 px-5 text-sm font-black text-blue-600 transition hover:bg-blue-50 sm:inline-flex"
+            className="hidden h-9 items-center justify-center rounded-lg border border-blue-600 px-3.5 text-[11px] font-black text-blue-600 transition hover:bg-blue-50 sm:inline-flex"
           >
             Saved candidates
           </Link>
         </div>
 
         {candidates.length > 0 ? (
-          <div className="mt-7 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-5 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {candidates.map((person) => (
               <article
                 key={person.slug}
-                className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-[0_22px_70px_rgba(15,23,42,0.08)] transition hover:-translate-y-1 hover:shadow-[0_30px_90px_rgba(37,99,235,0.18)]"
+                className="rounded-[1.15rem] border border-slate-200 bg-white p-3.5 shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]"
               >
-                <div className="flex items-start gap-4">
-                  <div className="h-20 w-20 overflow-hidden rounded-3xl bg-slate-200">
+                <div className="flex items-start gap-3">
+                  <div className="h-14 w-14 overflow-hidden rounded-xl bg-slate-200">
                     <img
                       src={person.avatar}
                       alt={person.name}
@@ -207,14 +213,14 @@ function SearchCvPageContent() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-xl font-black text-slate-950">
+                    <h3 className="text-sm font-black text-slate-950">
                       {person.name}
                     </h3>
-                    <p className="mt-1 text-sm font-bold text-blue-600">
+                    <p className="mt-1 text-[11px] font-bold text-blue-600">
                       {person.role}
                     </p>
-                    <div className="mt-2 flex items-center gap-1 text-sm font-black text-amber-600">
-                      <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                    <div className="mt-1.5 flex items-center gap-1 text-[11px] font-black text-amber-600">
+                      <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
                       {person.rating}
                     </div>
                   </div>
@@ -222,47 +228,47 @@ function SearchCvPageContent() {
                   <Link
                     href="/auth-required?feature=save-candidate&role=employer"
                     title="Sign in to save"
-                    className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 transition hover:bg-blue-100"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition hover:bg-blue-100"
                   >
-                    <Bookmark className="h-5 w-5" />
+                    <Bookmark className="h-4 w-4" />
                   </Link>
                 </div>
 
-                <p className="mt-4 line-clamp-2 text-sm font-medium leading-6 text-slate-500">
+                <p className="mt-3 line-clamp-2 text-[11px] font-medium leading-5 text-slate-500">
                   {person.shortBio}
                 </p>
 
-                <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-500">
+                <div className="mt-2.5 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
                   <MapPin className="h-4 w-4 text-blue-500" />
                   {person.location}
                 </div>
 
-                <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-500">
+                <div className="mt-2 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
                   <BriefcaseBusiness className="h-4 w-4 text-blue-500" />
                   {person.experience}
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-1.5">
                   {person.skills.map((skill) => (
                     <span
                       key={skill}
-                      className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-600"
+                      className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-600"
                     >
                       {skill}
                     </span>
                   ))}
                 </div>
 
-                <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="mt-3.5 grid grid-cols-2 gap-2">
                   <Link
                     href={`/people/${person.slug}`}
-                    className="flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-4 text-sm font-black text-white transition hover:bg-blue-700"
+                    className="flex h-9 items-center justify-center rounded-lg bg-blue-600 px-3 text-[11px] font-black text-white transition hover:bg-blue-700"
                   >
                     View Profile
                   </Link>
                   <Link
                     href="/auth-required?feature=invite-to-work&role=employer"
-                    className="flex h-11 items-center justify-center rounded-2xl border border-blue-600 px-4 text-sm font-black text-blue-600 transition hover:bg-blue-50"
+                    className="flex h-9 items-center justify-center rounded-lg border border-blue-600 px-3 text-[11px] font-black text-blue-600 transition hover:bg-blue-50"
                   >
                     Invite
                   </Link>
@@ -271,8 +277,8 @@ function SearchCvPageContent() {
             ))}
           </div>
         ) : (
-          <div className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-10 text-center shadow-sm">
-            <h3 className="text-2xl font-black text-slate-950">
+          <div className="mt-6 rounded-[1.5rem] border border-slate-200 bg-white p-6 text-center shadow-sm">
+            <h3 className="text-xl font-black text-slate-950">
               No candidates found
             </h3>
             <p className="mt-3 text-sm font-medium text-slate-500">

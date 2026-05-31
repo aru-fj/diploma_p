@@ -17,7 +17,7 @@ type DashboardSidebarProps = {
 function Logo() {
   return (
     <Link className="flex items-center gap-3" href="/dashboard/jobseeker">
-      <span className="grid h-12 w-12 place-items-center rounded-xl bg-[#0B63E5] text-3xl font-black text-white">
+      <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0B63E5] text-3xl font-black text-white">
         M
       </span>
       <span>
@@ -48,7 +48,7 @@ function SidebarLink({
   return (
     <motion.div whileHover={{ x: 3, transition: mediaHireMotion.fast }}>
       <Link
-        className={`flex h-12 items-center gap-3 rounded-xl px-4 text-sm font-bold transition ${
+        className={`flex h-10 items-center gap-3 rounded-xl px-4 text-sm font-bold transition ${
           item.color === "red"
             ? "text-red-500 hover:bg-red-50"
             : isActive
@@ -70,7 +70,7 @@ export function DashboardSidebar({
   onNavigate,
 }: DashboardSidebarProps) {
   return (
-    <aside className="flex h-full min-h-[calc(100vh-48px)] flex-col rounded-3xl bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.04)]">
+    <aside className="flex h-full min-h-[calc(100vh-48px)] flex-col rounded-2xl bg-white p-5 shadow-[0_18px_60px_rgba(15,23,42,0.04)]">
       <Logo />
       <div className="my-6 h-px bg-slate-100" />
 

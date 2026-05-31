@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { DashboardHeader } from "@/components/mediahire/dashboard/dashboard-header";
 import { ChatSidebar } from "./chat-sidebar";
@@ -8,8 +8,10 @@ import { ChatWindow } from "./chat-window";
 import { EmptyChatState } from "./empty-chat-state";
 import {
   conversations as initialConversations,
+  type ChatMessage,
   type Conversation,
 } from "./community-data";
+import { publicPeople } from "@/components/mediahire/public/public-people-data";
 import {
   fadeIn,
   mediaHireClassNames,
@@ -22,6 +24,60 @@ function formatMessageTime() {
     minute: "2-digit",
     hour12: false,
   }).format(new Date());
+}
+
+const jobSeekerChatsStorageKey = "mediahire_jobseeker_chats";
+
+function readStoredConversations() {
+  if (typeof window === "undefined") {
+    return initialConversations;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(jobSeekerChatsStorageKey);
+    const parsed = raw ? JSON.parse(raw) : null;
+
+    return Array.isArray(parsed) ? parsed : initialConversations;
+  } catch {
+    return initialConversations;
+  }
+}
+
+function persistConversations(conversations: Conversation[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(
+    jobSeekerChatsStorageKey,
+    JSON.stringify(conversations),
+  );
+}
+
+function createConversationFromSlug(slug: string): Conversation | null {
+  const person = publicPeople.find((item) => item.slug === slug);
+
+  if (!person) {
+    return null;
+  }
+
+  return {
+    avatar: person.avatar,
+    color: "bg-blue-50 text-blue-700",
+    id: person.slug,
+    initials: person.name
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase(),
+    lastSeen: "Online",
+    messages: [],
+    name: person.name,
+    preview: "Start the conversation.",
+    time: "Now",
+    unread: 0,
+  };
 }
 
 export function CommunityPage() {
@@ -50,14 +106,41 @@ export function CommunityPage() {
     conversations.find((conversation) => conversation.id === selectedId) ??
     null;
 
+  useEffect(() => {
+    const storedConversations = readStoredConversations();
+    const params = new URLSearchParams(window.location.search);
+    const chatSlug = params.get("chat");
+
+    let nextConversations = storedConversations;
+
+    if (chatSlug && !nextConversations.some((item) => item.id === chatSlug)) {
+      const createdConversation = createConversationFromSlug(chatSlug);
+
+      if (createdConversation) {
+        nextConversations = [createdConversation, ...nextConversations];
+      }
+    }
+
+    setConversations(nextConversations);
+
+    if (chatSlug) {
+      setSelectedId(chatSlug);
+    }
+  }, []);
+
   function handleSelect(conversationId: string) {
     setSelectedId(conversationId);
     setConversations((currentConversations) =>
-      currentConversations.map((conversation) =>
+      {
+        const nextConversations = currentConversations.map((conversation) =>
         conversation.id === conversationId
           ? { ...conversation, unread: 0 }
           : conversation,
-      ),
+        );
+
+        persistConversations(nextConversations);
+        return nextConversations;
+      },
     );
   }
 
@@ -66,8 +149,8 @@ export function CommunityPage() {
       return;
     }
 
-    setConversations((currentConversations) =>
-      currentConversations.map((conversation) =>
+    setConversations((currentConversations) => {
+      const nextConversations = currentConversations.map((conversation) =>
         conversation.id === selectedConversation.id
           ? {
               ...conversation,
@@ -79,14 +162,17 @@ export function CommunityPage() {
                   text: message,
                   time: formatMessageTime(),
                   type: "text",
-                },
+                } satisfies ChatMessage,
               ],
               preview: message,
               time: "Now",
             }
           : conversation,
-      ),
-    );
+      );
+
+      persistConversations(nextConversations);
+      return nextConversations;
+    });
   }
 
   return (

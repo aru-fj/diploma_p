@@ -1,7 +1,7 @@
 "use client";
 
 import type { ElementType } from "react";
-import { Heart, Send, Sparkles } from "lucide-react";
+import { Heart, Sparkles } from "lucide-react";
 
 const categoryTabs: {
   label: string;
@@ -12,12 +12,8 @@ const categoryTabs: {
     icon: Sparkles,
   },
   {
-    label: "Following",
+    label: "Saved",
     icon: Heart,
-  },
-  {
-    label: "The Best of MediaHire",
-    icon: Send,
   },
   {
     label: "Graphic Design",
@@ -43,7 +39,7 @@ export function CategoryPills({
   onChange,
 }: CategoryPillsProps) {
   return (
-    <div className="mt-4 flex flex-wrap justify-center gap-3">
+    <div className="mt-4 flex flex-wrap justify-center gap-2.5">
       {categoryTabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeCategory === tab.label;
@@ -53,7 +49,7 @@ export function CategoryPills({
             key={tab.label}
             type="button"
             onClick={() => onChange(tab.label)}
-            className={`flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-black shadow-sm transition hover:-translate-y-0.5 ${
+          className={`flex h-9 items-center gap-2 rounded-xl px-3.5 text-xs font-black shadow-sm transition hover:-translate-y-0.5 ${
               isActive
                 ? "bg-blue-700 text-white shadow-blue-600/20"
                 : "bg-blue-600 text-white shadow-blue-600/15 hover:bg-blue-700"

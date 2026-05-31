@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import type { DashboardPerson } from "./dashboard-data";
 import {
@@ -16,6 +17,17 @@ type MessageModalProps = {
 };
 
 export function MessageModal({ onClose, person }: MessageModalProps) {
+  const router = useRouter();
+
+  function openCommunity() {
+    if (!person) {
+      return;
+    }
+
+    onClose();
+    router.push(`/dashboard/jobseeker/community?chat=${person.id}`);
+  }
+
   return (
     <AnimatePresence>
       {person ? (
@@ -29,7 +41,7 @@ export function MessageModal({ onClose, person }: MessageModalProps) {
         >
           <motion.div
             animate="show"
-            className="w-full max-w-md rounded-3xl bg-white p-7 text-center shadow-[0_28px_90px_rgba(15,23,42,0.22)]"
+            className="w-full max-w-md rounded-2xl bg-white p-5 text-center shadow-[0_28px_90px_rgba(15,23,42,0.22)]"
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             initial="hidden"
             transition={mediaHireMotion.fast}
@@ -47,18 +59,15 @@ export function MessageModal({ onClose, person }: MessageModalProps) {
               Message {person.name}
             </h2>
             <p className="mx-auto mt-3 max-w-sm text-sm font-medium leading-6 text-slate-500">
-              Chat routing is prepared for{" "}
-              <span className="font-black text-[#0B63E5]">
-                /messages/{person.id}
-              </span>
-              . This placeholder will become the message composer.
+              Open Community to continue a conversation with{" "}
+              <span className="font-black text-[#0B63E5]">{person.name}</span>.
             </p>
             <button
               className={`mt-7 w-full ${mediaHireClassNames.primaryButton}`}
-              onClick={onClose}
+              onClick={openCommunity}
               type="button"
             >
-              Continue
+              Open Community
             </button>
           </motion.div>
         </motion.div>

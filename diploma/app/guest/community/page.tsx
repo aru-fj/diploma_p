@@ -18,6 +18,7 @@ export default async function GuestCommunityPage({
 
   return (
     <LockedAccessPage
+      activeItem="Community"
       message="Sign in or create an account to access this feature."
       role={resolveRole(resolvedSearchParams?.role)}
       title="Community is locked"

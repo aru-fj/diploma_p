@@ -40,11 +40,11 @@ export default function PublicPersonProfilePage() {
         <Header />
 
         <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
-          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 text-blue-600">
+          <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
             <UserRound className="h-8 w-8" />
           </div>
 
-          <h1 className="text-4xl font-black tracking-tight">
+          <h1 className="text-2xl font-black tracking-tight">
             Profile not found
           </h1>
 
@@ -54,7 +54,7 @@ export default function PublicPersonProfilePage() {
 
           <Link
             href="/"
-            className="mt-8 inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700"
+            className="mt-8 inline-flex h-10 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to homepage
@@ -100,10 +100,10 @@ export default function PublicPersonProfilePage() {
         </div>
       </section>
 
-      <section className="mx-auto grid w-full max-w-7xl gap-10 px-4 pb-20 sm:px-6 lg:grid-cols-[260px_1fr] lg:px-8">
-        <aside className="-mt-24 lg:-mt-20">
-          <div className="sticky top-8 rounded-[1.5rem] bg-white p-5">
-            <div className="h-28 w-28 overflow-hidden rounded-2xl bg-slate-200 shadow-xl">
+      <section className="mx-auto grid w-full max-w-7xl gap-5 px-4 pb-20 sm:px-6 lg:grid-cols-[260px_1fr] lg:px-5">
+        <aside className="-mt-16 lg:-mt-20">
+          <div className="sticky top-5 rounded-[1.5rem] bg-white p-5">
+            <div className="h-24 w-24 overflow-hidden rounded-2xl bg-slate-200 shadow-xl">
               <img
                 src={person.avatar}
                 alt={person.name}
@@ -147,7 +147,7 @@ export default function PublicPersonProfilePage() {
               </Link>
             </div>
 
-            <div className="mt-10">
+            <div className="mt-8">
               <h2 className="text-xl font-black text-slate-950">Skills</h2>
 
               <div className="mt-4 flex flex-wrap gap-2">
@@ -188,7 +188,7 @@ export default function PublicPersonProfilePage() {
             Back
           </Link>
 
-          <div className="mb-8 flex items-center gap-8 border-b border-slate-200">
+          <div className="mb-8 flex items-center gap-5 border-b border-slate-200">
             <TabButton
               label="Portfolio"
               active={activeTab === "portfolio"}
@@ -209,7 +209,7 @@ export default function PublicPersonProfilePage() {
           </div>
 
           {activeTab === "portfolio" && (
-            <div className="grid gap-x-8 gap-y-10 md:grid-cols-2 portfolio-panel-bg rounded-[2rem] bg-white/85 p-4 shadow-[0_22px_70px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 backdrop-blur sm:p-5">
+            <div className="grid gap-x-8 gap-y-10 md:grid-cols-2 portfolio-panel-bg rounded-2xl bg-white/85 p-4 shadow-[0_22px_70px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 backdrop-blur sm:p-5">
               {portfolioWorks.map((work) => (
                 <Link
                   key={work.slug}
@@ -237,10 +237,10 @@ export default function PublicPersonProfilePage() {
           )}
 
           {activeTab === "resume" && (
-            <div className="grid gap-6 lg:grid-cols-[1fr_0.75fr]">
-              <section className="rounded-[1.5rem] border border-slate-200 bg-white p-7 shadow-sm">
+            <div className="grid gap-5 lg:grid-cols-[1fr_0.75fr]">
+              <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="mb-6 flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
                     <FileText className="h-6 w-6" />
                   </div>
 
@@ -281,7 +281,7 @@ export default function PublicPersonProfilePage() {
               </section>
 
               <aside className="space-y-6">
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
                   <h2 className="text-xl font-black text-slate-950">
                     Education
                   </h2>
@@ -301,7 +301,7 @@ export default function PublicPersonProfilePage() {
                   </div>
                 </div>
 
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
                   <h2 className="text-xl font-black text-slate-950">
                     Languages
                   </h2>
@@ -322,7 +322,7 @@ export default function PublicPersonProfilePage() {
                   </div>
                 </div>
 
-                <div className="rounded-[1.5rem] border border-blue-100 bg-blue-50 p-6">
+                <div className="rounded-[1.5rem] border border-blue-100 bg-blue-50 p-5">
                   <h2 className="text-xl font-black text-slate-950">
                     Contact access
                   </h2>
@@ -348,7 +348,7 @@ export default function PublicPersonProfilePage() {
               {reviews.map((review) => (
                 <article
                   key={review.company}
-                  className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm"
+                  className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
@@ -373,7 +373,7 @@ export default function PublicPersonProfilePage() {
                 </article>
               ))}
 
-              <div className="rounded-[1.5rem] border border-blue-100 bg-blue-50 p-6 text-center">
+              <div className="rounded-[1.5rem] border border-blue-100 bg-blue-50 p-5 text-center">
                 <Heart className="mx-auto h-7 w-7 text-blue-600" />
 
                 <h2 className="mt-3 text-xl font-black text-slate-950">

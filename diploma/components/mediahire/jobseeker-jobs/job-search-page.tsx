@@ -48,7 +48,7 @@ export function JobSearchPage() {
           <div className="mx-auto mt-16 w-[min(960px,calc(100%-32px))] text-center text-white">
             <motion.h1
               animate={{ opacity: 1, y: 0 }}
-              className="text-4xl font-black tracking-tight md:text-5xl"
+              className="text-2xl font-black tracking-tight md:text-3xl"
               initial={{ opacity: 0, y: 18 }}
             >
               Creative Professions
@@ -66,7 +66,7 @@ export function JobSearchPage() {
             Discover the Best Job
           </h2>
           <div className="mx-auto mt-7 flex max-w-2xl flex-col gap-3 rounded-2xl bg-white p-2 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:flex-row">
-            <label className="flex min-h-12 flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4">
+            <label className="flex min-h-10 flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4">
               <Search className="text-slate-400" size={18} />
               <input
                 className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-slate-400"
@@ -76,7 +76,7 @@ export function JobSearchPage() {
                 value={query}
               />
             </label>
-            <label className="flex min-h-12 flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4">
+            <label className="flex min-h-10 flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4">
               <MapPin className="text-slate-400" size={18} />
               <input
                 className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-slate-400"
@@ -87,7 +87,7 @@ export function JobSearchPage() {
               />
             </label>
             <button
-              className="min-h-12 rounded-xl bg-[#0B63E5] px-6 text-sm font-black text-white transition hover:bg-[#0958cc]"
+              className="min-h-10 rounded-xl bg-[#0B63E5] px-6 text-sm font-black text-white transition hover:bg-[#0958cc]"
               type="button"
             >
               Search
@@ -95,7 +95,7 @@ export function JobSearchPage() {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+        <div className="mt-8 grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-black text-slate-950">
               <SlidersHorizontal size={18} />
@@ -125,7 +125,7 @@ export function JobSearchPage() {
               <JobCard job={job} key={job.id} />
             ))}
             {!filteredJobs.length ? (
-              <div className="rounded-2xl bg-white p-8 text-center text-sm font-black text-slate-500 md:col-span-2">
+              <div className="rounded-2xl bg-white p-5 text-center text-sm font-black text-slate-500 md:col-span-2">
                 No jobs found
               </div>
             ) : null}

@@ -33,11 +33,11 @@ export default function PublicWorkDetailPage() {
         <Header />
 
         <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
-          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 text-blue-600">
+          <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
             <BriefcaseBusiness className="h-8 w-8" />
           </div>
 
-          <h1 className="text-4xl font-black tracking-tight">
+          <h1 className="text-2xl font-black tracking-tight">
             Work not found
           </h1>
 
@@ -47,7 +47,7 @@ export default function PublicWorkDetailPage() {
 
           <Link
             href="/"
-            className="mt-8 inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700"
+            className="mt-8 inline-flex h-10 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to homepage
@@ -71,7 +71,7 @@ export default function PublicWorkDetailPage() {
         <Header />
       </div>
 
-      <section className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
+      <section className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6 lg:px-5">
         <Link
           href="/"
           className="mb-6 inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
@@ -84,7 +84,7 @@ export default function PublicWorkDetailPage() {
           href={`/people/${work.authorSlug}`}
           className="mb-4 flex w-fit items-center gap-3 rounded-[1.4rem] bg-white px-4 py-3 shadow-[0_14px_40px_rgba(15,23,42,0.07)] transition hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]"
         >
-          <div className="h-14 w-14 overflow-hidden rounded-[1rem] bg-slate-200">
+          <div className="h-10 w-14 overflow-hidden rounded-[1rem] bg-slate-200">
             <img
               src={authorAvatar}
               alt={work.author}
@@ -102,14 +102,14 @@ export default function PublicWorkDetailPage() {
           </div>
         </Link>
 
-        <article className="overflow-hidden rounded-[2rem] border border-white bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-          <div className="bg-[#eaf3ff] px-5 py-6 sm:px-8 md:px-8">
+        <article className="overflow-hidden rounded-2xl border border-white bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+          <div className="bg-[#eaf3ff] px-5 py-6 sm:px-5 md:px-5">
             <header className="mx-auto max-w-3xl text-center">
               <p className="mb-4 inline-flex rounded-full bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-blue-600 shadow-sm">
                 Public project
               </p>
 
-              <h1 className="text-3xl font-black italic text-blue-600 md:text-4xl">
+              <h1 className="text-3xl font-black italic text-blue-600 md:text-2xl">
                 {work.title}
               </h1>
 
@@ -118,7 +118,7 @@ export default function PublicWorkDetailPage() {
               </p>
             </header>
 
-            <div className="mx-auto mt-10 flex max-w-3xl flex-col gap-6">
+            <div className="mx-auto mt-8 flex max-w-3xl flex-col gap-5">
               {work.gallery.map((media, index) => (
                 <ProjectMediaItem
                   key={`${media.type}-${media.src}-${index}`}
@@ -129,8 +129,8 @@ export default function PublicWorkDetailPage() {
               ))}
             </div>
 
-            <footer className="mx-auto mt-10 max-w-3xl text-center">
-              <div className="mx-auto h-14 w-14 overflow-hidden rounded-2xl bg-slate-200 shadow-sm">
+            <footer className="mx-auto mt-8 max-w-3xl text-center">
+              <div className="mx-auto h-10 w-14 overflow-hidden rounded-2xl bg-slate-200 shadow-sm">
                 <img
                   src={authorAvatar}
                   alt={work.author}
@@ -152,7 +152,7 @@ export default function PublicWorkDetailPage() {
 
               <Link
                 href={publicAuthLinks.login}
-                className="mx-auto mt-6 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition hover:scale-105 hover:bg-blue-600"
+                className="mx-auto mt-6 flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition hover:scale-105 hover:bg-blue-600"
                 title="Sign in to like"
               >
                 <Heart className="h-6 w-6 fill-white" />
@@ -161,8 +161,8 @@ export default function PublicWorkDetailPage() {
           </div>
         </article>
 
-        <section className="mt-8 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.06)]">
-          <div className="border-b border-slate-200 p-5 md:p-6">
+        <section className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.06)]">
+          <div className="border-b border-slate-200 p-5 md:p-5">
             <div className="flex gap-4">
               <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-slate-200">
                 <img
@@ -176,7 +176,7 @@ export default function PublicWorkDetailPage() {
                 <textarea
                   readOnly
                   placeholder="Sign in to write a comment about the project."
-                  className="h-24 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-500 outline-none"
+                  className="h-20 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-500 outline-none"
                 />
 
                 <div className="mt-3 flex justify-end">
@@ -192,7 +192,7 @@ export default function PublicWorkDetailPage() {
             </div>
           </div>
 
-          <div className="space-y-5 p-5 md:p-6">
+          <div className="space-y-5 p-5 md:p-5">
             <CommentItem
               avatar="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80"
               name="Eduardo Sánchez"
@@ -236,7 +236,7 @@ export default function PublicWorkDetailPage() {
           />
         </section>
 
-        <section className="mt-8 rounded-[2rem] border border-blue-100 bg-blue-50 p-6 text-center">
+        <section className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 p-5 text-center">
           <MessageCircle className="mx-auto h-7 w-7 text-blue-600" />
 
           <h2 className="mt-3 text-xl font-black text-slate-950">

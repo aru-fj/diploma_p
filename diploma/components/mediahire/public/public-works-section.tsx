@@ -197,31 +197,31 @@ export function PublicWorksSection({
     mode === "projects" ? projectFilterLabels : peopleFilterLabels;
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl rounded-[1.7rem] bg-white p-4 shadow-[0_18px_60px_rgba(15,23,42,0.07)] md:p-5">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+    <section className="mx-auto w-full max-w-none px-4 py-6 sm:px-6 lg:px-10">
+      <div className="mx-auto w-full rounded-[1.35rem] bg-white p-3.5 shadow-[0_14px_45px_rgba(15,23,42,0.06)] md:p-4">
+        <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
           <button
             type="button"
             onClick={() => setFilterMenuOpen((value) => !value)}
-            className="flex h-11 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 text-sm font-black text-slate-900 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+            className="flex h-9 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 text-[11px] font-black text-slate-900 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
           >
             <SlidersHorizontal className="h-4 w-4" />
             Filter
           </button>
 
-          <div className="flex h-11 flex-1 items-center gap-3 rounded-full bg-slate-100 px-5">
-            <Search className="h-5 w-5 text-slate-500" />
+          <div className="flex h-9 flex-1 items-center gap-2.5 rounded-full bg-slate-100 px-3.5">
+            <Search className="h-4 w-4 text-slate-500" />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={
                 mode === "projects" ? "Search projects" : "Search people"
               }
-              className="h-full flex-1 bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
+              className="h-full flex-1 bg-transparent text-xs font-semibold text-slate-900 outline-none placeholder:text-slate-400"
             />
           </div>
 
-          <div className="grid h-11 grid-cols-2 rounded-full bg-slate-100 p-1 lg:w-[230px]">
+          <div className="grid h-9 grid-cols-2 rounded-full bg-slate-100 p-1 lg:w-[190px]">
             <button
               type="button"
               onClick={() => {
@@ -229,7 +229,7 @@ export function PublicWorksSection({
                 setActiveSection("for-you");
                 setSearch("");
               }}
-              className={`rounded-full text-sm font-black transition ${
+              className={`rounded-full text-xs font-black transition ${
                 mode === "projects"
                   ? "bg-white text-slate-950 shadow-sm"
                   : "text-slate-500 hover:text-slate-800"
@@ -245,7 +245,7 @@ export function PublicWorksSection({
                 setActiveSection("for-you");
                 setSearch("");
               }}
-              className={`rounded-full text-sm font-black transition ${
+              className={`rounded-full text-xs font-black transition ${
                 mode === "people"
                   ? "bg-white text-slate-950 shadow-sm"
                   : "text-slate-500 hover:text-slate-800"
@@ -257,13 +257,13 @@ export function PublicWorksSection({
         </div>
 
         {filterMenuOpen && (
-          <div className="mt-4 flex flex-wrap justify-center gap-2 rounded-2xl bg-slate-50 p-3">
+          <div className="mt-3 flex flex-wrap justify-center gap-2 rounded-2xl bg-slate-50 p-2">
             {Object.entries(filterLabels).map(([key, label]) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => setActiveFilter(key as PublicFilterKey)}
-                className={`h-9 rounded-full px-4 text-xs font-black transition ${
+                className={`h-7 rounded-full px-3 text-[10px] font-black transition ${
                   activeFilter === key
                     ? "bg-blue-600 text-white"
                     : "bg-white text-slate-600 hover:text-blue-600"
@@ -275,7 +275,7 @@ export function PublicWorksSection({
           </div>
         )}
 
-        <div className="mt-4 flex flex-wrap justify-center gap-3">
+        <div className="mt-3 flex flex-wrap justify-center gap-2">
           {sectionTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeSection === tab.key;
@@ -292,13 +292,13 @@ export function PublicWorksSection({
 
                   setActiveSection(tab.key);
                 }}
-                className={`flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-black shadow-sm transition hover:-translate-y-0.5 ${
+                className={`flex h-8 items-center gap-1.5 rounded-lg px-3 text-[11px] font-black shadow-sm transition hover:-translate-y-0.5 ${
                   isActive
                     ? "bg-blue-700 text-white shadow-blue-600/20"
                     : "bg-blue-600 text-white shadow-blue-600/15 hover:bg-blue-700"
                 }`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-3.5 w-3.5" />
                 {tab.label}
               </button>
             );
@@ -306,9 +306,9 @@ export function PublicWorksSection({
         </div>
       </div>
 
-      <div className="mb-8 mt-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+      <div className="mb-5 mt-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <p className="mb-3 inline-flex rounded-full bg-blue-50 px-4 py-2 text-sm font-bold text-blue-600">
+          <p className="mb-2 inline-flex rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-bold text-blue-600">
             {mode === "projects"
               ? "Public projects"
               : role === "employer"
@@ -316,7 +316,7 @@ export function PublicWorksSection({
                 : "Public people"}
           </p>
 
-          <h2 className="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
+          <h2 className="text-xl font-black tracking-tight text-slate-950 md:text-2xl">
             {mode === "projects"
               ? "Explore creative projects"
               : role === "employer"
@@ -324,7 +324,7 @@ export function PublicWorksSection({
                 : "Explore media specialists"}
           </h2>
 
-          <p className="mt-3 max-w-2xl text-base font-medium leading-7 text-slate-500">
+          <p className="mt-2 max-w-2xl text-xs font-medium leading-5 text-slate-500">
             {mode === "projects"
               ? "Use sections, filters, and search to browse public projects before registration."
               : role === "employer"
@@ -335,7 +335,7 @@ export function PublicWorksSection({
 
         <Link
           href={role === "employer" ? "/search-cv" : "/search-job"}
-          className="inline-flex h-12 items-center justify-center rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-blue-600"
+          className="inline-flex h-9 items-center justify-center rounded-lg bg-slate-950 px-3.5 text-[11px] font-black text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-blue-600"
         >
           {role === "employer" ? "Search CV" : "Search jobs"}
           <ArrowRight className="ml-2 h-4 w-4" />
@@ -344,7 +344,7 @@ export function PublicWorksSection({
 
       {mode === "projects" ? (
         filteredWorks.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {filteredWorks.map((work) => (
               <ProjectCard key={work.slug} work={work} />
             ))}
@@ -360,7 +360,7 @@ export function PublicWorksSection({
           />
         )
       ) : filteredPeople.length > 0 ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {filteredPeople.map((person) => (
             <PersonCard key={person.slug} person={person} />
           ))}
@@ -381,45 +381,45 @@ export function PublicWorksSection({
 
 function ProjectCard({ work }: { work: PublicWork }) {
   return (
-    <article className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_22px_70px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_30px_90px_rgba(37,99,235,0.18)]">
+    <article className="group overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]">
       <Link href={`/work/${work.slug}`} className="block">
-        <div className="relative h-56 overflow-hidden bg-slate-100">
+        <div className="relative h-36 overflow-hidden bg-slate-100">
           <img
             src={work.coverImage}
             alt={work.title}
             className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           />
 
-          <div className="absolute left-4 top-4 rounded-full bg-white/90 px-4 py-2 text-xs font-black text-slate-900 shadow-lg backdrop-blur">
+          <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-black text-slate-900 shadow-lg backdrop-blur">
             {work.category}
           </div>
 
-          <div className="absolute bottom-4 left-4 rounded-full bg-slate-950/80 px-4 py-2 text-xs font-bold text-white backdrop-blur">
+          <div className="absolute bottom-3 left-3 rounded-full bg-slate-950/80 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur">
             {work.type}
           </div>
         </div>
       </Link>
 
-      <div className="p-5">
+      <div className="p-3.5">
         <Link href={`/work/${work.slug}`} className="block">
-          <h3 className="text-xl font-black text-slate-950 transition group-hover:text-blue-600">
+          <h3 className="text-sm font-black text-slate-950 transition group-hover:text-blue-600">
             {work.title}
           </h3>
 
-          <p className="mt-1 text-sm font-bold text-slate-500">
+          <p className="mt-1 text-xs font-bold text-slate-500">
             {work.author} · {work.role}
           </p>
         </Link>
 
-        <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-500">
+        <div className="mt-2.5 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
           <CalendarDays className="h-4 w-4 text-blue-500" />
           {work.createdAt}
         </div>
 
-        <div className="mt-5 flex gap-3">
+        <div className="mt-3.5 flex gap-2">
           <Link
             href={`/work/${work.slug}`}
-            className="flex h-11 flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 text-sm font-black text-white transition hover:bg-blue-700"
+            className="flex h-9 flex-1 items-center justify-center rounded-lg bg-blue-600 px-3 text-[11px] font-black text-white transition hover:bg-blue-700"
           >
             View details
           </Link>
@@ -427,9 +427,9 @@ function ProjectCard({ work }: { work: PublicWork }) {
           <Link
             href={publicAuthLinks.login}
             title="Sign in to save"
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
           >
-            <Bookmark className="h-5 w-5" />
+            <Bookmark className="h-4 w-4" />
           </Link>
         </div>
       </div>
@@ -439,21 +439,21 @@ function ProjectCard({ work }: { work: PublicWork }) {
 
 function PersonCard({ person }: { person: PublicPerson }) {
   return (
-    <article className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_22px_70px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_30px_90px_rgba(37,99,235,0.18)]">
-      <div className="relative h-36 overflow-hidden bg-slate-100">
+    <article className="group overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]">
+      <div className="relative h-24 overflow-hidden bg-slate-100">
         <img
           src={person.coverImage}
           alt={person.name}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
         />
 
-        <div className="absolute left-4 top-4 rounded-full bg-white/90 px-4 py-2 text-xs font-black text-slate-900 shadow-lg backdrop-blur">
+        <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-black text-slate-900 shadow-lg backdrop-blur">
           {person.category}
         </div>
       </div>
 
-      <div className="relative p-5 pt-12">
-        <div className="absolute -top-10 left-5 h-20 w-20 overflow-hidden rounded-3xl border-4 border-white bg-slate-200 shadow-lg">
+      <div className="relative p-3.5 pt-8">
+        <div className="absolute -top-6 left-4 h-12 w-12 overflow-hidden rounded-xl border-[3px] border-white bg-slate-200 shadow-lg">
           <img
             src={person.avatar}
             alt={person.name}
@@ -461,20 +461,20 @@ function PersonCard({ person }: { person: PublicPerson }) {
           />
         </div>
 
-        <div className="absolute right-5 top-5 flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-600">
+        <div className="absolute right-3.5 top-3.5 flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[10px] font-black text-amber-600">
           <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
           {person.rating}
         </div>
 
-        <h3 className="text-xl font-black text-slate-950">{person.name}</h3>
+        <h3 className="text-sm font-black text-slate-950">{person.name}</h3>
 
-        <p className="mt-1 text-sm font-bold text-blue-600">{person.role}</p>
+        <p className="mt-1 text-[11px] font-bold text-blue-600">{person.role}</p>
 
-        <p className="mt-3 line-clamp-2 text-sm font-medium leading-6 text-slate-500">
+        <p className="mt-2 line-clamp-2 text-[11px] font-medium leading-5 text-slate-500">
           {person.shortBio}
         </p>
 
-        <div className="mt-4 space-y-2 text-sm font-semibold text-slate-500">
+        <div className="mt-2.5 space-y-1.5 text-[11px] font-semibold text-slate-500">
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-blue-500" />
             {person.location}
@@ -491,25 +491,25 @@ function PersonCard({ person }: { person: PublicPerson }) {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-1.5">
           {person.skills.map((skill) => (
             <span
               key={skill}
-              className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-600"
+              className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-600"
             >
               {skill}
             </span>
           ))}
         </div>
 
-        <div className="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-700">
+        <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[11px] font-black text-slate-700">
           {person.availability}
         </div>
 
-        <div className="mt-5 flex gap-3">
+        <div className="mt-3.5 flex gap-2">
           <Link
             href={`/people/${person.slug}`}
-            className="flex h-11 flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 text-sm font-black text-white transition hover:bg-blue-700"
+            className="flex h-9 flex-1 items-center justify-center rounded-lg bg-blue-600 px-3 text-[11px] font-black text-white transition hover:bg-blue-700"
           >
             View profile
           </Link>
@@ -517,9 +517,9 @@ function PersonCard({ person }: { person: PublicPerson }) {
           <Link
             href={publicAuthLinks.login}
             title="Sign in to save"
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
           >
-            <Bookmark className="h-5 w-5" />
+            <Bookmark className="h-4 w-4" />
           </Link>
         </div>
       </div>
@@ -537,22 +537,22 @@ function EmptyState({
   onReset: () => void;
 }) {
   return (
-    <div className="rounded-[2rem] border border-slate-200 bg-white p-8 text-center shadow-sm">
-      <h3 className="text-2xl font-black text-slate-950">{title}</h3>
+    <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 text-center shadow-sm">
+      <h3 className="text-xl font-black text-slate-950">{title}</h3>
 
       <p className="mt-3 text-sm font-medium text-slate-500">{text}</p>
 
       <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
         <Link
           href={publicAuthLinks.login}
-          className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700"
+          className="inline-flex h-10 items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-black text-white transition hover:bg-blue-700"
         >
           Login
         </Link>
         <button
           type="button"
           onClick={onReset}
-          className="h-12 rounded-2xl border border-blue-600 bg-white px-6 text-sm font-black text-blue-600 transition hover:bg-blue-50"
+          className="h-10 rounded-xl border border-blue-600 bg-white px-5 text-sm font-black text-blue-600 transition hover:bg-blue-50"
         >
           Back to For You
         </button>

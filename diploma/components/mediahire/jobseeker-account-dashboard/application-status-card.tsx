@@ -35,7 +35,7 @@ export function ApplicationStatusCard() {
       transition={mediaHireMotion.item(2)}
       variants={fadeInUp}
     >
-      <div className="flex gap-7 border-b border-slate-100">
+      <div className="flex gap-5 border-b border-slate-100">
         {(["Apply status", "Offered job"] as const).map((tab) => (
           <button
             className={`relative px-3 pb-4 text-base font-black transition ${
@@ -99,7 +99,7 @@ export function ApplicationStatusCard() {
               <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
                 <div className="flex items-center gap-4">
                   <span
-                    className={`grid h-14 w-14 place-items-center rounded-xl text-xl font-black ${application.logoClass}`}
+                    className={`grid h-10 w-14 place-items-center rounded-xl text-xl font-black ${application.logoClass}`}
                   >
                     {application.logoText}
                   </span>

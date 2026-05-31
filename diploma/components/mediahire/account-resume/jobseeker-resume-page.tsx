@@ -136,7 +136,7 @@ const initialResumeState: ResumeFormState = {
 function DashboardLogo() {
   return (
     <Link className="flex items-center gap-3" href="/account/jobseeker">
-      <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#0B63E5] text-white shadow-[0_16px_36px_rgba(11,99,229,0.22)]">
+      <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#0B63E5] text-white shadow-[0_16px_36px_rgba(11,99,229,0.22)]">
         <span className="text-2xl font-black leading-none">M</span>
       </span>
       <span className="leading-tight">
@@ -163,7 +163,7 @@ function AccountSidebar({
   const sidebar = (
     <motion.aside
       animate="show"
-      className="flex h-full w-full flex-col rounded-[2rem] border border-slate-100 bg-white p-5 shadow-[0_22px_70px_rgba(15,23,42,0.06)]"
+      className="flex h-full w-full flex-col rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_22px_70px_rgba(15,23,42,0.06)]"
       initial="hidden"
       transition={mediaHireMotion.panel}
       variants={slideInLeft}
@@ -180,14 +180,14 @@ function AccountSidebar({
         </button>
       </div>
 
-      <p className="mt-10 px-4 text-xs font-bold text-slate-400">Main</p>
+      <p className="mt-8 px-4 text-xs font-bold text-slate-400">Main</p>
       <nav className="mt-3 grid gap-2">
         {sidebarItems.map((item) => {
           const isActive = item.label === active;
 
           return (
             <Link
-              className={`flex h-12 items-center gap-3 rounded-2xl px-4 text-sm font-black transition ${
+              className={`flex h-10 items-center gap-3 rounded-2xl px-4 text-sm font-black transition ${
                 isActive
                   ? "bg-[#0B63E5] text-white shadow-[0_16px_34px_rgba(11,99,229,0.22)]"
                   : "text-slate-600 hover:bg-[#eef4ff] hover:text-[#0B63E5]"
@@ -205,14 +205,14 @@ function AccountSidebar({
 
       <div className="mt-auto grid gap-2 border-t border-slate-100 pt-5">
         <Link
-          className="flex h-12 items-center gap-3 rounded-2xl px-4 text-sm font-black text-red-500 transition hover:bg-red-50"
+          className="flex h-10 items-center gap-3 rounded-2xl px-4 text-sm font-black text-red-500 transition hover:bg-red-50"
           href="/"
         >
           <LogOut size={18} />
           Log out
         </Link>
         <Link
-          className="flex h-12 items-center gap-3 rounded-2xl px-4 text-sm font-black text-slate-500 transition hover:bg-[#eef4ff] hover:text-[#0B63E5]"
+          className="flex h-10 items-center gap-3 rounded-2xl px-4 text-sm font-black text-slate-500 transition hover:bg-[#eef4ff] hover:text-[#0B63E5]"
           href="#help"
         >
           <CircleHelp size={18} />
@@ -224,7 +224,7 @@ function AccountSidebar({
 
   return (
     <>
-      <div className="hidden lg:sticky lg:top-6 lg:block lg:h-[calc(100vh-3rem)]">
+      <div className="hidden lg:sticky lg:top-5 lg:block lg:h-[calc(100vh-3rem)]">
         {sidebar}
       </div>
 
@@ -279,7 +279,7 @@ function DashboardTopbar({
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <label className="flex h-12 min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)] sm:w-72">
+        <label className="flex h-10 min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)] sm:w-72">
           <input
             className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
             onChange={(event) => setSearch(event.target.value)}
@@ -330,8 +330,8 @@ function ResumeHeaderCard({ profile }: { profile: JobSeekerProfile }) {
       transition={mediaHireMotion.item(0)}
       variants={fadeInUp}
     >
-      <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:p-6">
-        <div className="grid h-28 w-28 shrink-0 place-items-center rounded-3xl border border-dashed border-slate-400 bg-[#fafcff] text-slate-500">
+      <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:p-5">
+        <div className="grid h-24 w-24 shrink-0 place-items-center rounded-2xl border border-dashed border-slate-400 bg-[#fafcff] text-slate-500">
           <FileImage size={30} />
         </div>
 
@@ -388,7 +388,7 @@ function PersonalInfoGrid({ profile }: { profile: JobSeekerProfile }) {
   return (
     <motion.section
       animate="show"
-      className={`p-5 sm:p-6 ${mediaHireClassNames.card}`}
+      className={`p-5 sm:p-5 ${mediaHireClassNames.card}`}
       initial="hidden"
       transition={mediaHireMotion.item(0.04)}
       variants={fadeInUp}
@@ -430,7 +430,7 @@ function ResumeTextarea({
 
   return (
     <motion.textarea
-      className="min-h-28 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold leading-6 text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-[#0B63E5] focus:ring-4 focus:ring-blue-100"
+      className="min-h-24 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold leading-6 text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-[#0B63E5] focus:ring-4 focus:ring-blue-100"
       onChange={handleChange}
       placeholder="Write Your description"
       ref={textareaRef}
@@ -454,7 +454,7 @@ function ResumeSectionCard({
   return (
     <motion.section
       animate="show"
-      className={`p-5 sm:p-6 ${mediaHireClassNames.card}`}
+      className={`p-5 sm:p-5 ${mediaHireClassNames.card}`}
       initial="hidden"
       transition={mediaHireMotion.item(index * 0.035)}
       variants={fadeInUp}
@@ -484,7 +484,7 @@ function ActionButtons({
   return (
     <div className="flex flex-col gap-3 pb-10 sm:flex-row sm:justify-end">
       <motion.button
-        className="h-11 rounded-xl border border-[#0B63E5] bg-white px-8 text-sm font-black text-[#0B63E5] transition hover:bg-[#eef4ff] disabled:cursor-not-allowed disabled:opacity-50"
+        className="h-11 rounded-xl border border-[#0B63E5] bg-white px-5 text-sm font-black text-[#0B63E5] transition hover:bg-[#eef4ff] disabled:cursor-not-allowed disabled:opacity-50"
         disabled={!hasUnsavedChanges || isSaving}
         onClick={onCancel}
         type="button"
@@ -494,7 +494,7 @@ function ActionButtons({
         Cancel
       </motion.button>
       <motion.button
-        className="h-11 rounded-xl bg-[#0B63E5] px-10 text-sm font-black text-white shadow-[0_14px_30px_rgba(11,99,229,0.22)] transition hover:bg-[#0957ca] disabled:cursor-not-allowed disabled:opacity-60"
+        className="h-11 rounded-xl bg-[#0B63E5] px-6 text-sm font-black text-white shadow-[0_14px_30px_rgba(11,99,229,0.22)] transition hover:bg-[#0957ca] disabled:cursor-not-allowed disabled:opacity-60"
         disabled={!hasUnsavedChanges || isSaving}
         onClick={onSave}
         type="button"
@@ -629,11 +629,11 @@ export function JobSeekerResumePage() {
   return (
     <motion.main
       animate="show"
-      className="min-h-screen bg-[#f5f7fb] px-4 py-6 text-slate-950 sm:px-6 lg:px-8"
+      className="min-h-screen bg-[#f5f7fb] px-4 py-6 text-slate-950 sm:px-6 lg:px-5"
       initial="hidden"
       variants={fadeIn}
     >
-      <div className="mx-auto grid max-w-[1500px] gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-[1500px] gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
         <AccountSidebar
           active="My Resume"
           isOpen={isSidebarOpen}

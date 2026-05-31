@@ -70,6 +70,10 @@ function nextPath(role: MediaHireRole, mode: OAuthMode) {
     : "/signup/jobseeker/google-details";
 }
 
+function signupPath(role: MediaHireRole) {
+  return role === "employer" ? "/signup/employer" : "/signup/jobseeker";
+}
+
 function isMediaHireRole(value: unknown): value is MediaHireRole {
   return value === "employer" || value === "jobseeker";
 }
@@ -159,6 +163,7 @@ export function GoogleAuthCallbackClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
+  const [backToSignUpHref, setBackToSignUpHref] = useState("/signup/jobseeker");
 
   useEffect(() => {
     let isMounted = true;
@@ -168,6 +173,10 @@ export function GoogleAuthCallbackClient() {
       const role = normalizeRole(searchParams.get("role") || storedOAuth?.role || null);
       const mode = normalizeMode(searchParams.get("mode") || storedOAuth?.mode || null);
       const code = searchParams.get("code");
+
+      if (isMounted) {
+        setBackToSignUpHref(signupPath(role));
+      }
 
       try {
         if (code) {
@@ -325,7 +334,7 @@ export function GoogleAuthCallbackClient() {
         {error ? (
           <Link
             className="mt-7 inline-flex text-sm font-black text-[#0B63E5] underline-offset-4 transition hover:underline"
-            href="/signup"
+            href={backToSignUpHref}
           >
             Back to sign up
           </Link>

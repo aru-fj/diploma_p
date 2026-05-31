@@ -46,16 +46,16 @@ export function JobSeekerNav({ active = "Search Job" }: { active?: string }) {
   }, []);
 
   return (
-    <nav className="mx-auto flex min-h-[68px] w-[min(1320px,calc(100%-32px))] items-center justify-between gap-6 rounded-2xl border border-slate-200 bg-white px-7 py-3 shadow-[0_16px_45px_rgba(15,23,42,0.08)]">
-      <Link className="shrink-0 text-xl font-black tracking-tight" href="/home/jobseeker">
+    <nav className="mx-auto flex min-h-[54px] w-[min(1320px,calc(100%-32px))] items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-2 shadow-[0_12px_34px_rgba(15,23,42,0.07)]">
+      <Link className="shrink-0 text-base font-black tracking-tight" href="/home/jobseeker">
         <span className="text-[#0B63E5]">Media</span>
         <span className="text-slate-950">Hire</span>
       </Link>
 
-      <div className="hidden items-center gap-8 lg:flex">
+      <div className="hidden items-center gap-6 lg:flex">
         {links.map((link) => (
           <Link
-            className={`text-sm font-black transition hover:text-[#0B63E5] ${
+            className={`text-xs font-black transition hover:text-[#0B63E5] ${
               active === link.label ? "text-[#0B63E5]" : "text-slate-600"
             }`}
             href={link.href}
@@ -66,18 +66,18 @@ export function JobSeekerNav({ active = "Search Job" }: { active?: string }) {
         ))}
       </div>
 
-      <div className="flex shrink-0 items-center gap-4 text-slate-600">
-        <Search size={20} />
-        <Bell size={19} />
-        <span className="hidden h-9 w-px bg-slate-200 sm:block" />
-        <span className="hidden text-sm font-black text-slate-600 sm:block">
+      <div className="flex shrink-0 items-center gap-3 text-slate-600">
+        <Search size={17} />
+        <Bell size={16} />
+        <span className="hidden h-7 w-px bg-slate-200 sm:block" />
+        <span className="hidden text-xs font-black text-slate-600 sm:block">
           Job Seeker
         </span>
         {isAuthenticated ? (
           <JobSeekerUserMenu />
         ) : (
           <Link
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0B63E5] px-4 text-sm font-black text-white transition hover:bg-[#0958cc]"
+            className="inline-flex h-9 items-center gap-2 rounded-xl bg-[#0B63E5] px-3.5 text-xs font-black text-white transition hover:bg-[#0958cc]"
             href="/signup"
           >
             <UserRound size={16} />
@@ -91,14 +91,14 @@ export function JobSeekerNav({ active = "Search Job" }: { active?: string }) {
 
 export function MediaHireFooter() {
   return (
-    <footer className="mt-24 border-t border-slate-200 bg-white">
-      <div className="mx-auto grid w-[min(1320px,calc(100%-32px))] gap-10 py-12 md:grid-cols-4">
+    <footer className="mt-16 border-t border-slate-200 bg-white">
+      <div className="mx-auto grid w-[min(1320px,calc(100%-32px))] gap-8 py-9 md:grid-cols-4">
         <div>
-          <h3 className="text-3xl font-black tracking-tight">
+          <h3 className="text-2xl font-black tracking-tight">
             <span className="text-[#0B63E5]">Media</span>
             <span className="text-slate-950">Hire</span>
           </h3>
-          <p className="mt-4 max-w-xs text-sm font-medium leading-6 text-slate-500">
+          <p className="mt-3 max-w-xs text-xs font-medium leading-5 text-slate-500">
             MediaHire is a smart job search and recruitment platform that connects
             job seekers with employers. With fast search, professional resume
             building, and intelligent matching, hiring and job hunting stay simple.
@@ -106,7 +106,7 @@ export function MediaHireFooter() {
         </div>
         <div>
           <h4 className="text-sm font-black text-slate-950">Our services</h4>
-          <div className="mt-4 grid gap-3 text-sm font-semibold text-slate-500">
+          <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-500">
             <Link href="/home/jobseeker/job-search">Find job</Link>
             <Link href="/account/jobseeker/resume">Create resume</Link>
             <Link href="/home/jobseeker/job-search">Search company</Link>
@@ -115,7 +115,7 @@ export function MediaHireFooter() {
         </div>
         <div>
           <h4 className="text-sm font-black text-slate-950">Links</h4>
-          <div className="mt-4 grid gap-3 text-sm font-semibold text-slate-500">
+          <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-500">
             <Link href="#blog">Blog</Link>
             <Link href="#help">Help center</Link>
             <Link href="#contact">Contact us</Link>
@@ -125,7 +125,7 @@ export function MediaHireFooter() {
         </div>
         <div>
           <h4 className="text-sm font-black text-slate-950">Contact Us</h4>
-          <div className="mt-4 grid gap-3 text-sm font-semibold text-slate-500">
+          <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-500">
             <span>Instagram  WhatsApp</span>
             <span>1500 Marilla St, Dallas, TX 75201</span>
             <span>1(647)558-5560</span>
@@ -175,10 +175,10 @@ export function JobCard({ job }: { job: MediaHireJob }) {
   }, [job.id]);
 
   return (
-    <article className="group relative rounded-2xl border border-slate-200 bg-white p-5 transition duration-300 hover:-translate-y-1 hover:border-[#0B63E5]/40 hover:shadow-[0_22px_55px_rgba(15,23,42,0.08)]">
+    <article className="group relative rounded-2xl border border-slate-200 bg-white p-4 transition duration-300 hover:-translate-y-1 hover:border-[#0B63E5]/40 hover:shadow-[0_18px_44px_rgba(15,23,42,0.075)]">
       <button
         aria-label={isAuthenticated && saved ? "Unsave job" : "Save job"}
-        className={`absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full transition ${
+        className={`absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full transition ${
           isAuthenticated && saved
             ? "bg-[#0B63E5] text-white"
             : "bg-[#eef4ff] text-[#0B63E5] hover:bg-[#dcecff]"
@@ -198,16 +198,16 @@ export function JobCard({ job }: { job: MediaHireJob }) {
       >
         {isAuthenticated && saved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
       </button>
-      <Link className="block pr-10" href={`/home/jobseeker/jobs/${job.id}`}>
-      <div className="flex gap-4">
+      <Link className="block pr-9" href={`/home/jobseeker/jobs/${job.id}`}>
+      <div className="flex gap-3">
         <img
           alt={job.companyName}
-          className="h-16 w-16 rounded-xl object-cover"
+          className="h-12 w-12 rounded-xl object-cover"
           src={job.companyLogo}
         />
         <div className="min-w-0 flex-1">
           <p className="text-xs font-black text-slate-400">{job.companyName}</p>
-          <h3 className="mt-1 text-lg font-black leading-tight text-slate-950 transition group-hover:text-[#0B63E5]">
+          <h3 className="mt-1 text-base font-black leading-tight text-slate-950 transition group-hover:text-[#0B63E5]">
             {job.title}
           </h3>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -230,7 +230,7 @@ export function JobCard({ job }: { job: MediaHireJob }) {
               {job.postedAt}
             </span>
           </div>
-          <p className="mt-3 text-sm font-black text-[#0B63E5]">{job.salary}</p>
+          <p className="mt-3 text-xs font-black text-[#0B63E5]">{job.salary}</p>
           {isAuthenticated && applied ? (
             <span className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-600">
               Applied
@@ -239,7 +239,7 @@ export function JobCard({ job }: { job: MediaHireJob }) {
         </div>
       </div>
       </Link>
-      <div className="mt-4 flex gap-2 pl-20">
+      <div className="mt-4 flex gap-2 pl-[60px]">
         <button
           className={`h-9 rounded-xl px-4 text-xs font-black text-white transition ${
             isAuthenticated && applied ? "bg-emerald-600" : "bg-[#0B63E5] hover:bg-[#0958cc]"

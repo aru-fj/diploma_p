@@ -54,15 +54,15 @@ export function EmployerHeader({ active = "Home" }: { active?: string }) {
   }
 
   return (
-    <header className="relative z-50 mx-auto flex min-h-[68px] w-full max-w-6xl items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white/95 px-4 py-3 shadow-[0_16px_45px_rgba(15,23,42,0.08)] backdrop-blur sm:px-6">
-      <Link className="shrink-0 text-xl font-black tracking-tight" href="/home/employer">
+    <header className="relative z-50 mx-auto flex min-h-[54px] w-full max-w-6xl items-center justify-between gap-4 rounded-xl border border-slate-200/80 bg-white/95 px-4 py-2 shadow-[0_12px_34px_rgba(15,23,42,0.07)] backdrop-blur sm:px-5">
+      <Link className="shrink-0 text-base font-black tracking-tight" href="/home/employer">
         <span className="text-[#0B63E5]">Media</span>
         <span className="text-slate-950">Hire</span>
       </Link>
-      <nav className="hidden items-center gap-8 lg:flex">
+      <nav className="hidden items-center gap-6 lg:flex">
         {nav.map((item) => (
           <Link
-            className={`text-sm font-black transition hover:text-[#0B63E5] ${active === item.label ? "text-[#0B63E5]" : "text-slate-600"}`}
+            className={`text-xs font-black transition hover:text-[#0B63E5] ${active === item.label ? "text-[#0B63E5]" : "text-slate-600"}`}
             href={item.href}
             key={item.label}
           >
@@ -70,29 +70,29 @@ export function EmployerHeader({ active = "Home" }: { active?: string }) {
           </Link>
         ))}
       </nav>
-      <div className="flex shrink-0 items-center gap-4 text-slate-600">
-        <button aria-label="Search" className="grid h-9 w-9 place-items-center rounded-full transition hover:bg-[#eef4ff] hover:text-[#0B63E5]" type="button">
-          <Search size={18} />
+      <div className="flex shrink-0 items-center gap-3 text-slate-600">
+        <button aria-label="Search" className="grid h-8 w-8 place-items-center rounded-full transition hover:bg-[#eef4ff] hover:text-[#0B63E5]" type="button">
+          <Search size={16} />
         </button>
-        <button aria-label="Notifications" className="grid h-9 w-9 place-items-center rounded-full transition hover:bg-[#eef4ff] hover:text-[#0B63E5]" type="button">
-          <Bell size={18} />
+        <button aria-label="Notifications" className="grid h-8 w-8 place-items-center rounded-full transition hover:bg-[#eef4ff] hover:text-[#0B63E5]" type="button">
+          <Bell size={16} />
         </button>
-        <span className="hidden h-9 w-px bg-slate-200 sm:block" />
-        <span className="hidden text-sm font-black text-slate-600 sm:block">Employer</span>
-        <Link className="hidden h-10 items-center rounded-xl bg-[#0B63E5] px-4 text-sm font-black text-white transition hover:bg-[#0958cc] xl:inline-flex" href="/home/employer/post-job">
+        <span className="hidden h-7 w-px bg-slate-200 sm:block" />
+        <span className="hidden text-xs font-black text-slate-600 sm:block">Employer</span>
+        <Link className="hidden h-9 items-center rounded-xl bg-[#0B63E5] px-3.5 text-xs font-black text-white transition hover:bg-[#0958cc] xl:inline-flex" href="/home/employer/post-job">
           Post a job
         </Link>
         <div className="relative">
           <button
-            className="inline-flex min-h-12 items-center gap-3 rounded-2xl px-2.5 py-1.5 text-sm font-black text-slate-700 transition hover:bg-[#eef4ff]"
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl px-2 py-1 text-xs font-black text-slate-700 transition hover:bg-[#eef4ff]"
             onClick={() => setOpen((current) => !current)}
             type="button"
           >
-            <span className="relative block h-10 w-10 overflow-hidden rounded-full ring-2 ring-white">
-              <Image alt={profile.companyName} className="h-full w-full object-cover" height={40} src={profile.avatar} unoptimized={profile.avatar.startsWith("data:")} width={40} />
+            <span className="relative block h-8 w-8 overflow-hidden rounded-full ring-2 ring-white">
+              <Image alt={profile.companyName} className="h-full w-full object-cover" height={32} src={profile.avatar} unoptimized={profile.avatar.startsWith("data:")} width={32} />
               <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
             </span>
-            <span className="hidden max-w-[150px] truncate text-sm font-black text-slate-700 md:block">{profile.companyName}</span>
+            <span className="hidden max-w-[130px] truncate text-xs font-black text-slate-700 md:block">{profile.companyName}</span>
             <ChevronDown className={`text-[#0B63E5] transition ${open ? "rotate-180" : ""}`} size={16} />
           </button>
           <AnimatePresence>
@@ -119,11 +119,11 @@ export function EmployerHeader({ active = "Home" }: { active?: string }) {
 
 export function EmployerFooter() {
   return (
-    <footer className="mt-24 border-t border-slate-200 bg-white">
-      <div className="mx-auto grid w-[min(1320px,calc(100%-32px))] gap-10 py-12 md:grid-cols-4">
+    <footer className="mt-16 border-t border-slate-200 bg-white">
+      <div className="mx-auto grid w-[min(1320px,calc(100%-32px))] gap-8 py-9 md:grid-cols-4">
         <div>
-          <h3 className="text-3xl font-black tracking-tight"><span className="text-[#0B63E5]">Media</span><span>Hire</span></h3>
-          <p className="mt-4 max-w-xs text-sm font-medium leading-6 text-slate-500">MediaHire helps employers find creative specialists, review portfolios, publish jobs, and manage hiring conversations in one clean platform.</p>
+          <h3 className="text-2xl font-black tracking-tight"><span className="text-[#0B63E5]">Media</span><span>Hire</span></h3>
+          <p className="mt-3 max-w-xs text-xs font-medium leading-5 text-slate-500">MediaHire helps employers find creative specialists, review portfolios, publish jobs, and manage hiring conversations in one clean platform.</p>
         </div>
         {[
           ["Our services", "Post job", "Search CV", "Manage applications", "Hiring plan"],
@@ -132,7 +132,7 @@ export function EmployerFooter() {
         ].map((column) => (
           <div key={column[0]}>
             <h4 className="text-sm font-black text-slate-950">{column[0]}</h4>
-            <div className="mt-4 grid gap-3 text-sm font-semibold text-slate-500">
+            <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-500">
               {column.slice(1).map((item) => <span key={item}>{item}</span>)}
             </div>
           </div>
@@ -145,7 +145,7 @@ export function EmployerFooter() {
 export function EmployerShell({ active, children }: { active?: string; children: ReactNode }) {
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
-      <div className="px-4 pt-8 sm:px-6">
+      <div className="px-4 pt-5 sm:px-6">
         <EmployerHeader active={active} />
       </div>
       {children}
@@ -159,27 +159,27 @@ export function EmployerDashboardShell({ active, children, title, subtitle }: { 
   const pathname = usePathname();
 
   return (
-    <main className="min-h-screen bg-[#f5f7fb] p-4 text-slate-950 md:p-8">
-      <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="flex min-h-[calc(100vh-4rem)] flex-col rounded-3xl bg-white p-6 shadow-sm">
-          <Link className="text-2xl font-black tracking-tight" href="/home/employer">
+    <main className="min-h-screen bg-[#f5f7fb] p-4 text-slate-950 md:p-6">
+      <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[240px_1fr]">
+        <aside className="flex min-h-[calc(100vh-3rem)] flex-col rounded-2xl bg-white p-5 shadow-sm">
+          <Link className="text-xl font-black tracking-tight" href="/home/employer">
             <span className="text-[#0B63E5]">Media</span>Hire
           </Link>
           <p className="mt-1 text-sm font-semibold text-slate-400">Employer Dashboard</p>
-          <nav className="mt-10 grid gap-2">
+          <nav className="mt-8 grid gap-2">
             {sidebar.map((item) => (
-              <Link className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black transition ${active === item.label || pathname === item.href ? "bg-slate-100 text-slate-950" : "text-slate-500 hover:bg-[#eef4ff] hover:text-[#0B63E5]"}`} href={item.href} key={item.label}>
+              <Link className={`flex h-10 items-center gap-3 rounded-xl px-3 text-xs font-black transition ${active === item.label || pathname === item.href ? "bg-slate-100 text-slate-950" : "text-slate-500 hover:bg-[#eef4ff] hover:text-[#0B63E5]"}`} href={item.href} key={item.label}>
                 <item.icon size={18} />
                 {item.label}
               </Link>
             ))}
           </nav>
           <div className="mt-auto grid gap-2">
-            <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black text-red-600 hover:bg-red-50" href="/">
+            <Link className="flex h-10 items-center gap-3 rounded-xl px-3 text-xs font-black text-red-600 hover:bg-red-50" href="/">
               <LogOut size={18} />
               Log out
             </Link>
-            <button className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black text-slate-500 hover:bg-slate-50" type="button">
+            <button className="flex h-10 items-center gap-3 rounded-xl px-3 text-xs font-black text-slate-500 hover:bg-slate-50" type="button">
               <HelpCircle size={18} />
               Help
             </button>
@@ -188,22 +188,22 @@ export function EmployerDashboardShell({ active, children, title, subtitle }: { 
         <section>
           <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="text-4xl font-black tracking-tight">{title}</h1>
+              <h1 className="text-2xl font-black tracking-tight">{title}</h1>
               <p className="mt-2 text-sm font-semibold text-slate-500">{subtitle}</p>
             </div>
             <div className="flex items-center gap-3">
               <label className="relative hidden sm:block">
-                <input className="h-12 w-72 rounded-2xl border border-slate-200 bg-white px-4 pr-11 text-sm font-semibold outline-none focus:border-[#0B63E5]" placeholder="Search" />
+                <input className="h-10 w-64 rounded-xl border border-slate-200 bg-white px-3 pr-10 text-sm font-semibold outline-none focus:border-[#0B63E5]" placeholder="Search" />
                 <Search className="absolute right-4 top-1/2 -translate-y-1/2" size={18} />
               </label>
-              <Image alt={profile.companyName} className="h-12 w-12 rounded-2xl object-cover" height={48} src={profile.avatar} unoptimized={profile.avatar.startsWith("data:")} width={48} />
+              <Image alt={profile.companyName} className="h-10 w-10 rounded-xl object-cover" height={40} src={profile.avatar} unoptimized={profile.avatar.startsWith("data:")} width={40} />
               <div className="hidden sm:block">
                 <p className="text-sm font-black">{profile.companyName}</p>
                 <p className="text-xs font-semibold text-slate-400">{profile.email}</p>
               </div>
             </div>
           </header>
-          <div className="mt-8">{children}</div>
+          <div className="mt-6">{children}</div>
         </section>
       </div>
     </main>
@@ -222,18 +222,18 @@ export function StarRating({ value }: { value: number }) {
 
 export function ProjectCard({ onSave, project, saved }: { onSave: () => void; project: EmployerProject; saved: boolean }) {
   return (
-    <article className="group rounded-3xl bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-100">
+    <article className="group rounded-2xl bg-white p-3.5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
         <Image alt={project.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" height={360} src={project.image} width={520} />
-        <button className={`absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full ${saved ? "bg-[#0B63E5] text-white" : "bg-white text-[#0B63E5]"}`} onClick={onSave} type="button">
+        <button className={`absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full ${saved ? "bg-[#0B63E5] text-white" : "bg-white text-[#0B63E5]"}`} onClick={onSave} type="button">
           <Bookmark size={18} />
         </button>
       </div>
       <div className="mt-4">
         <p className="text-xs font-black text-[#0B63E5]">{project.category}</p>
-        <h3 className="mt-1 text-lg font-black">{project.title}</h3>
-        <p className="mt-1 text-sm font-bold text-slate-500">{project.authorName}</p>
-        <Link className="mt-4 inline-flex h-10 items-center rounded-xl bg-[#0B63E5] px-4 text-sm font-black text-white" href={`/home/employer/projects/${project.id}`}>View Details</Link>
+        <h3 className="mt-1 text-base font-black">{project.title}</h3>
+        <p className="mt-1 text-xs font-bold text-slate-500">{project.authorName}</p>
+        <Link className="mt-4 inline-flex h-9 items-center rounded-xl bg-[#0B63E5] px-3.5 text-xs font-black text-white" href={`/home/employer/projects/${project.id}`}>View Details</Link>
       </div>
     </article>
   );
@@ -241,11 +241,11 @@ export function ProjectCard({ onSave, project, saved }: { onSave: () => void; pr
 
 export function CandidateCard({ candidate, onMessage, onSave, saved }: { candidate: EmployerCandidate; onMessage: () => void; onSave: () => void; saved: boolean }) {
   return (
-    <article className="rounded-3xl border border-[#0B63E5]/30 bg-white p-5 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+    <article className="rounded-2xl border border-[#0B63E5]/30 bg-white p-4 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
       <button className={`ml-auto grid h-9 w-9 place-items-center rounded-full ${saved ? "bg-[#0B63E5] text-white" : "bg-[#eef4ff] text-[#0B63E5]"}`} onClick={onSave} type="button"><Bookmark size={17} /></button>
-      <Image alt={candidate.name} className="mx-auto h-20 w-20 rounded-2xl object-cover" height={80} src={candidate.avatar} width={80} />
-      <h3 className="mt-3 text-lg font-black">{candidate.name}</h3>
-      <p className="text-sm font-semibold text-slate-500">{candidate.role}</p>
+      <Image alt={candidate.name} className="mx-auto h-16 w-16 rounded-xl object-cover" height={64} src={candidate.avatar} width={64} />
+      <h3 className="mt-3 text-base font-black">{candidate.name}</h3>
+      <p className="text-xs font-semibold text-slate-500">{candidate.role}</p>
       <div className="mt-3 flex justify-center"><StarRating value={candidate.rating} /></div>
       <div className="mt-4 flex flex-wrap justify-center gap-2">
         {candidate.skills.slice(0, 3).map((skill) => <span className="rounded-full bg-[#eef4ff] px-3 py-1 text-xs font-black text-[#0B63E5]" key={skill}>{skill}</span>)}
@@ -254,8 +254,8 @@ export function CandidateCard({ candidate, onMessage, onSave, saved }: { candida
         {candidate.portfolio.slice(0, 3).map((project) => <Image alt={project.title} className="h-16 w-full rounded-xl object-cover" height={64} key={project.id} src={project.image} width={90} />)}
       </div>
       <div className="mt-5 grid gap-2 sm:grid-cols-2">
-        <Link className="inline-flex h-10 items-center justify-center rounded-xl border border-[#0B63E5] text-sm font-black text-[#0B63E5]" href={`/home/employer/people/${candidate.id}`}>View Details</Link>
-        <button className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#0B63E5] text-sm font-black text-white" onClick={onMessage} type="button">
+        <Link className="inline-flex h-9 items-center justify-center rounded-xl border border-[#0B63E5] text-xs font-black text-[#0B63E5]" href={`/home/employer/people/${candidate.id}`}>View Details</Link>
+        <button className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-[#0B63E5] text-xs font-black text-white" onClick={onMessage} type="button">
           <MessageCircle size={16} />
           Message
         </button>

@@ -8,9 +8,9 @@ export const metadata: Metadata = {
 
 export default function EmployerDashboardPage() {
   return (
-    <main className="grid min-h-screen place-items-center bg-[#f5f7fb] px-4 py-10 text-slate-950">
-      <section className="w-full max-w-2xl rounded-[2rem] border border-[#252525]/10 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.10)] sm:p-12">
-        <span className="grid h-16 w-16 place-items-center rounded-2xl bg-slate-100 text-[#252525]">
+    <main className="grid min-h-screen place-items-center bg-[#f5f7fb] px-4 py-7 text-slate-950">
+      <section className="w-full max-w-2xl rounded-2xl border border-[#252525]/10 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.10)] sm:p-12">
+        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-[#252525]">
           <Building2 size={30} />
         </span>
         <h1 className="mt-6 text-3xl font-black tracking-tight">

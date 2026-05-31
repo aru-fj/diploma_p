@@ -66,16 +66,16 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
-      <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-5">
         <Header />
 
-        <div className="mt-12 overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-slate-200">
-          <div className="relative bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 px-6 py-12 text-white sm:px-8">
+        <div className="mt-8 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+          <div className="relative bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 px-6 py-6 text-white sm:px-5">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.35),transparent_35%)]" />
 
-            <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-white/20 ring-1 ring-white/40 backdrop-blur">
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/20 ring-1 ring-white/40 backdrop-blur">
                   {company.logo ? (
                     <img
                       src={company.logo}
@@ -83,7 +83,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <ShieldCheck className="h-12 w-12 text-white" />
+                    <ShieldCheck className="h-10 w-10 text-white" />
                   )}
                 </div>
 
@@ -92,7 +92,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
                     Company Profile
                   </p>
 
-                  <h1 className="mt-2 text-4xl font-black tracking-tight md:text-5xl">
+                  <h1 className="mt-2 text-2xl font-black tracking-tight md:text-3xl">
                     {company.name}
                   </h1>
 
@@ -105,14 +105,14 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
 
               <Link
                 href="/search-job"
-                className="inline-flex h-12 items-center justify-center rounded-2xl bg-white px-6 text-sm font-black text-blue-600 transition hover:bg-blue-50"
+                className="inline-flex h-10 items-center justify-center rounded-2xl bg-white px-6 text-sm font-black text-blue-600 transition hover:bg-blue-50"
               >
                 Back to jobs
               </Link>
             </div>
           </div>
 
-          <div className="grid gap-5 border-b border-slate-200 px-6 py-7 sm:grid-cols-2 lg:grid-cols-4 sm:px-8">
+          <div className="grid gap-5 border-b border-slate-200 px-6 py-7 sm:grid-cols-2 lg:grid-cols-4 sm:px-5">
             <CompanyStat
               icon={<BriefcaseBusiness className="h-6 w-6" />}
               title={`${companyJobs.length}`}
@@ -138,7 +138,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
             />
           </div>
 
-          <div className="grid gap-8 px-6 py-8 lg:grid-cols-[minmax(0,1fr)_340px] sm:px-8">
+          <div className="grid gap-5 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_340px] sm:px-5">
             <div>
               <section>
                 <h2 className="text-2xl font-black text-slate-950">
@@ -154,7 +154,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
                 </p>
               </section>
 
-              <section className="mt-10">
+              <section className="mt-8">
                 <div className="flex items-center justify-between gap-4">
                   <h2 className="text-2xl font-black text-slate-950">
                     Active vacancies from {company.name}
@@ -170,13 +170,13 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
                     <Link
                       key={job.slug}
                       href={`/search-job/${job.slug}`}
-                      className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_24px_70px_rgba(37,99,235,0.14)]"
+                      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_24px_70px_rgba(37,99,235,0.14)]"
                     >
                       <div className="flex items-start gap-4">
                         <img
                           src={job.logo}
                           alt={job.company}
-                          className="h-14 w-14 rounded-2xl object-cover"
+                          className="h-10 w-14 rounded-2xl object-cover"
                         />
 
                         <div className="min-w-0 flex-1">
@@ -226,7 +226,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
             </div>
 
             <aside className="space-y-5">
-              <div className="rounded-[2rem] bg-slate-50 p-6 ring-1 ring-slate-200">
+              <div className="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
                 <h3 className="text-lg font-black text-slate-950">
                   Company information
                 </h3>
@@ -239,7 +239,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
                 </div>
               </div>
 
-              <div className="rounded-[2rem] bg-slate-50 p-6 ring-1 ring-slate-200">
+              <div className="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
                 <h3 className="text-lg font-black text-slate-950">
                   Other actual jobs
                 </h3>
@@ -283,7 +283,7 @@ function CompanyStat({
 }) {
   return (
     <div className="flex items-center gap-4">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
         {icon}
       </div>
 

@@ -43,23 +43,23 @@ const servicesByRole: Record<
 
 export function Footer({ role = "jobseeker" }: { role?: PublicRole }) {
   return (
-    <footer className="bg-white px-2 py-0 sm:px-4">
-      <div className="mx-auto max-w-7xl rounded-t-lg border border-slate-200 bg-white px-8 py-12 sm:px-12 lg:px-[116px]">
-        <div className="grid gap-10 md:grid-cols-3">
+    <footer className="bg-white px-4 py-0 sm:px-6 lg:px-10">
+      <div className="mx-auto w-full max-w-none rounded-t-lg border border-slate-200 bg-white px-5 py-8 sm:px-8 lg:px-12">
+        <div className="grid gap-7 md:grid-cols-3">
           <div>
             <Link
-              className="text-3xl font-black tracking-tight text-slate-950"
+              className="text-xl font-black tracking-tight text-slate-950"
               href={role === "employer" ? "/?role=employer" : "/"}
             >
               <span className="text-[#2563ff]">Media</span>Hire
             </Link>
-            <p className="mt-6 max-w-sm text-sm leading-6 text-slate-600">
+            <p className="mt-4 max-w-sm text-[11px] leading-5 text-slate-600">
               MediaHire is a smart job search and recruitment platform that
               connects job seekers with employers. With fast search,
               professional resume building, and intelligent matching, MediaHire
               makes hiring and job hunting easy and efficient.
             </p>
-            <p className="mt-6 text-sm font-semibold text-slate-800">
+            <p className="mt-4 text-[11px] font-semibold text-slate-800">
               Diploma Project:{" "}
               <span className="font-medium">
                 Zh. Aishat, K. Aruzhan, A. Zhanel
@@ -97,7 +97,7 @@ export function Footer({ role = "jobseeker" }: { role?: PublicRole }) {
               </span>
             </div>
 
-            <ul className="mt-7 space-y-4 text-sm text-slate-700">
+            <ul className="mt-5 space-y-2.5 text-[11px] text-slate-700">
               <li className="flex items-center gap-3">
                 <GraduationCap size={18} className="text-slate-600" />
                 Developed at Astana IT University
@@ -140,8 +140,8 @@ function FooterColumn({
 }) {
   return (
     <div>
-      <h3 className="text-base font-semibold text-slate-950">{title}</h3>
-      <ul className="mt-6 space-y-4 text-sm text-slate-700">
+      <h3 className="text-xs font-semibold text-slate-950">{title}</h3>
+      <ul className="mt-4 space-y-2.5 text-[11px] text-slate-700">
         {links.map((item) => (
           <li key={item.label}>
             <Link

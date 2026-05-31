@@ -62,18 +62,18 @@ export const slideInRight: Variants = {
 export const mediaHireClassNames = {
   appShell: "min-h-screen bg-[#f5f7fb] text-slate-950",
   card:
-    "rounded-3xl border border-slate-100 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.05)]",
-  dashboardPad: "px-4 py-8 sm:px-6 lg:px-8",
+    "rounded-2xl border border-slate-100 bg-white shadow-[0_14px_44px_rgba(15,23,42,0.045)]",
+  dashboardPad: "px-4 py-6 sm:px-6 lg:px-8",
   focus:
     "focus:outline-none focus:ring-4 focus:ring-[#0B63E5]/15 focus:ring-offset-0",
-  h1: "text-3xl font-black tracking-tight text-slate-950 sm:text-4xl",
-  h2: "text-2xl font-black tracking-tight text-slate-950 sm:text-3xl",
+  h1: "text-2xl font-black tracking-tight text-slate-950 sm:text-3xl",
+  h2: "text-xl font-black tracking-tight text-slate-950 sm:text-2xl",
   input:
-    "h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0B63E5] focus:ring-4 focus:ring-[#0B63E5]/10",
+    "h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0B63E5] focus:ring-4 focus:ring-[#0B63E5]/10",
   pageContainer: "mx-auto w-full max-w-6xl",
   primaryButton:
-    "h-14 rounded-2xl bg-[#0B63E5] text-base font-black text-white shadow-[0_16px_36px_rgba(11,99,229,0.20)] transition hover:bg-[#0758cf] focus:outline-none focus:ring-4 focus:ring-[#0B63E5]/20 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none",
+    "h-10 rounded-xl bg-[#0B63E5] px-4 text-sm font-black text-white shadow-[0_12px_26px_rgba(11,99,229,0.18)] transition hover:bg-[#0758cf] focus:outline-none focus:ring-4 focus:ring-[#0B63E5]/20 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none",
   sectionCard:
-    "rounded-[2rem] border border-slate-100 bg-white shadow-[0_22px_70px_rgba(15,23,42,0.06)]",
-  subtitle: "text-sm font-medium leading-6 text-slate-500 sm:text-base",
+    "rounded-2xl border border-slate-100 bg-white shadow-[0_16px_52px_rgba(15,23,42,0.05)]",
+  subtitle: "text-sm font-medium leading-6 text-slate-500",
 };

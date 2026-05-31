@@ -63,7 +63,7 @@ export function ProjectGrid({
   const filteredWorks = useMemo(() => {
     let works = [...publicWorks];
 
-    if (activeCategory === "Following") {
+    if (activeCategory === "Saved" || activeCategory === "Following") {
       works = works.filter((work) => savedWorkSlugs.includes(work.slug));
     }
 
@@ -105,7 +105,20 @@ export function ProjectGrid({
       });
     }
 
-    if (activeSort === "Recently Added") {
+    const scoreBySlug = (slug: string) =>
+      slug.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+
+    if (activeSort === "Top Rated") {
+      works = [...works].sort((a, b) => scoreBySlug(b.slug) - scoreBySlug(a.slug));
+    } else if (activeSort === "Most Viewed") {
+      works = [...works].sort((a, b) => b.title.length - a.title.length);
+    } else if (activeSort === "Popular Now") {
+      works = [...works].sort((a, b) => b.tools.length - a.tools.length);
+    } else if (activeSort === "Most Discussed") {
+      works = [...works].sort(
+        (a, b) => b.responsibilities.length - a.responsibilities.length,
+      );
+    } else if (activeSort === "Recently Added") {
       works = [...works].reverse();
     }
 
@@ -113,43 +126,43 @@ export function ProjectGrid({
   }, [activeCategory, activeSort, search, savedWorkSlugs]);
 
   return (
-    <section className="mx-auto mt-8 w-full max-w-6xl">
+    <section className="mx-auto mt-7 w-full max-w-5xl">
       {filteredWorks.length > 0 ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filteredWorks.map((work) => {
             const isSaved = savedWorkSlugs.includes(work.slug);
 
             return (
               <article
                 key={work.slug}
-                className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_22px_70px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_30px_90px_rgba(37,99,235,0.18)]"
+                className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgba(37,99,235,0.16)]"
               >
                 <Link href={`/home/jobseeker/work/${work.slug}`} className="block">
-                  <div className="relative h-56 overflow-hidden bg-slate-100">
+                  <div className="relative h-44 overflow-hidden bg-slate-100">
                     <img
                       src={work.coverImage}
                       alt={work.title}
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
 
-                    <div className="absolute left-4 top-4 rounded-full bg-white/90 px-4 py-2 text-xs font-black text-slate-900 shadow-lg backdrop-blur">
+                    <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1.5 text-[11px] font-black text-slate-900 shadow-lg backdrop-blur">
                       {work.category}
                     </div>
 
-                    <div className="absolute bottom-4 left-4 rounded-full bg-slate-950/80 px-4 py-2 text-xs font-bold text-white backdrop-blur">
+                    <div className="absolute bottom-3 left-3 rounded-full bg-slate-950/80 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur">
                       {work.type}
                     </div>
                   </div>
                 </Link>
 
-                <div className="p-5">
+                <div className="p-4">
                   <Link href={`/home/jobseeker/work/${work.slug}`} className="block">
-                    <h3 className="text-xl font-black text-slate-950 transition group-hover:text-blue-600">
+                    <h3 className="text-lg font-black text-slate-950 transition group-hover:text-blue-600">
                       {work.title}
                     </h3>
                   </Link>
 
-                  <p className="mt-1 text-sm font-bold text-slate-500">
+                  <p className="mt-1 text-xs font-bold text-slate-500">
                     {work.authorSlug ? (
                       <Link
                         href={`/home/jobseeker/people/${work.authorSlug}`}
@@ -163,15 +176,15 @@ export function ProjectGrid({
                     · {work.role}
                   </p>
 
-                  <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-500">
+                  <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-slate-500">
                     <CalendarDays className="h-4 w-4 text-blue-500" />
                     {work.createdAt}
                   </div>
 
-                  <div className="mt-5 flex gap-3">
+                  <div className="mt-4 flex gap-2.5">
                     <Link
                       href={`/home/jobseeker/work/${work.slug}`}
-                      className="flex h-11 flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 text-sm font-black text-white transition hover:bg-blue-700"
+                      className="flex h-10 flex-1 items-center justify-center rounded-xl bg-blue-600 px-4 text-xs font-black text-white transition hover:bg-blue-700"
                     >
                       View details
                     </Link>
@@ -180,7 +193,7 @@ export function ProjectGrid({
                       type="button"
                       onClick={() => toggleSavedWork(work.slug)}
                       title={isSaved ? "Remove from saved" : "Save project"}
-                      className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                      className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
                     >
                       <Bookmark
                         className={`h-5 w-5 ${
@@ -199,6 +212,7 @@ export function ProjectGrid({
           title="No projects found"
           text={
             activeCategory === "Following"
+              || activeCategory === "Saved"
               ? "Save projects first, then they will appear here."
               : "Try another category or search keyword."
           }
@@ -210,7 +224,7 @@ export function ProjectGrid({
 
 function EmptyState({ title, text }: { title: string; text: string }) {
   return (
-    <div className="rounded-[2rem] border border-slate-200 bg-white p-8 text-center shadow-sm">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
       <h3 className="text-2xl font-black text-slate-950">{title}</h3>
       <p className="mt-3 text-sm font-medium text-slate-500">{text}</p>
     </div>

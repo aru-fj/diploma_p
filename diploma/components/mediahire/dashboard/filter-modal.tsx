@@ -29,7 +29,7 @@ type FilterModalProps = {
   onSortChange: (sort: SortOption) => void;
 };
 
-const projectSortOptions: SortOption[] = [
+export const projectSortOptions: SortOption[] = [
   "Recommended",
   "Top Rated",
   "Popular Now",
@@ -38,7 +38,7 @@ const projectSortOptions: SortOption[] = [
   "Recently Added",
 ];
 
-const peopleSortOptions: SortOption[] = [
+export const peopleSortOptions: SortOption[] = [
   "Recommended",
   "Top Rated",
   "Most Hired",

@@ -50,14 +50,14 @@ export function JobDetailPage({ job }: { job: MediaHireJob }) {
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
-      <div className="bg-white py-8">
+      <div className="bg-white py-6">
         <JobSeekerNav active="Search Job" />
       </div>
 
-      <section className="mx-auto w-[min(1320px,calc(100%-32px))] rounded-[2rem] bg-white p-6 shadow-[0_22px_70px_rgba(15,23,42,0.06)] md:p-10">
+      <section className="mx-auto w-[min(1320px,calc(100%-32px))] rounded-2xl bg-white p-5 shadow-[0_22px_70px_rgba(15,23,42,0.06)] md:p-5">
         <div className="flex flex-col gap-5 md:flex-row md:items-start">
           <Link
-            className="block h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-slate-100"
+            className="block h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-100"
             href={`/home/jobseeker/company/${job.companyId}`}
           >
             <img
@@ -144,7 +144,7 @@ export function JobDetailPage({ job }: { job: MediaHireJob }) {
           <JobFacts job={job} />
         </div>
 
-        <div className="mt-10 grid gap-9">
+        <div className="mt-8 grid gap-9">
           <section>
             <h2 className="text-xl font-black text-slate-950">Overview</h2>
             <p className="mt-4 text-base font-medium leading-8 text-slate-600">

@@ -18,6 +18,7 @@ export default async function GuestMyProfilePage({
 
   return (
     <LockedAccessPage
+      activeItem="My Profile"
       message="Sign in or create an account to access this feature."
       role={resolveRole(resolvedSearchParams?.role)}
       title="My Profile is locked"

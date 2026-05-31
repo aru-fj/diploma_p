@@ -57,7 +57,7 @@ export function DashboardTopbar({
           <Menu size={20} />
         </button>
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+          <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-2xl">
             Dashboard
           </h1>
           <p className="mt-1 text-sm font-medium text-slate-500">
@@ -83,7 +83,7 @@ export function DashboardTopbar({
 
         <button
           aria-label="Notifications"
-          className="relative grid h-12 w-12 place-items-center rounded-2xl bg-white text-slate-700 shadow-sm transition hover:text-[#0B63E5]"
+          className="relative grid h-10 w-10 place-items-center rounded-2xl bg-white text-slate-700 shadow-sm transition hover:text-[#0B63E5]"
           type="button"
         >
           <Bell size={20} />
@@ -95,7 +95,7 @@ export function DashboardTopbar({
         <div className="flex items-center gap-3 rounded-2xl bg-white px-3 py-2 shadow-sm">
           <Image
             alt={fullName}
-            className="h-12 w-12 rounded-xl object-cover"
+            className="h-10 w-10 rounded-xl object-cover"
             height={48}
             src={avatarSrc}
             unoptimized={avatarSrc.startsWith("data:")}
