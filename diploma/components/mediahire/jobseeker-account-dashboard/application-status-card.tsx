@@ -12,8 +12,8 @@ import { ApplicationTimeline } from "./application-timeline";
 import { fadeInUp, mediaHireClassNames, mediaHireMotion } from "../ui/design-system";
 
 export function ApplicationStatusCard() {
-  const [activeTab, setActiveTab] = useState<"Apply status" | "Offered job">(
-    "Apply status",
+  const [activeTab, setActiveTab] = useState<"Application Status" | "Job Offers">(
+    "Application Status",
   );
   const [filter, setFilter] = useState<ApplicationFilter>("All");
   const [sort, setSort] = useState("Newest");
@@ -30,17 +30,17 @@ export function ApplicationStatusCard() {
   return (
     <motion.section
       animate="show"
-      className={`p-5 ${mediaHireClassNames.card}`}
+      className={`p-4 ${mediaHireClassNames.card}`}
       initial="hidden"
       transition={mediaHireMotion.item(2)}
       variants={fadeInUp}
     >
-      <div className="flex gap-5 border-b border-slate-100">
-        {(["Apply status", "Offered job"] as const).map((tab) => (
+      <div className="flex w-fit rounded-xl bg-slate-100 p-1">
+        {(["Application Status", "Job Offers"] as const).map((tab) => (
           <button
-            className={`relative px-3 pb-4 text-base font-black transition ${
+            className={`rounded-lg px-3 py-1.5 text-[11px] font-black transition ${
               activeTab === tab
-                ? "text-[#0B63E5]"
+                ? "bg-white text-[#0B63E5] shadow-sm"
                 : "text-slate-400 hover:text-[#0B63E5]"
             }`}
             key={tab}
@@ -48,25 +48,18 @@ export function ApplicationStatusCard() {
             type="button"
           >
             {tab}
-            {activeTab === tab ? (
-              <motion.span
-                className="absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full bg-[#0B63E5]"
-                layoutId="jobseeker-dashboard-tab"
-                transition={mediaHireMotion.fast}
-              />
-            ) : null}
           </button>
         ))}
       </div>
 
-      <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-2">
           {applicationFilters.map((item) => (
             <button
-              className={`h-9 rounded-lg border px-4 text-sm font-bold transition ${
+              className={`h-8 rounded-lg px-3 text-[11px] font-black transition ${
                 filter === item
-                  ? "border-[#0B63E5] bg-[#0B63E5] text-white"
-                  : "border-slate-300 bg-white text-slate-700 hover:border-[#0B63E5] hover:text-[#0B63E5]"
+                  ? "bg-[#0B63E5] text-white"
+                  : "bg-[#eef4ff] text-[#0B63E5] hover:bg-[#dcecff]"
               }`}
               key={item}
               onClick={() => setFilter(item)}
@@ -78,7 +71,7 @@ export function ApplicationStatusCard() {
         </div>
 
         <select
-          className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-[#0B63E5] focus:ring-4 focus:ring-[#0B63E5]/10"
+          className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 outline-none focus:border-[#0B63E5] focus:ring-4 focus:ring-[#0B63E5]/10"
           onChange={(event) => setSort(event.target.value)}
           value={sort}
         >
@@ -87,19 +80,19 @@ export function ApplicationStatusCard() {
         </select>
       </div>
 
-      <div className="mt-7 grid gap-4">
+      <div className="mt-4 grid gap-3">
         {visibleApplications.map((application) => {
           const isExpanded = expandedId === application.id;
 
           return (
             <article
-              className="rounded-2xl border border-slate-200 bg-white p-5"
+              className="rounded-2xl border border-slate-100 bg-white p-3"
               key={application.id}
             >
               <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
                 <div className="flex items-center gap-4">
                   <span
-                    className={`grid h-10 w-14 place-items-center rounded-xl text-xl font-black ${application.logoClass}`}
+                    className={`grid h-9 w-9 place-items-center rounded-xl text-xs font-black ${application.logoClass}`}
                   >
                     {application.logoText}
                   </span>
@@ -107,11 +100,11 @@ export function ApplicationStatusCard() {
                     <p className="text-xs font-semibold text-slate-400">
                       {application.company}
                     </p>
-                    <h3 className="text-lg font-black text-slate-950">
+                    <h3 className="text-sm font-black text-slate-950">
                       {application.title}
                     </h3>
                     <button
-                      className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-500"
+                      className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-500"
                       onClick={() =>
                         setExpandedId((current) =>
                           current === application.id ? "" : application.id,
@@ -125,7 +118,7 @@ export function ApplicationStatusCard() {
                 </div>
                 <button
                   aria-label={isExpanded ? "Collapse history" : "Expand history"}
-                  className="grid h-10 w-10 place-items-center rounded-full text-slate-700 transition hover:bg-[#eef4ff] hover:text-[#0B63E5]"
+                  className="grid h-8 w-8 place-items-center rounded-full text-slate-700 transition hover:bg-[#eef4ff] hover:text-[#0B63E5]"
                   onClick={() =>
                     setExpandedId((current) =>
                       current === application.id ? "" : application.id,

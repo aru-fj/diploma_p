@@ -4,7 +4,6 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import {
-  Bell,
   BriefcaseBusiness,
   Globe2,
   Mail,
@@ -12,7 +11,6 @@ import {
   MessageSquare,
   Plus,
   Phone,
-  Search,
   Star,
   UserRound,
 } from "lucide-react";
@@ -36,7 +34,7 @@ import {
   SAVED_PROFILES_CHANGED_EVENT,
   toggleSavedProfile,
 } from "../saved-profiles-storage";
-import { JobSeekerUserMenu } from "../jobseeker-user-menu";
+import { JobSeekerNavbar } from "../jobseeker-navbar";
 import { publicPeople } from "@/components/mediahire/public/public-people-data";
 import { publicWorks } from "@/components/mediahire/public/public-works-data";
 
@@ -275,60 +273,7 @@ function createPublicSpecialistProfile(slug: string): SpecialistProfile | undefi
 }
 
 function MediaHireProfileNavbar() {
-  const navLinks = [
-    { href: "/home/jobseeker", label: "Home" },
-    { href: "/home/jobseeker/job-search", label: "Search Job" },
-    { href: "/profile/jobseeker", label: "My Profile" },
-    { href: "/community", label: "Community" },
-  ];
-
-  return (
-    <nav className="relative z-20 mx-auto flex min-h-[68px] w-[min(1320px,calc(100%-32px))] items-center justify-between gap-6 rounded-2xl border border-white/70 bg-white px-7 py-3 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
-      <Link
-        className="shrink-0 text-xl font-black tracking-tight"
-        href="/home/jobseeker"
-      >
-        <span className="text-[#0B63E5]">Media</span>
-        <span className="text-slate-950">Hire</span>
-      </Link>
-
-      <div className="hidden items-center gap-8 lg:flex">
-        {navLinks.map((link) => (
-          <Link
-            className={`text-sm font-black transition hover:text-[#0B63E5] ${
-              link.label === "Home" ? "text-[#0B63E5]" : "text-slate-600"
-            }`}
-            href={link.href}
-            key={link.label}
-          >
-            {link.label}
-          </Link>
-        ))}
-      </div>
-
-      <div className="flex shrink-0 items-center gap-4 text-slate-600">
-        <button
-          aria-label="Search"
-          className="grid h-10 w-10 place-items-center rounded-full transition hover:bg-[#eef4ff] hover:text-[#0B63E5]"
-          type="button"
-        >
-          <Search size={20} />
-        </button>
-        <button
-          aria-label="Notifications"
-          className="grid h-10 w-10 place-items-center rounded-full transition hover:bg-[#eef4ff] hover:text-[#0B63E5]"
-          type="button"
-        >
-          <Bell size={19} />
-        </button>
-        <span className="hidden h-9 w-px bg-slate-200 sm:block" />
-        <span className="hidden text-sm font-black text-slate-600 sm:block">
-          Job Seeker
-        </span>
-        <JobSeekerUserMenu />
-      </div>
-    </nav>
-  );
+  return <JobSeekerNavbar active="Home" />;
 }
 
 function SpecialistFooter() {
@@ -457,17 +402,13 @@ function SpecialistSidebar({ profile }: { profile: SpecialistProfile }) {
           <Plus size={17} />
           {isSaved ? "Saved" : "Save"}
         </motion.button>
-        <motion.button
+        <Link
+          href={`/dashboard/jobseeker/community?chat=${profile.id}`}
           className="flex h-11 items-center justify-center gap-2 rounded-full border border-[#0B63E5] bg-white text-sm font-black text-slate-700 transition hover:bg-[#eef4ff] hover:text-[#0B63E5]"
-          onClick={() => {
-            void requireJobSeekerAuth("message people");
-          }}
-          type="button"
-          whileTap={{ scale: 0.98 }}
         >
           <MessageSquare size={17} />
           Message
-        </motion.button>
+        </Link>
       </div>
 
       <section className="mt-10">
@@ -692,14 +633,15 @@ export function SpecialistProfilePage({
   const [remoteProfile, setRemoteProfile] = useState<SpecialistProfile | null>(
     null,
   );
-  const [remoteProfileLoaded, setRemoteProfileLoaded] = useState(false);
+  const [remoteProfileLoaded, setRemoteProfileLoaded] = useState(
+    () => !profileId || Boolean(profile) || Boolean(specialistProfiles[profileId]),
+  );
 
   const selectedProfile =
     profile || (profileId ? specialistProfiles[profileId] : undefined) || remoteProfile;
 
   useEffect(() => {
     if (!profileId || profile || specialistProfiles[profileId]) {
-      setRemoteProfileLoaded(true);
       return;
     }
 
@@ -888,8 +830,9 @@ export function JobSeekerDashboardRouteSwitcher({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+
+  const isPeopleProfilePath = pathname.startsWith("/home/jobseeker/people/");
   const isSpecialistProfilePath =
-    pathname.startsWith("/home/jobseeker/people/") ||
     pathname.startsWith("/home/jobseeker/specialists/");
 
   useEffect(() => {
@@ -899,7 +842,7 @@ export function JobSeekerDashboardRouteSwitcher({
       pathname.startsWith("/community") ||
       pathname.startsWith("/profile/") ||
       pathname.startsWith("/account/jobseeker");
-    const isProfilePage = pathname.startsWith("/profile/");
+    const isProfilePage = pathname.startsWith("/profile/") && pathname !== "/profile/jobseeker";
     const isPeopleProfilePage = false;
     const styleId = "mediahire-consistent-ui";
     let styleTag = document.getElementById(styleId) as HTMLStyleElement | null;
@@ -913,10 +856,6 @@ export function JobSeekerDashboardRouteSwitcher({
         }
         body[data-mediahire-normalized="true"] :where(button, input, select, textarea) {
           transition: all 0.2s ease;
-        }
-        body[data-mediahire-normalized="true"] :where(button) {
-          font-size: 0.95rem;
-          font-weight: 700;
         }
         body[data-mediahire-profile-view="true"] main {
           max-width: 1500px !important;
@@ -1056,7 +995,7 @@ export function JobSeekerDashboardRouteSwitcher({
       return;
     }
 
-    const isAnyProfilePath = pathname.startsWith("/profile/");
+    const isAnyProfilePath = pathname.startsWith("/profile/") && pathname !== "/profile/jobseeker";
     if (!isAnyProfilePath) {
       return;
     }
@@ -1195,7 +1134,7 @@ export function JobSeekerDashboardRouteSwitcher({
       return;
     }
 
-    const isAnyProfilePath = pathname.startsWith("/profile/");
+    const isAnyProfilePath = pathname.startsWith("/profile/") && pathname !== "/profile/jobseeker";
 
     if (!isAnyProfilePath) {
       return;
@@ -1421,7 +1360,7 @@ export function JobSeekerDashboardRouteSwitcher({
         router.push("/community");
       }
 
-      if (label === "Dashboard") {
+      if (label === "Activity") {
         event.preventDefault();
         router.push("/account/jobseeker");
       }
@@ -1451,11 +1390,6 @@ export function JobSeekerDashboardRouteSwitcher({
       if (label === "Settings") {
         event.preventDefault();
         router.push("/settings/jobseeker");
-      }
-
-      if (label === "Account Setting") {
-        event.preventDefault();
-        router.push("/account/jobseeker/settings");
       }
 
       if (label === "Logout" || label === "Log out") {
@@ -1709,6 +1643,13 @@ export function JobSeekerDashboardRouteSwitcher({
       }
 
       if (actionLabel === "message") {
+        if (
+          actionControl instanceof HTMLAnchorElement &&
+          actionControl.href.includes("/dashboard/jobseeker/community")
+        ) {
+          return;
+        }
+
         event.preventDefault();
         event.stopPropagation();
         void requireJobSeekerAuth("message people");
@@ -2154,27 +2095,30 @@ export function JobSeekerDashboardRouteSwitcher({
 
       return {
         ...fallbackProfile,
-        avatarPreview: profile.avatar_url || fallbackProfile.avatarPreview,
-        bio: profile.bio || fallbackProfile.bio,
-        city: profile.city || fallbackProfile.city,
-        country: profile.country || fallbackProfile.country,
-        email: profile.email || authEmail || fallbackProfile.email,
+        avatarPreview: fallbackProfile.avatarPreview || profile.avatar_url || "",
+        bio: fallbackProfile.bio || profile.bio || "",
+        city: fallbackProfile.city || profile.city || "",
+        country: fallbackProfile.country || profile.country || "",
+        email: fallbackProfile.email || profile.email || authEmail,
         expectedSalary:
+          fallbackProfile.expectedSalary ||
           profile.expected_salary?.toString() ||
           profile.minimum_salary?.toString() ||
-          fallbackProfile.expectedSalary,
-        firstName: profile.first_name || fallbackProfile.firstName,
-        fullName: profileFullName(profile) || fallbackProfile.fullName,
-        jobTitle: profile.job_title || fallbackProfile.jobTitle,
-        lastName: profile.last_name || fallbackProfile.lastName,
-        location: profileLocation(profile) || fallbackProfile.location,
+          "",
+        firstName: fallbackProfile.firstName || profile.first_name || "",
+        fullName: fallbackProfile.fullName || profileFullName(profile) || "",
+        jobTitle: fallbackProfile.jobTitle || profile.job_title || "",
+        lastName: fallbackProfile.lastName || profile.last_name || "",
+        location: fallbackProfile.location || profileLocation(profile) || "",
         minimumSalary:
-          profile.minimum_salary?.toString() || fallbackProfile.minimumSalary,
-        paymentPeriod: profile.payment_period || fallbackProfile.paymentPeriod,
-        postalCode: profile.postal_code || fallbackProfile.postalCode,
-        resumeUrl: profile.resume_url || fallbackProfile.resumeUrl,
-        role: profile.job_title || fallbackProfile.role,
-        skills: profile.skills || fallbackProfile.skills,
+          fallbackProfile.minimumSalary ||
+          profile.minimum_salary?.toString() ||
+          "",
+        paymentPeriod: fallbackProfile.paymentPeriod || profile.payment_period || "",
+        postalCode: fallbackProfile.postalCode || profile.postal_code || "",
+        resumeUrl: fallbackProfile.resumeUrl || profile.resume_url || "",
+        role: fallbackProfile.role || profile.job_title || "",
+        skills: fallbackProfile.skills || profile.skills || "",
       };
     }
 
@@ -2344,7 +2288,7 @@ export function JobSeekerDashboardRouteSwitcher({
         }
       }
 
-      if (label.includes("saved")) {
+      if (label.includes("saved") && control instanceof HTMLAnchorElement) {
         event.preventDefault();
         event.stopPropagation();
         void requireJobSeekerAuth("open saved items");
@@ -2415,14 +2359,18 @@ export function JobSeekerDashboardRouteSwitcher({
   if (pathname === "/dashboard/jobseeker") {
     return null;
   }
-
+  
+  if (isPeopleProfilePath) {
+    return <>{children}</>;
+  }
+  
   if (isSpecialistProfilePath) {
     const slug = pathname.split("/").filter(Boolean).pop() || "";
     const selectedProfile =
       specialistProfiles[slug] || createPublicSpecialistProfile(slug);
-
+  
     return <SpecialistProfilePage profile={selectedProfile} profileId={slug} />;
   }
-
+  
   return <>{children}</>;
 }

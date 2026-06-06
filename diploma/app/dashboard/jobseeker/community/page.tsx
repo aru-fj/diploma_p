@@ -7,6 +7,22 @@ export const metadata: Metadata = {
     "Message employers, recruiters, clients, and creative collaborators on MediaHire.",
 };
 
-export default function JobSeekerCommunityRoute() {
-  return <CommunityPage />;
+type JobSeekerCommunityRouteProps = {
+  searchParams?: Promise<{
+    chat?: string;
+  }>;
+};
+
+export default async function JobSeekerCommunityRoute({
+  searchParams,
+}: JobSeekerCommunityRouteProps) {
+  const resolvedSearchParams = await searchParams;
+  const initialChatId = resolvedSearchParams?.chat || null;
+
+  return (
+    <CommunityPage
+      initialChatId={initialChatId}
+      key={initialChatId || "community-inbox"}
+    />
+  );
 }

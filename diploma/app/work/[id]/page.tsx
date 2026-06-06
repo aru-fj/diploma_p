@@ -60,65 +60,69 @@ export default function PublicWorkDetailPage() {
   }
 
   const authorAvatar = work.authorAvatar || work.coverImage;
-  const authorProfile = publicPeople.find((person) => person.name === work.author);
+  const authorProfile = publicPeople.find(
+    (person) => person.name === work.author,
+  );
   const authorProfileHref = authorProfile
     ? `/people/${authorProfile.slug}`
     : `/people/${createSlug(work.author)}`;
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
-      <div className="bg-[#eaf3ff] pb-8 pt-6 sm:pt-8">
+      <div className="bg-[#eaf3ff] pb-6 pt-5 sm:pt-6">
         <Header />
       </div>
 
-      <section className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6 lg:px-5">
-        <Link
-          href="/"
-          className="mb-6 inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Link>
+      <section className="mx-auto w-full max-w-4xl px-4 pb-12 pt-6 sm:px-6 lg:px-5">
+        <div className="mb-5 flex flex-col gap-3 sm:grid sm:grid-cols-[auto_1fr] sm:items-center lg:grid-cols-[0px_1fr]">
+          <Link
+            href="/"
+            className="inline-flex h-10 w-fit items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 lg:-translate-x-20"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Link>
 
-        <Link
-          href={`/people/${work.authorSlug}`}
-          className="mb-4 flex w-fit items-center gap-3 rounded-[1.4rem] bg-white px-4 py-3 shadow-[0_14px_40px_rgba(15,23,42,0.07)] transition hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]"
-        >
-          <div className="h-10 w-14 overflow-hidden rounded-[1rem] bg-slate-200">
-            <img
-              src={authorAvatar}
-              alt={work.author}
-              className="h-full w-full object-cover"
-            />
-          </div>
+          <Link
+            href={authorProfileHref}
+            className="flex w-fit items-center gap-3.5 rounded-2xl bg-white px-3.5 py-2.5 shadow-[0_12px_34px_rgba(15,23,42,0.07)] transition hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-[0_16px_42px_rgba(37,99,235,0.12)] sm:justify-self-start"
+          >
+            <div className="h-12 w-14 overflow-hidden rounded-xl bg-slate-200">
+              <img
+                src={authorAvatar}
+                alt={work.author}
+                className="h-full w-full object-cover"
+              />
+            </div>
 
-          <div>
-            <h2 className="text-lg font-black text-slate-950">
-              {work.title}
-            </h2>
-            <p className="mt-0.5 text-base font-black text-slate-500 transition hover:text-blue-600">
-              {work.author}
-            </p>
-          </div>
-        </Link>
+            <div>
+              <h2 className="text-sm font-black text-slate-950">
+                {work.title}
+              </h2>
+              <p className="mt-0.5 text-xs font-black text-slate-500 transition hover:text-blue-600">
+                {work.author}
+              </p>
+            </div>
+          </Link>
+        </div>
 
-        <article className="overflow-hidden rounded-2xl border border-white bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-          <div className="bg-[#eaf3ff] px-5 py-6 sm:px-5 md:px-5">
-            <header className="mx-auto max-w-3xl text-center">
-              <p className="mb-4 inline-flex rounded-full bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-blue-600 shadow-sm">
+        <article className="overflow-hidden rounded-2xl border border-white bg-white shadow-[0_18px_56px_rgba(15,23,42,0.08)]">
+          <div className="bg-[#eaf3ff] px-4 py-5 sm:px-5">
+            <header className="mx-auto max-w-2xl text-center">
+              <p className="mb-3 inline-flex rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-blue-600 shadow-sm">
                 Public project
               </p>
 
-              <h1 className="text-3xl font-black italic text-blue-600 md:text-2xl">
+              <h1 className="text-2xl font-black italic text-blue-600">
                 {work.title}
               </h1>
 
-              <p className="mx-auto mt-5 max-w-2xl text-sm font-bold italic leading-7 text-slate-700 md:text-base">
+              <p className="mx-auto mt-3 max-w-xl text-xs font-bold italic leading-6 text-slate-700 sm:text-sm">
                 {work.description}
               </p>
             </header>
 
-            <div className="mx-auto mt-8 flex max-w-3xl flex-col gap-5">
+            <div className="mx-auto mt-6 flex max-w-2xl flex-col gap-4">
               {work.gallery.map((media, index) => (
                 <ProjectMediaItem
                   key={`${media.type}-${media.src}-${index}`}
@@ -129,8 +133,8 @@ export default function PublicWorkDetailPage() {
               ))}
             </div>
 
-            <footer className="mx-auto mt-8 max-w-3xl text-center">
-              <div className="mx-auto h-10 w-14 overflow-hidden rounded-2xl bg-slate-200 shadow-sm">
+            <footer className="mx-auto mt-6 max-w-2xl text-center">
+              <div className="mx-auto h-9 w-12 overflow-hidden rounded-xl bg-slate-200 shadow-sm">
                 <img
                   src={authorAvatar}
                   alt={work.author}
@@ -138,33 +142,33 @@ export default function PublicWorkDetailPage() {
                 />
               </div>
 
-              <p className="mt-4 text-xs font-black text-slate-600">
+              <p className="mt-3 text-[11px] font-black text-slate-600">
                 {work.author}
               </p>
 
-              <h2 className="mt-1 text-2xl font-black italic text-slate-950">
+              <h2 className="mt-1 text-lg font-black italic text-slate-950">
                 {work.title}
               </h2>
 
-              <p className="mt-2 text-xs font-semibold text-slate-500">
+              <p className="mt-1.5 text-[11px] font-semibold text-slate-500">
                 Published: {work.createdAt}
               </p>
 
               <Link
                 href={publicAuthLinks.login}
-                className="mx-auto mt-6 flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition hover:scale-105 hover:bg-blue-600"
+                className="mx-auto mt-5 flex h-9 w-9 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition hover:scale-105 hover:bg-blue-600"
                 title="Sign in to like"
               >
-                <Heart className="h-6 w-6 fill-white" />
+                <Heart className="h-5 w-5 fill-white" />
               </Link>
             </footer>
           </div>
         </article>
 
-        <section className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.06)]">
-          <div className="border-b border-slate-200 p-5 md:p-5">
-            <div className="flex gap-4">
-              <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-slate-200">
+        <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
+          <div className="border-b border-slate-200 p-4">
+            <div className="flex gap-3">
+              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-slate-200">
                 <img
                   src={authorAvatar}
                   alt={work.author}
@@ -176,13 +180,13 @@ export default function PublicWorkDetailPage() {
                 <textarea
                   readOnly
                   placeholder="Sign in to write a comment about the project."
-                  className="h-20 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-500 outline-none"
+                  className="h-16 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-medium text-slate-500 outline-none"
                 />
 
-                <div className="mt-3 flex justify-end">
+                <div className="mt-2.5 flex justify-end">
                   <Link
                     href={publicAuthLinks.login}
-                    className="inline-flex h-9 items-center justify-center rounded-full bg-blue-600 px-5 text-xs font-black text-white transition hover:bg-blue-700"
+                    className="inline-flex h-8 items-center justify-center rounded-full bg-blue-600 px-4 text-[11px] font-black text-white transition hover:bg-blue-700"
                   >
                     <Send className="mr-2 h-3.5 w-3.5" />
                     Post comment
@@ -192,7 +196,7 @@ export default function PublicWorkDetailPage() {
             </div>
           </div>
 
-          <div className="space-y-5 p-5 md:p-5">
+          <div className="space-y-4 p-4">
             <CommentItem
               avatar="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80"
               name="Eduardo Sánchez"
@@ -216,41 +220,41 @@ export default function PublicWorkDetailPage() {
           </div>
         </section>
 
-        <section className="mt-8 grid gap-5 md:grid-cols-3">
+        <section className="mt-6 grid gap-4 md:grid-cols-3">
           <InfoBox
-            icon={<BriefcaseBusiness className="h-5 w-5" />}
+            icon={<BriefcaseBusiness className="h-4 w-4" />}
             label="Category"
             value={work.category}
           />
 
           <InfoBox
-            icon={<CalendarDays className="h-5 w-5" />}
+            icon={<CalendarDays className="h-4 w-4" />}
             label="Type"
             value={work.type}
           />
 
           <InfoBox
-            icon={<LockKeyhole className="h-5 w-5" />}
+            icon={<LockKeyhole className="h-4 w-4" />}
             label="Guest access"
             value="View only"
           />
         </section>
 
-        <section className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 p-5 text-center">
-          <MessageCircle className="mx-auto h-7 w-7 text-blue-600" />
+        <section className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-center">
+          <MessageCircle className="mx-auto h-6 w-6 text-blue-600" />
 
-          <h2 className="mt-3 text-xl font-black text-slate-950">
+          <h2 className="mt-2.5 text-lg font-black text-slate-950">
             Want to contact the creator?
           </h2>
 
-          <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-slate-500">
+          <p className="mx-auto mt-2 max-w-lg text-xs font-medium leading-5 text-slate-500">
             Guests can only view project details. To save, like, comment, or
             send a message, create an account.
           </p>
 
           <Link
             href={publicAuthLinks.login}
-            className="mt-5 inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700"
+            className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-blue-600 px-5 text-xs font-black text-white transition hover:bg-blue-700"
           >
             Sign in to interact
           </Link>
@@ -283,11 +287,11 @@ function ProjectMediaItem({
 }) {
   if (media.type === "image") {
     return (
-      <div className="overflow-hidden rounded-[1.5rem] bg-slate-100 shadow-sm ring-1 ring-white">
+      <div className="h-[360px] overflow-hidden rounded-2xl bg-slate-100 shadow-sm ring-1 ring-white sm:h-[420px]">
         <img
           src={media.src}
           alt={media.alt || `${title} ${index + 1}`}
-          className="w-full object-cover"
+          className="h-full w-full object-cover"
         />
       </div>
     );
@@ -297,8 +301,8 @@ function ProjectMediaItem({
     const embedUrl = getYouTubeEmbedUrl(media.src);
 
     return (
-      <div className="overflow-hidden rounded-[1.5rem] bg-black shadow-sm ring-1 ring-white">
-        <div className="flex items-center gap-2 bg-slate-950 px-4 py-3 text-sm font-black text-white">
+      <div className="overflow-hidden rounded-2xl bg-black shadow-sm ring-1 ring-white">
+        <div className="flex items-center gap-2 bg-slate-950 px-3.5 py-2.5 text-xs font-black text-white">
           <Play className="h-4 w-4" />
           {media.title}
         </div>
@@ -312,7 +316,7 @@ function ProjectMediaItem({
             allowFullScreen
           />
         ) : (
-          <div className="flex aspect-video items-center justify-center bg-slate-900 px-6 text-center text-sm font-bold text-white">
+          <div className="flex aspect-video items-center justify-center bg-slate-900 px-5 text-center text-xs font-bold text-white">
             Invalid YouTube link
           </div>
         )}
@@ -321,10 +325,10 @@ function ProjectMediaItem({
   }
 
   return (
-    <div className="overflow-hidden rounded-[1.5rem] bg-white shadow-sm ring-1 ring-slate-200">
-      <div className="flex items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-          <FileText className="h-5 w-5 text-blue-600" />
+    <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-3.5 py-2.5">
+        <div className="flex items-center gap-2 text-xs font-black text-slate-900">
+          <FileText className="h-4 w-4 text-blue-600" />
           {media.title}
         </div>
 
@@ -332,7 +336,7 @@ function ProjectMediaItem({
           href={media.src}
           target="_blank"
           rel="noreferrer"
-          className="rounded-full bg-blue-600 px-4 py-2 text-xs font-black text-white transition hover:bg-blue-700"
+          className="rounded-full bg-blue-600 px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-blue-700"
         >
           Open PDF
         </a>
@@ -341,7 +345,7 @@ function ProjectMediaItem({
       <iframe
         src={`${media.src}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`}
         title={media.title}
-        className="h-[85vh] min-h-[760px] w-full bg-white"
+        className="h-[520px] w-full bg-white"
       />
     </div>
   );
@@ -394,20 +398,20 @@ function CommentItem({
   text: string;
 }) {
   return (
-    <div className="flex gap-4">
-      <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-slate-200">
+    <div className="flex gap-3">
+      <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-slate-200">
         <img src={avatar} alt={name} className="h-full w-full object-cover" />
       </div>
 
       <div>
-        <p className="text-lg font-black text-slate-950">
+        <p className="text-sm font-black text-slate-950">
           {name}
-          <span className="ml-2 text-xs font-semibold text-slate-400">
+          <span className="ml-2 text-[11px] font-semibold text-slate-400">
             · {date}
           </span>
         </p>
 
-        <p className="mt-1 text-sm font-medium text-slate-600">{text}</p>
+        <p className="mt-1 text-xs font-medium text-slate-600">{text}</p>
       </div>
     </div>
   );
@@ -423,16 +427,16 @@ function InfoBox({
   value: string;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-2.5 flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
         {icon}
       </div>
 
-      <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
         {label}
       </p>
 
-      <p className="mt-1 text-sm font-black text-slate-800">{value}</p>
+      <p className="mt-1 text-xs font-black text-slate-800">{value}</p>
     </div>
   );
 }

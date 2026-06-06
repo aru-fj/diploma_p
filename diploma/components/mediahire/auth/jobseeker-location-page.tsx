@@ -10,6 +10,7 @@ import { AuthLogo } from "./logo";
 import { PrimaryButton } from "./primary-button";
 import { ProgressSteps } from "./progress-steps";
 import { TestimonialCard } from "./testimonial-card";
+import { updateJobSeekerSignupProfile } from "./jobseeker-signup-profile";
 
 type LocationForm = {
   location: string;
@@ -62,6 +63,11 @@ export function JobSeekerLocationPage() {
       "mediahire.jobseeker.location",
       JSON.stringify({ location, postalCode }),
     );
+    updateJobSeekerSignupProfile({
+      city: location,
+      location,
+      postalCode,
+    });
 
     const {
       data: { user },

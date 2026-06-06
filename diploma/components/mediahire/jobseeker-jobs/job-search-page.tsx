@@ -1,139 +1,761 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { MapPin, Search, SlidersHorizontal } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { ChevronUp, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { mediaHireJobs } from "../jobs-data";
 import { JobCard, JobSeekerNav, MediaHireFooter } from "./job-shared-ui";
 
-export function JobSearchPage() {
-  const [query, setQuery] = useState("");
-  const [location, setLocation] = useState("");
+type FilterState = {
+  city: string;
+  currency: SalaryCurrency;
+  jobTypes: string[];
+  languages: string[];
+  maxSalary: number;
+  minSalary: number;
+  publicationDates: string[];
+  workModes: string[];
+};
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setQuery(params.get("query") || params.get("q") || "");
-    setLocation(params.get("location") || "");
+type SalaryCurrency = "KZT" | "USD" | "RUB";
+
+const salaryCurrencyRates: Record<SalaryCurrency, number> = {
+  KZT: 500,
+  USD: 1,
+  RUB: 90,
+};
+
+const salaryRanges: Record<
+  SalaryCurrency,
+  {
+    max: number;
+    min: number;
+    step: number;
+  }
+> = {
+  KZT: { min: 50000, max: 400000, step: 5000 },
+  USD: { min: 100, max: 800, step: 25 },
+  RUB: { min: 10000, max: 70000, step: 1000 },
+};
+
+const emptyFilters: FilterState = {
+  city: "All Kazakhstan",
+  currency: "KZT",
+  jobTypes: [],
+  languages: [],
+  maxSalary: salaryRanges.KZT.max,
+  minSalary: salaryRanges.KZT.min,
+  publicationDates: [],
+  workModes: [],
+};
+
+const languageOptions = ["Kazakh", "Russian", "English"];
+const publicationDateOptions = [
+  "Last 24 hours",
+  "Last 3 days",
+  "Last 7 days",
+  "Last 14 days",
+];
+const cityOptions = ["Astana", "Almaty", "Shymkent", "Aktobe"];
+const jobTypeOptions = ["Full-Time", "Part-Time", "Contract"];
+const salaryCurrencyOptions: SalaryCurrency[] = ["KZT", "USD", "RUB"];
+const workModeOptions = ["Remote", "Hybrid", "Onsite"];
+
+type JobSearchPageProps = {
+  initialLocation?: string;
+  initialQuery?: string;
+};
+
+export function JobSearchPage({
+  initialLocation = "All Kazakhstan",
+  initialQuery = "",
+}: JobSearchPageProps) {
+  const [query, setQuery] = useState(initialQuery);
+  const [location, setLocation] = useState(initialLocation);
+  const [filters, setFilters] = useState<FilterState>(emptyFilters);
+
+  const locations = useMemo(() => {
+    return [
+      "All Kazakhstan",
+      ...Array.from(new Set(mediaHireJobs.map((job) => job.location))),
+    ];
   }, []);
 
   const filteredJobs = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    const normalizedLocation = location.trim().toLowerCase();
 
     return mediaHireJobs.filter((job) => {
-      const titleMatch =
-        !normalizedQuery ||
-        job.title.toLowerCase().includes(normalizedQuery) ||
-        job.companyName.toLowerCase().includes(normalizedQuery);
-      const locationMatch =
-        !normalizedLocation || job.location.toLowerCase().includes(normalizedLocation);
+      const searchText = [
+        job.title,
+        job.companyName,
+        job.location,
+        job.type,
+        job.level,
+        job.description,
+        job.salary,
+        job.postedAt,
+        ...job.tags,
+      ]
+        .join(" ")
+        .toLowerCase();
 
-      return titleMatch && locationMatch;
+      const tagsText = job.tags.join(" ").toLowerCase();
+
+      const matchesQuery = normalizedQuery
+        ? searchText.includes(normalizedQuery)
+        : true;
+
+      const matchesLocation =
+        location === "All Kazakhstan" ? true : job.location === location;
+
+      const jobCity = getJobCity(job.location);
+      const matchesCity =
+        filters.city === "All Kazakhstan" ? true : jobCity === filters.city;
+
+      const matchesJobType =
+        filters.jobTypes.length === 0
+          ? true
+          : filters.jobTypes.some((type) => getFilterJobType(job.type) === type);
+
+      const matchesWorkMode =
+        filters.workModes.length === 0
+          ? true
+          : filters.workModes.some((mode) => tagsText.includes(mode.toLowerCase()));
+
+      const matchesLanguage =
+        filters.languages.length === 0
+          ? true
+          : filters.languages.some((language) =>
+              searchText.includes(language.toLowerCase()),
+            );
+
+      const matchesPublicationDate =
+        filters.publicationDates.length === 0
+          ? true
+          : filters.publicationDates.some(
+              (date) => getPostedAgeHours(job.postedAt) <= getPublicationHours(date),
+            );
+
+      const salary = convertUsdSalary(
+        getSalaryUsd(job.salary),
+        filters.currency,
+      );
+      const matchesSalary =
+        salary >= filters.minSalary && salary <= filters.maxSalary;
+
+      return (
+        matchesQuery &&
+        matchesLocation &&
+        matchesCity &&
+        matchesJobType &&
+        matchesWorkMode &&
+        matchesLanguage &&
+        matchesPublicationDate &&
+        matchesSalary
+      );
     });
-  }, [location, query]);
+  }, [query, location, filters]);
+
+  const hasActiveFilters =
+    query ||
+    location !== "All Kazakhstan" ||
+    filters.city !== "All Kazakhstan" ||
+    filters.currency !== emptyFilters.currency ||
+    filters.jobTypes.length > 0 ||
+    filters.languages.length > 0 ||
+    filters.publicationDates.length > 0 ||
+    filters.workModes.length > 0 ||
+    filters.minSalary !== salaryRanges[filters.currency].min ||
+    filters.maxSalary !== salaryRanges[filters.currency].max;
+
+  const activeFilterLabels = getActiveFilterLabels(filters);
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
-      <section className="relative overflow-hidden bg-slate-950 pb-20 pt-8">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-90"
-          style={{
-            backgroundImage:
-              "linear-gradient(120deg,rgba(80,0,0,0.44),rgba(11,99,229,0.2)),url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=85')",
-          }}
-        />
+      <section className="relative overflow-hidden pt-6">
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1800&q=90"
+            alt="Creative professions"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-slate-950/50" />
+        </div>
+
         <div className="relative z-10">
           <JobSeekerNav active="Search Job" />
-          <div className="mx-auto mt-16 w-[min(960px,calc(100%-32px))] text-center text-white">
-            <motion.h1
+
+          <div className="px-4 pb-12 pt-6 sm:px-6 lg:px-8">
+            <motion.div
               animate={{ opacity: 1, y: 0 }}
-              className="text-2xl font-black tracking-tight md:text-3xl"
+              className="mx-auto max-w-3xl text-center"
               initial={{ opacity: 0, y: 18 }}
+              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
             >
-              Creative Professions
-            </motion.h1>
-            <p className="mt-4 text-xl font-semibold text-white/90">
-              Browse and find a new job
-            </p>
+              <h1 className="text-3xl font-black tracking-tight text-white md:text-4xl">
+                Discover the Best Job
+              </h1>
+
+              <p className="mt-3 text-sm font-semibold text-white/90 md:text-base">
+                Browse and find a new job
+              </p>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto w-[min(1320px,calc(100%-32px))] py-14">
-        <div className="text-center">
-          <h2 className="text-3xl font-black text-slate-950">
-            Discover the Best Job
-          </h2>
-          <div className="mx-auto mt-7 flex max-w-2xl flex-col gap-3 rounded-2xl bg-white p-2 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:flex-row">
-            <label className="flex min-h-10 flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4">
-              <Search className="text-slate-400" size={18} />
-              <input
-                className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-slate-400"
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Job title or keywords"
-                type="search"
-                value={query}
-              />
-            </label>
-            <label className="flex min-h-10 flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4">
-              <MapPin className="text-slate-400" size={18} />
-              <input
-                className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-slate-400"
-                onChange={(event) => setLocation(event.target.value)}
-                placeholder="location"
-                type="search"
-                value={location}
-              />
-            </label>
-            <button
-              className="min-h-10 rounded-xl bg-[#0B63E5] px-6 text-sm font-black text-white transition hover:bg-[#0958cc]"
-              type="button"
-            >
-              Search
-            </button>
+      <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl bg-white p-2 shadow-[0_16px_50px_rgba(15,23,42,0.08)] md:flex-row">
+          <div className="flex h-10 flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3">
+            <Search className="h-4 w-4 text-slate-400" />
+
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Job title or keywords"
+              className="h-full flex-1 bg-transparent text-xs font-bold text-slate-900 outline-none placeholder:text-slate-400"
+            />
           </div>
+
+          <div className="flex h-10 flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3 md:max-w-[250px]">
+            <MapPin className="h-4 w-4 text-slate-400" />
+
+            <select
+              value={location}
+              onChange={(event) => setLocation(event.target.value)}
+              className="h-full flex-1 bg-transparent text-xs font-black text-slate-700 outline-none"
+            >
+              {locations.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+
+            {location !== "All Kazakhstan" && (
+              <button
+                type="button"
+                onClick={() => setLocation("All Kazakhstan")}
+                className="rounded-full bg-slate-200 p-1 text-slate-500 transition hover:bg-slate-300"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const params = new URLSearchParams();
+
+              if (query.trim()) {
+                params.set("query", query.trim());
+              }
+
+              if (location !== "All Kazakhstan") {
+                params.set("location", location);
+              }
+
+              window.history.replaceState(
+                null,
+                "",
+                params.toString()
+                  ? `/home/jobseeker/job-search?${params.toString()}`
+                  : "/home/jobseeker/job-search",
+              );
+            }}
+            className="h-10 rounded-xl bg-blue-600 px-5 text-sm font-black text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700"
+          >
+            Search
+          </button>
         </div>
 
-        <div className="mt-8 grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
-          <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 text-sm font-black text-slate-950">
-              <SlidersHorizontal size={18} />
-              All Filters
+        <div className="mt-8 grid gap-6 lg:grid-cols-[240px_1fr]">
+          <aside className="h-fit max-h-[calc(100vh-120px)] overflow-y-auto rounded-lg border border-slate-200 bg-white px-4 py-5 shadow-sm">
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-4">
+              <SlidersHorizontal className="h-4 w-4 text-slate-900" />
+
+              <h3 className="text-base font-black text-slate-950">
+                All Filters
+              </h3>
             </div>
-            {[
-              "Active Filters",
-              "Work Language",
-              "Publication date",
-              "Education level",
-              "Job type",
-              "Distance",
-              "Salary (Monthly)",
-              "Work modes",
-            ].map((filter) => (
-              <div
-                className="mt-4 border-t border-slate-100 pt-4 text-sm font-bold text-slate-600"
-                key={filter}
+
+            {activeFilterLabels.length > 0 ? (
+              <section className="border-b border-slate-200 py-4">
+                <h4 className="text-sm font-black text-slate-950">
+                  Active Filters
+                </h4>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {activeFilterLabels.map((label) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => setFilters((prev) => removeFilter(prev, label))}
+                      className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-200"
+                    >
+                      {label}
+                      <X className="h-3 w-3" />
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            <FilterSection title="Work Language">
+              <CheckboxGroup
+                options={languageOptions}
+                selected={filters.languages}
+                onToggle={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    languages: toggleArrayValue(prev.languages, value),
+                  }))
+                }
+              />
+            </FilterSection>
+
+            <FilterSection title="Publication date">
+              <CheckboxGroup
+                options={publicationDateOptions}
+                selected={filters.publicationDates}
+                onToggle={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    publicationDates: toggleArrayValue(
+                      prev.publicationDates,
+                      value,
+                    ),
+                  }))
+                }
+              />
+            </FilterSection>
+
+            <FilterSection title="City">
+              <RadioGroup
+                name="city"
+                options={cityOptions}
+                selected={filters.city}
+                onChange={(value) =>
+                  setFilters((prev) => ({ ...prev, city: value }))
+                }
+              />
+            </FilterSection>
+
+            <FilterSection title="Job type">
+              <CheckboxGroup
+                options={jobTypeOptions}
+                selected={filters.jobTypes}
+                onToggle={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    jobTypes: toggleArrayValue(prev.jobTypes, value),
+                  }))
+                }
+              />
+            </FilterSection>
+
+            <FilterSection title="Salary">
+              <RadioGroup
+                name="salary-currency"
+                options={salaryCurrencyOptions}
+                selected={filters.currency}
+                onChange={(value) =>
+                  setFilters((prev) => {
+                    const currency = value as SalaryCurrency;
+                    const range = salaryRanges[currency];
+
+                    return {
+                      ...prev,
+                      currency,
+                      minSalary: range.min,
+                      maxSalary: range.max,
+                    };
+                  })
+                }
+              />
+
+              <SalaryRangeControl
+                currency={filters.currency}
+                maxSalary={filters.maxSalary}
+                minSalary={filters.minSalary}
+                onChange={(minSalary, maxSalary) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    minSalary,
+                    maxSalary,
+                  }))
+                }
+              />
+            </FilterSection>
+
+            <FilterSection title="Work modes">
+              <CheckboxGroup
+                options={workModeOptions}
+                selected={filters.workModes}
+                onToggle={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    workModes: toggleArrayValue(prev.workModes, value),
+                  }))
+                }
+              />
+            </FilterSection>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setLocation("All Kazakhstan");
+                  setFilters(emptyFilters);
+                }}
+                className="mt-5 h-10 w-full rounded-xl bg-slate-950 text-xs font-black text-white transition hover:bg-blue-600"
               >
-                {filter}
-              </div>
-            ))}
+                Reset filters
+              </button>
+            )}
           </aside>
 
-          <div className="grid gap-5 md:grid-cols-2">
-            {filteredJobs.map((job) => (
-              <JobCard job={job} key={job.id} />
-            ))}
-            {!filteredJobs.length ? (
-              <div className="rounded-2xl bg-white p-5 text-center text-sm font-black text-slate-500 md:col-span-2">
-                No jobs found
+          <section>
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-xs font-black text-slate-500">
+                {filteredJobs.length} jobs found
+              </p>
+
+              <p className="text-xs font-bold text-slate-400">
+                Job seeker mode
+              </p>
+            </div>
+
+            {filteredJobs.length > 0 ? (
+              <div className="grid gap-5 xl:grid-cols-2">
+                {filteredJobs.map((job) => (
+                  <JobCard job={job} key={job.id} />
+                ))}
               </div>
-            ) : null}
-          </div>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+                <h3 className="text-xl font-black text-slate-950">
+                  No jobs found
+                </h3>
+
+                <p className="mt-3 text-sm font-medium text-slate-500">
+                  Try another keyword, location, or filter.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery("");
+                    setLocation("All Kazakhstan");
+                    setFilters(emptyFilters);
+                  }}
+                  className="mt-5 h-10 rounded-xl bg-blue-600 px-4 text-sm font-black text-white transition hover:bg-blue-700"
+                >
+                  Reset search
+                </button>
+              </div>
+            )}
+          </section>
         </div>
       </section>
 
       <MediaHireFooter />
     </main>
   );
+}
+
+function FilterSection({
+  children,
+  title,
+}: {
+  children: ReactNode;
+  title: string;
+}) {
+  return (
+    <section className="border-b border-slate-200 py-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h4 className="text-sm font-black text-slate-950">{title}</h4>
+        <ChevronUp className="h-4 w-4 text-slate-600" />
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function CheckboxGroup({
+  onToggle,
+  options,
+  selected,
+}: {
+  onToggle: (value: string) => void;
+  options: string[];
+  selected: string[];
+}) {
+  return (
+    <div className="grid gap-2.5">
+      {options.map((option) => {
+        const isChecked = selected.includes(option);
+
+        return (
+          <label
+            key={option}
+            className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-700"
+          >
+            <input
+              checked={isChecked}
+              onChange={() => onToggle(option)}
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300 text-blue-600"
+            />
+            {option}
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+function RadioGroup({
+  name,
+  onChange,
+  options,
+  selected,
+}: {
+  name: string;
+  onChange: (value: string) => void;
+  options: string[];
+  selected: string;
+}) {
+  return (
+    <div className="grid gap-2.5">
+      {options.map((option) => (
+        <label
+          key={option}
+          className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-700"
+        >
+          <input
+            checked={selected === option}
+            name={name}
+            onChange={() => onChange(option)}
+            type="radio"
+            className="h-4 w-4 border-slate-300 text-blue-600"
+          />
+          {option}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function SalaryRangeControl({
+  currency,
+  maxSalary,
+  minSalary,
+  onChange,
+}: {
+  currency: SalaryCurrency;
+  maxSalary: number;
+  minSalary: number;
+  onChange: (minSalary: number, maxSalary: number) => void;
+}) {
+  const range = salaryRanges[currency];
+
+  function updateMin(value: number) {
+    onChange(Math.min(value, maxSalary), maxSalary);
+  }
+
+  function updateMax(value: number) {
+    onChange(minSalary, Math.max(value, minSalary));
+  }
+
+  return (
+    <div className="mt-5">
+      <h5 className="text-sm font-black text-slate-950">Price Range</h5>
+      <p className="mt-2 text-[11px] font-medium text-slate-600">
+        Use slider or enter min and max price
+      </p>
+
+      <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-[11px] font-semibold text-slate-700">
+        <label className="grid grid-cols-[auto_1fr] items-center gap-2">
+          Min
+          <input
+            min={range.min}
+            max={range.max}
+            step={range.step}
+            type="number"
+            value={minSalary}
+            onChange={(event) => updateMin(Number(event.target.value))}
+            className="h-8 min-w-0 rounded border border-slate-200 px-2 text-xs font-semibold outline-none focus:border-blue-300"
+          />
+        </label>
+
+        <span className="text-slate-400">-</span>
+
+        <label className="grid grid-cols-[auto_1fr] items-center gap-2">
+          Max
+          <input
+            min={range.min}
+            max={range.max}
+            step={range.step}
+            type="number"
+            value={maxSalary}
+            onChange={(event) => updateMax(Number(event.target.value))}
+            className="h-8 min-w-0 rounded border border-slate-200 px-2 text-xs font-semibold outline-none focus:border-blue-300"
+          />
+        </label>
+      </div>
+
+      <div className="mt-4 grid gap-2">
+        <input
+          min={range.min}
+          max={range.max}
+          step={range.step}
+          type="range"
+          value={minSalary}
+          onChange={(event) => updateMin(Number(event.target.value))}
+          className="h-1 w-full accent-blue-600"
+          aria-label="Minimum salary"
+        />
+        <input
+          min={range.min}
+          max={range.max}
+          step={range.step}
+          type="range"
+          value={maxSalary}
+          onChange={(event) => updateMax(Number(event.target.value))}
+          className="h-1 w-full accent-blue-600"
+          aria-label="Maximum salary"
+        />
+      </div>
+    </div>
+  );
+}
+
+function toggleArrayValue(values: string[], value: string) {
+  return values.includes(value)
+    ? values.filter((item) => item !== value)
+    : [...values, value];
+}
+
+function getJobCity(location: string) {
+  return location.split(",")[0]?.trim() || location;
+}
+
+function getFilterJobType(jobType: string) {
+  return jobType === "Freelance" ? "Contract" : jobType;
+}
+
+function getSalaryUsd(salary: string) {
+  const amount = Number(salary.match(/\d+/)?.[0] || 0);
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function convertUsdSalary(salaryUsd: number, currency: SalaryCurrency) {
+  return Math.round(salaryUsd * salaryCurrencyRates[currency]);
+}
+
+function getPostedAgeHours(postedAt: string) {
+  const normalized = postedAt.toLowerCase();
+
+  if (normalized.includes("today")) {
+    return 12;
+  }
+
+  const amount = Number(normalized.match(/\d+/)?.[0] || 0);
+
+  if (normalized.includes("hour")) {
+    return amount;
+  }
+
+  if (normalized.includes("day")) {
+    return amount * 24;
+  }
+
+  return 24 * 14;
+}
+
+function getPublicationHours(label: string) {
+  if (label === "Last 24 hours") {
+    return 24;
+  }
+
+  const days = Number(label.match(/\d+/)?.[0] || 14);
+  return days * 24;
+}
+
+function getActiveFilterLabels(filters: FilterState) {
+  const range = salaryRanges[filters.currency];
+  const salaryChanged =
+    filters.minSalary !== range.min || filters.maxSalary !== range.max;
+
+  return [
+    ...filters.languages,
+    ...filters.publicationDates,
+    filters.city !== "All Kazakhstan" ? filters.city : null,
+    ...filters.jobTypes,
+    filters.currency !== emptyFilters.currency ? filters.currency : null,
+    salaryChanged ? `${filters.minSalary}-${filters.maxSalary}` : null,
+    ...filters.workModes,
+  ].filter((label): label is string => Boolean(label));
+}
+
+function removeFilter(filters: FilterState, label: string): FilterState {
+  const range = salaryRanges[filters.currency];
+
+  if (filters.languages.includes(label)) {
+    return {
+      ...filters,
+      languages: filters.languages.filter((item) => item !== label),
+    };
+  }
+
+  if (filters.publicationDates.includes(label)) {
+    return {
+      ...filters,
+      publicationDates: filters.publicationDates.filter((item) => item !== label),
+    };
+  }
+
+  if (filters.jobTypes.includes(label)) {
+    return {
+      ...filters,
+      jobTypes: filters.jobTypes.filter((item) => item !== label),
+    };
+  }
+
+  if (filters.workModes.includes(label)) {
+    return {
+      ...filters,
+      workModes: filters.workModes.filter((item) => item !== label),
+    };
+  }
+
+  if (filters.city === label) {
+    return {
+      ...filters,
+      city: "All Kazakhstan",
+    };
+  }
+
+  if (label === filters.currency) {
+    return {
+      ...filters,
+      currency: emptyFilters.currency,
+      maxSalary: salaryRanges[emptyFilters.currency].max,
+      minSalary: salaryRanges[emptyFilters.currency].min,
+    };
+  }
+
+  if (label === `${filters.minSalary}-${filters.maxSalary}`) {
+    return {
+      ...filters,
+      maxSalary: range.max,
+      minSalary: range.min,
+    };
+  }
+
+  return filters;
 }

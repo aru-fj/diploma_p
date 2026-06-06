@@ -12,6 +12,7 @@ import { PasswordInput } from "./password-input";
 import { ProgressSteps } from "./progress-steps";
 import { GoogleIcon, SocialButton } from "./social-button";
 import { TestimonialCard } from "./testimonial-card";
+import { updateJobSeekerSignupProfile } from "./jobseeker-signup-profile";
 
 type SignupForm = {
   confirmPassword: string;
@@ -101,6 +102,12 @@ export function JobSeekerSignupPage() {
         lastName,
         password: form.password,
         role: "jobseeker",
+      });
+
+      updateJobSeekerSignupProfile({
+        email,
+        firstName,
+        lastName,
       });
     
       window.localStorage.setItem(

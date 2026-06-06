@@ -3,9 +3,13 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import {
+  BriefcaseBusiness,
   FileText,
+  GraduationCap,
   Grid2X2,
   ImageIcon,
+  Languages,
+  Link as LinkIcon,
   Mail,
   MapPin,
   Plus,
@@ -14,7 +18,6 @@ import {
   UserRound,
   Video,
 } from "lucide-react";
-import { motion } from "framer-motion";
 
 import { supabase } from "@/lib/supabase-client";
 import {
@@ -28,13 +31,14 @@ import {
   type ProjectMediaBlock,
   type ProfileSummary,
 } from "../projects-data";
-import { JobSeekerNav, MediaHireFooter } from "../jobseeker-jobs/job-shared-ui";
+import { JobSeekerNavbar } from "../jobseeker-navbar";
 import {
   getCurrentUserProfile,
   getResumeData,
   getSettings,
   type ResumeData,
 } from "../shared/user-state";
+import { JobSeekerAvatar } from "../jobseeker-avatar-placeholder";
 
 type ProfileTab = "portfolio" | "reviews" | "add" | "resume";
 
@@ -74,24 +78,26 @@ function localProfileSummary(): ProfileSummary {
   const fullName =
     profile.fullName ||
     [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
-    demoProfile.fullName;
+    profile.email?.split("@")[0] ||
+    "Job Seeker";
+  const location =
+    profile.location ||
+    [profile.city, profile.country].filter(Boolean).join(", ") ||
+    "Location not added";
+  const skills = splitList(profile.skills);
+  const software = splitList(profile.software);
 
   return {
-    avatarUrl: profile.avatarPreview || demoProfile.avatarUrl,
+    avatarUrl: profile.avatarPreview,
     availableStatus: "Available for Freelance",
-    bio: profile.bio || demoProfile.bio,
-    email: profile.email || demoProfile.email,
+    bio: profile.bio || "",
+    email: profile.email || "Email not added",
     fullName,
     id: profile.email || "local-jobseeker-profile",
-    location:
-      profile.location ||
-      [profile.city, profile.country].filter(Boolean).join(", ") ||
-      demoProfile.location,
-    profession: profile.jobTitle || profile.role || demoProfile.profession,
-    skills: splitList(profile.skills).length
-      ? splitList(profile.skills)
-      : demoProfile.skills,
-    software: demoProfile.software,
+    location,
+    profession: profile.jobTitle || profile.role || "Role not added",
+    skills,
+    software,
   };
 }
 
@@ -124,6 +130,15 @@ function projectCover(project: MediaHireProject) {
 async function loadProfile() {
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
+  const localProfile = getCurrentUserProfile();
+  const localFullName =
+    localProfile.fullName ||
+    [localProfile.firstName, localProfile.lastName].filter(Boolean).join(" ");
+  const localLocation =
+    localProfile.location ||
+    [localProfile.city, localProfile.country].filter(Boolean).join(", ");
+  const localSkills = splitList(localProfile.skills);
+  const localSoftware = splitList(localProfile.software);
 
   if (!user) {
     return localProfileSummary();
@@ -173,34 +188,45 @@ async function loadProfile() {
     | null;
 
   const fullName =
+    localFullName ||
     profile?.full_name ||
     [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") ||
     user.user_metadata?.full_name ||
     user.email?.split("@")[0] ||
-    demoProfile.fullName;
+    localProfileSummary().fullName;
 
   return {
     avatarUrl:
+      localProfile.avatarPreview ||
       profile?.avatar_url ||
       user.user_metadata?.avatar_url ||
       localProfileSummary().avatarUrl,
-    availableStatus: profile?.available_status || demoProfile.availableStatus,
-    bio: profile?.bio || localProfileSummary().bio,
-    email: profile?.email || user.email || localProfileSummary().email,
+    availableStatus: profile?.available_status || "Available for Freelance",
+    bio: localProfile.bio || profile?.bio || localProfileSummary().bio,
+    email: localProfile.email || profile?.email || user.email || localProfileSummary().email,
     fullName,
     id: user.id,
     location:
+      localLocation ||
       profile?.location ||
       [profile?.city, profile?.country].filter(Boolean).join(", ") ||
       localProfileSummary().location,
     profession:
-      profile?.profession || profile?.job_title || localProfileSummary().profession,
-    skills: splitList(profile?.skills).length
+      localProfile.jobTitle ||
+      localProfile.role ||
+      profile?.profession ||
+      profile?.job_title ||
+      localProfileSummary().profession,
+    skills: localSkills.length
+      ? localSkills
+      : splitList(profile?.skills).length
       ? splitList(profile?.skills)
-      : demoProfile.skills,
-    software: splitList(profile?.software).length
+      : [],
+    software: localSoftware.length
+      ? localSoftware
+      : splitList(profile?.software).length
       ? splitList(profile?.software)
-      : demoProfile.software,
+      : [],
   } satisfies ProfileSummary;
 }
 
@@ -260,57 +286,66 @@ async function loadProjectsFromSupabase(profile: ProfileSummary) {
 function ProfileSidebar({ profile }: { profile: ProfileSummary }) {
   const rows = [
     { icon: MapPin, label: profile.location },
-    { icon: UserRound, label: profile.profession },
+    { icon: BriefcaseBusiness, label: profile.profession },
     { icon: Mail, label: profile.email },
   ];
 
   return (
-    <aside className="self-start rounded-[2rem] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] ring-1 ring-slate-100">
-      <img
-        alt="Job seeker avatar"
-        className="h-32 w-32 rounded-3xl border-[6px] border-white object-cover shadow-[0_18px_48px_rgba(15,23,42,0.18)]"
-        src={profile.avatarUrl}
-      />
-      <h1 className="mt-5 text-3xl font-black leading-tight text-slate-950">
-        {profile.fullName}
-      </h1>
-      <p className="mt-2 text-sm font-bold text-slate-500">
-        {profile.availableStatus}
-      </p>
+    <aside className="-mt-12 lg:-mt-16">
+      <div className="sticky top-5 rounded-2xl bg-white p-4">
+        <JobSeekerAvatar
+          className="h-20 w-20 overflow-hidden rounded-xl shadow-lg"
+          iconSize={30}
+          size={80}
+          src={profile.avatarUrl}
+        />
 
-      <div className="mt-6 grid gap-3">
-        {rows.map((row) => (
-          <div className="flex items-center gap-3" key={row.label}>
-            <row.icon className="text-[#0B63E5]" size={18} />
-            <span className="text-sm font-semibold text-slate-600">
-              {row.label}
-            </span>
+        <h1 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
+          {profile.fullName}
+        </h1>
+
+        <p className="mt-1 text-xs font-semibold text-slate-500">
+          {profile.availableStatus}
+        </p>
+
+        <div className="mt-4 space-y-2.5 text-xs font-semibold text-slate-600">
+          {rows.map((row) => (
+            <div className="flex items-center gap-3" key={row.label}>
+              <row.icon className="h-3.5 w-3.5 shrink-0 text-slate-600" />
+              <span className="break-words">{row.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6">
+          <h2 className="text-lg font-black text-slate-950">Skills</h2>
+
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {profile.skills.map((skill) => (
+              <span
+                className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                key={skill}
+              >
+                {skill}
+              </span>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
 
-      <h2 className="mt-8 text-2xl font-black">Skills</h2>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {profile.skills.map((skill) => (
-          <span
-            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-600"
-            key={skill}
-          >
-            {skill}
-          </span>
-        ))}
-      </div>
+        <div className="mt-6">
+          <h2 className="text-lg font-black text-slate-950">Software</h2>
 
-      <h2 className="mt-8 text-2xl font-black">Software</h2>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {profile.software.map((software) => (
-          <span
-            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-600"
-            key={software}
-          >
-            {software}
-          </span>
-        ))}
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {profile.software.map((software) => (
+              <span
+                className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                key={software}
+              >
+                {software}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
     </aside>
   );
@@ -323,39 +358,20 @@ function PortfolioGrid({
   onAddProject: () => void;
   projects: MediaHireProject[];
 }) {
-  if (!projects.length) {
-    return (
-      <div className="rounded-[2rem] bg-white p-10 text-center shadow-sm ring-1 ring-slate-200">
-        <h3 className="text-2xl font-black text-slate-950">
-          No published projects yet
-        </h3>
-        <p className="mx-auto mt-3 max-w-md text-sm font-semibold leading-6 text-slate-500">
-          Create your first project and publish it to show your portfolio on
-          MediaHire.
-        </p>
-        <button
-          className="mt-6 h-11 rounded-xl bg-[#0B63E5] px-8 text-sm font-black text-white transition hover:bg-[#0958cc]"
-          onClick={onAddProject}
-          type="button"
-        >
-          Go to Add Project
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+    <div className="grid gap-x-6 gap-y-7 rounded-2xl bg-white/85 p-3 shadow-[0_18px_55px_rgba(15,23,42,0.07)] ring-1 ring-slate-200/70 backdrop-blur sm:p-4 md:grid-cols-2">
+      <AddProjectCard onAddProject={onAddProject} />
+
       {projects.map((project) => (
         <Link
-          className="group block rounded-[1.7rem] bg-white p-5 shadow-[0_18px_48px_rgba(15,23,42,0.07)] ring-1 ring-slate-100 transition duration-300 hover:-translate-y-1"
+          className="group block min-h-[285px] w-full rounded-2xl bg-white p-2.5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(37,99,235,0.13)]"
           href={`/home/jobseeker/work/${project.id}`}
           key={project.id}
         >
-          <div className="aspect-[4/3] w-full overflow-hidden rounded-[1.35rem] bg-slate-100">
+          <div className="h-52 overflow-hidden rounded-xl bg-slate-100 shadow-sm">
             <img
               alt={project.title}
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
               onError={(event) => {
                 event.currentTarget.src = projectFallbackCover;
               }}
@@ -363,17 +379,40 @@ function PortfolioGrid({
             />
           </div>
 
-          <div className="mt-5">
-            <h3 className="text-xl font-black leading-tight text-slate-950">
-              {project.title}
-            </h3>
-            <p className="mt-2 text-base font-black text-slate-500">
-              {project.authorName}
-            </p>
-          </div>
+          <h3 className="mt-3 text-base font-black text-slate-950 group-hover:text-blue-600">
+            {project.title}
+          </h3>
+
+          <p className="mt-1 text-xs font-semibold text-slate-500">
+            {project.authorName}
+          </p>
         </Link>
       ))}
     </div>
+  );
+}
+
+function AddProjectCard({ onAddProject }: { onAddProject: () => void }) {
+  return (
+    <button
+      className="group block min-h-[285px] w-full rounded-2xl bg-white p-2.5 text-left shadow-[0_12px_30px_rgba(15,23,42,0.06)] ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(37,99,235,0.13)]"
+      onClick={onAddProject}
+      type="button"
+    >
+      <div className="flex h-52 items-center justify-center rounded-xl border border-dashed border-blue-300 bg-blue-50/60 shadow-sm transition group-hover:bg-blue-50">
+        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-blue-600 shadow-sm transition group-hover:scale-105">
+          <Plus size={28} />
+        </span>
+      </div>
+
+      <h3 className="mt-3 text-base font-black text-slate-950 group-hover:text-blue-600">
+        Add project
+      </h3>
+
+      <p className="mt-1 text-xs font-semibold text-slate-500">
+        Upload photos, video, PDF or project details
+      </p>
+    </button>
   );
 }
 
@@ -726,24 +765,101 @@ function AddProjectForm({
   );
 }
 
-function ResumePanel({ resume }: { resume: ResumeData }) {
-  const rows = [
-    ["About me", resume.about],
-    ["Professional Skill", resume.skills],
-    ["Work Experience", resume.experience],
-    ["Education", resume.education],
-    ["Links", resume.links],
-    ["Languages", resume.languages],
-    ["Job Preferences", resume.jobPreferences],
-    ["Preferred Job Benefits", resume.benefits],
-  ];
+function unwrapElement(element: Element) {
+  const parent = element.parentNode;
+
+  if (!parent) {
+    return;
+  }
+
+  while (element.firstChild) {
+    parent.insertBefore(element.firstChild, element);
+  }
+
+  parent.removeChild(element);
+}
+
+function sanitizeRichText(html: string) {
+  if (typeof window === "undefined" || !html) {
+    return html;
+  }
+
+  const parser = new DOMParser();
+  const parsedDocument = parser.parseFromString(`<div>${html}</div>`, "text/html");
+  const root = parsedDocument.body.firstElementChild;
+  const allowedTags = new Set(["B", "BR", "DIV", "EM", "I", "P", "STRONG"]);
+
+  if (!root) {
+    return "";
+  }
+
+  Array.from(root.querySelectorAll("*")).forEach((element) => {
+    Array.from(element.attributes).forEach((attribute) =>
+      element.removeAttribute(attribute.name),
+    );
+
+    if (!allowedTags.has(element.tagName)) {
+      unwrapElement(element);
+    }
+  });
+
+  return root.innerHTML.trim();
+}
+
+function RichTextContent({ html }: { html: string }) {
+  return (
+    <div
+      className="rich-text-content whitespace-pre-wrap text-xs font-medium leading-5 text-slate-700"
+      dangerouslySetInnerHTML={{ __html: sanitizeRichText(html) }}
+    />
+  );
+}
+
+function ResumeSection({
+  children,
+  icon: Icon,
+  title,
+}: {
+  children: React.ReactNode;
+  icon: typeof UserRound;
+  title: string;
+}) {
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
+      <div className="mb-4 flex items-center gap-2 text-slate-800">
+        <Icon className="h-4 w-4 text-slate-500" />
+        <h3 className="text-sm font-black">{title}</h3>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs font-medium leading-5 text-slate-700">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function ResumePanel({
+  profile,
+  resume,
+}: {
+  profile: ProfileSummary;
+  resume: ResumeData;
+}) {
   const hasResume =
-    rows.some(([, value]) => Boolean(value)) || Boolean(resume.pdfName || resume.pdfUrl);
+    Boolean(resume.about) ||
+    Boolean(resume.skills) ||
+    Boolean(resume.experience) ||
+    Boolean(resume.education) ||
+    Boolean(resume.links) ||
+    Boolean(resume.languages) ||
+    Boolean(resume.jobPreferences) ||
+    Boolean(resume.benefits) ||
+    Boolean(resume.pdfName || resume.pdfUrl);
 
   if (!hasResume) {
     return (
-      <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-10 text-center">
-        <h3 className="text-2xl font-black text-slate-950">
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
+        <h3 className="text-xl font-black text-slate-950">
           No resume information added yet
         </h3>
         <p className="mx-auto mt-3 max-w-md text-sm font-semibold leading-6 text-slate-500">
@@ -760,23 +876,97 @@ function ResumePanel({ resume }: { resume: ResumeData }) {
   }
 
   return (
-    <div className="grid gap-5">
-      {rows.map(([label, value]) =>
-        value ? (
-          <section
-            className="rounded-[1.5rem] bg-white p-6 shadow-[0_18px_48px_rgba(15,23,42,0.06)] ring-1 ring-slate-100"
-            key={label}
-          >
-            <h3 className="text-lg font-black text-slate-950">{label}</h3>
-            <p className="mt-3 whitespace-pre-line text-sm font-semibold leading-7 text-slate-600">
-              {value}
+    <div className="max-w-2xl space-y-4">
+      <section className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2 text-slate-800">
+          <UserRound className="h-4 w-4 text-slate-500" />
+          <h3 className="text-sm font-black">Personal Information</h3>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <p className="text-[11px] font-bold text-slate-400">Full Name</p>
+            <p className="mt-1 text-xs font-black text-slate-700">
+              {profile.fullName || "Not specified"}
             </p>
-          </section>
-        ) : null,
-      )}
+          </div>
+
+          <div>
+            <p className="text-[11px] font-bold text-slate-400">City</p>
+            <p className="mt-1 text-xs font-black text-slate-700">
+              {profile.location || "Not specified"}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-[11px] font-bold text-slate-400">Email</p>
+            <p className="mt-1 break-words text-xs font-black text-slate-700">
+              {profile.email || "Available after login"}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-[11px] font-bold text-slate-400">Profession</p>
+            <p className="mt-1 text-xs font-black text-slate-700">
+              {profile.profession || "Not specified"}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {resume.about ? (
+        <ResumeSection icon={UserRound} title="About me">
+          <RichTextContent html={resume.about} />
+        </ResumeSection>
+      ) : null}
+
+      {resume.skills ? (
+        <ResumeSection icon={FileText} title="Professional Skill">
+          <p className="whitespace-pre-line text-xs font-medium leading-5 text-slate-700">
+            {resume.skills}
+          </p>
+        </ResumeSection>
+      ) : null}
+
+      {resume.experience ? (
+        <ResumeSection icon={BriefcaseBusiness} title="Work Experience">
+          <RichTextContent html={resume.experience} />
+        </ResumeSection>
+      ) : null}
+
+      {resume.education ? (
+        <ResumeSection icon={GraduationCap} title="Education">
+          <RichTextContent html={resume.education} />
+        </ResumeSection>
+      ) : null}
+
+      {resume.links ? (
+        <ResumeSection icon={LinkIcon} title="Links">
+          <RichTextContent html={resume.links} />
+        </ResumeSection>
+      ) : null}
+
+      {resume.languages ? (
+        <ResumeSection icon={Languages} title="Languages">
+          <RichTextContent html={resume.languages} />
+        </ResumeSection>
+      ) : null}
+
+      {resume.jobPreferences ? (
+        <ResumeSection icon={BriefcaseBusiness} title="Job Preferences">
+          <RichTextContent html={resume.jobPreferences} />
+        </ResumeSection>
+      ) : null}
+
+      {resume.benefits ? (
+        <ResumeSection icon={FileText} title="Preferred Job Benefits">
+          <RichTextContent html={resume.benefits} />
+        </ResumeSection>
+      ) : null}
+
       {resume.pdfName || resume.pdfUrl ? (
         <a
-          className="rounded-[1.5rem] bg-white p-6 text-sm font-black text-[#0B63E5] shadow-[0_18px_48px_rgba(15,23,42,0.06)] ring-1 ring-slate-100"
+          className="block rounded-xl border border-slate-200 bg-white p-3.5 text-xs font-black text-[#0B63E5] shadow-sm"
           href={resume.pdfUrl || "#"}
           rel="noreferrer"
           target="_blank"
@@ -789,8 +979,10 @@ function ResumePanel({ resume }: { resume: ResumeData }) {
 }
 
 export function MyProfileProjectsPage() {
-  const [activeTab, setActiveTab] = useState<ProfileTab>("add");
-  const [profile, setProfile] = useState<ProfileSummary>(demoProfile);
+  const [activeTab, setActiveTab] = useState<ProfileTab>("portfolio");
+  const [profile, setProfile] = useState<ProfileSummary>(() =>
+    localProfileSummary(),
+  );
   const [projects, setProjects] = useState<MediaHireProject[]>([]);
   const [resume, setResume] = useState<ResumeData>(() => getResumeData());
   const [settings, setSettings] = useState(() => getSettings());
@@ -826,18 +1018,19 @@ export function MyProfileProjectsPage() {
         mergedProjects.length || loadedProfile.id !== demoProfile.id
           ? mergedProjects
           : demoProjects;
+      const initialProjectsWithCurrentAuthor = initialProjects.map((project) => ({
+        ...project,
+        authorAvatar: loadedProfile.avatarUrl,
+        authorName: loadedProfile.fullName,
+      }));
 
       if (!isMounted) {
         return;
       }
 
       setProfile(loadedProfile);
-      setProjects(initialProjects);
-      setActiveTab(
-        initialProjects.some((project) => project.status === "published")
-          ? "portfolio"
-          : "add",
-      );
+      setProjects(initialProjectsWithCurrentAuthor);
+      setActiveTab("portfolio");
     }
 
     void hydrate();
@@ -852,11 +1045,18 @@ export function MyProfileProjectsPage() {
     }
 
     window.addEventListener("mediahire:resume-updated", handleSharedStateUpdate);
-    window.addEventListener("mediahire:settings-updated", handleSharedStateUpdate);
-    window.addEventListener("mediahire:jobseeker-profile-updated", handleProfileUpdate);
+    window.addEventListener(
+      "mediahire:settings-updated",
+      handleSharedStateUpdate,
+    );
+    window.addEventListener(
+      "mediahire:jobseeker-profile-updated",
+      handleProfileUpdate,
+    );
 
     return () => {
       isMounted = false;
+
       window.removeEventListener(
         "mediahire:resume-updated",
         handleSharedStateUpdate,
@@ -878,83 +1078,85 @@ export function MyProfileProjectsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
-      <section
-        className="min-h-[320px] bg-cover bg-center pt-8"
-        style={{
-          backgroundImage:
-            "linear-gradient(90deg,rgba(255,255,255,0.18),rgba(255,255,255,0.1)),url('https://images.unsplash.com/photo-1550684376-efcbd6e3f031?auto=format&fit=crop&w=1800&q=90')",
-        }}
-      >
-        <JobSeekerNav active="My Profile" />
+    <main className="min-h-screen bg-white text-slate-950">
+      <section className="relative overflow-hidden bg-[#eef4ff]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(11,99,229,0.16),transparent_32%),linear-gradient(180deg,#eef4ff_0%,#f8fbff_65%,#ffffff_100%)]" />
+  
+        <div className="relative z-10 pb-24 pt-4 sm:pt-5">
+          <JobSeekerNavbar active="My Profile" />
+        </div>
       </section>
-
-      <section className="mx-auto -mt-16 grid w-[min(1320px,calc(100%-32px))] grid-cols-1 items-start gap-8 lg:grid-cols-[300px_minmax(0,1fr)]">
+  
+      <section className="mx-auto grid w-full max-w-6xl gap-5 px-4 pb-16 sm:px-6 lg:grid-cols-[230px_1fr] lg:px-5">
         <ProfileSidebar profile={profile} />
 
-        <motion.div
-          animate={{ opacity: 1, y: 0 }}
-          className="min-h-[760px] overflow-hidden rounded-[2rem] bg-white/70 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.06)] ring-1 ring-white/80 backdrop-blur md:p-7"
-          initial={{ opacity: 0, y: 16 }}
-        >
-          <div className="flex gap-10 border-b border-slate-200">
+        <section className="pt-6 lg:pt-8">
+          <div className="mb-6 flex items-center gap-5 border-b border-slate-200">
             {[
               ["portfolio", "Portfolio"],
-              ["reviews", "Reviews"],
-              ["add", "Add Project"],
               ["resume", "Resume"],
+              ["reviews", "Reviews"],
             ].map(([tab, label]) => (
               <button
-                className={`relative pb-4 text-base font-black transition ${
-                  activeTab === tab ? "text-[#0B63E5]" : "text-slate-400"
+                className={`relative pb-3 text-sm font-black transition ${
+                  activeTab === tab
+                    ? "text-blue-600"
+                    : "text-slate-400 hover:text-slate-700"
                 }`}
                 key={tab}
                 onClick={() => setActiveTab(tab as ProfileTab)}
                 type="button"
               >
                 {label}
+
                 {activeTab === tab ? (
-                  <span className="absolute bottom-[-1px] left-0 h-[3px] w-full rounded-full bg-[#0B63E5]" />
+                  <span className="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-blue-600" />
                 ) : null}
               </button>
             ))}
           </div>
 
-          <div className="mt-8">
-            {activeTab === "portfolio" ? (
-              settings.profileVisibility && settings.publicPortfolio ? (
-                <PortfolioGrid
-                  onAddProject={() => setActiveTab("add")}
-                  projects={publishedProjects}
-                />
-              ) : (
-                <div className="rounded-[2rem] bg-amber-50 p-8 text-center text-sm font-black text-amber-700">
-                  {settings.profileVisibility
-                    ? "Public portfolio is turned off in Settings."
-                    : "Profile visibility is turned off in Settings."}
-                </div>
-              )
-            ) : null}
-
-            {activeTab === "reviews" ? (
-              <div className="rounded-[2rem] bg-white p-8 text-center text-sm font-black text-slate-500 shadow-sm">
-                No reviews yet
-              </div>
-            ) : null}
-
-            {activeTab === "add" ? (
-              <AddProjectForm
-                onProjectSaved={handleProjectSaved}
-                profile={profile}
+          {activeTab === "portfolio" ? (
+            settings.profileVisibility && settings.publicPortfolio ? (
+              <PortfolioGrid
+                onAddProject={() => setActiveTab("add")}
+                projects={publishedProjects}
               />
-            ) : null}
+            ) : (
+              <div className="rounded-2xl bg-amber-50 p-8 text-center text-sm font-black text-amber-700">
+                {settings.profileVisibility
+                  ? "Public portfolio is turned off in Settings."
+                  : "Profile visibility is turned off in Settings."}
+              </div>
+            )
+          ) : null}
 
-            {activeTab === "resume" ? <ResumePanel resume={resume} /> : null}
-          </div>
-        </motion.div>
+          {activeTab === "add" ? (
+            <AddProjectForm
+              onProjectSaved={handleProjectSaved}
+              profile={profile}
+            />
+          ) : null}
+
+          {activeTab === "resume" ? (
+            <ResumePanel profile={profile} resume={resume} />
+          ) : null}
+
+          {activeTab === "reviews" ? (
+            <div className="max-w-2xl space-y-4">
+              <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h3 className="text-base font-black text-slate-950">
+                  No reviews yet
+                </h3>
+
+                <p className="mt-3 text-xs font-medium leading-6 text-slate-600">
+                  Reviews will appear here after completed collaborations.
+                </p>
+              </article>
+            </div>
+          ) : null}
+        </section>
       </section>
-
-      <MediaHireFooter />
     </main>
   );
 }

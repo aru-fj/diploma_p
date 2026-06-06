@@ -1,15 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import { Eye, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { StatsCard } from "./stats-card";
 import { fadeInUp, mediaHireClassNames, mediaHireMotion } from "../ui/design-system";
 import { getStoredJobSeekerProfile } from "../account-settings/profile-store";
-
-const avatar =
-  "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=240&q=85";
+import { JobSeekerAvatar } from "../jobseeker-avatar-placeholder";
 
 export function ProfileSummaryCard() {
   const [profile, setProfile] = useState(() => getStoredJobSeekerProfile());
@@ -17,7 +14,7 @@ export function ProfileSummaryCard() {
     profile.fullName ||
     [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
     "Job Seeker";
-  const avatarSrc = profile.avatarPreview || avatar;
+  const avatarSrc = profile.avatarPreview;
   const role =
     profile.jobTitle || profile.role || "Creative Specialist";
 
@@ -41,35 +38,34 @@ export function ProfileSummaryCard() {
   return (
     <motion.section
       animate="show"
-      className={`p-6 ${mediaHireClassNames.card}`}
+      className={`p-4 ${mediaHireClassNames.card}`}
       initial="hidden"
       transition={mediaHireMotion.item(0)}
       variants={fadeInUp}
     >
-      <div className="grid gap-5 md:grid-cols-[1fr_auto] md:items-center">
-        <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
-          <Image
+      <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
+        <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+          <JobSeekerAvatar
             alt={fullName}
-            className="h-24 w-24 rounded-full object-cover"
-            height={96}
+            className="h-14 w-14 rounded-2xl ring-4 ring-[#eef4ff]"
+            iconSize={22}
+            size={56}
             src={avatarSrc}
-            unoptimized={avatarSrc.startsWith("data:")}
-            width={96}
           />
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-black text-slate-950">
+            <h2 className="text-base font-black text-slate-950">
               {fullName}
             </h2>
             <p className="mt-1 text-xs font-semibold text-slate-500">
               {role}, 4+ years of experience
             </p>
-            <div className="mt-4 h-1.5 max-w-sm rounded-full bg-slate-100">
+            <div className="mt-3 h-1.5 max-w-sm rounded-full bg-slate-100">
               <div className="h-full w-[92%] rounded-full bg-[#0B63E5]" />
             </div>
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <StatsCard
             count={3}
             icon={Eye}

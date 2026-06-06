@@ -11,25 +11,37 @@ import {
   FileText,
   Heart,
   LockKeyhole,
-  MessageCircle,
   Play,
   Send,
 } from "lucide-react";
 
-import { DashboardFooter } from "@/components/mediahire/dashboard/dashboard-footer";
 import { DashboardHeader } from "@/components/mediahire/dashboard/dashboard-header";
 import {
   getPublicWorkBySlug,
   type PublicWorkMedia,
 } from "@/components/mediahire/public/public-works-data";
 import { publicPeople } from "@/components/mediahire/public/public-people-data";
+import {
+  isProjectSaved,
+  SAVED_PROJECTS_CHANGED_EVENT,
+  toggleSavedProject,
+} from "@/components/mediahire/saved-projects-storage";
+import {
+  getStoredJobSeekerProfile,
+  type JobSeekerProfile,
+} from "@/components/mediahire/account-settings/profile-store";
+import { JobSeekerAvatar } from "@/components/mediahire/jobseeker-avatar-placeholder";
 
 type ProjectComment = {
   avatar: string;
   name: string;
   date: string;
+  isCurrentUser?: boolean;
   text: string;
 };
+
+const legacyCurrentUserAvatar =
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80";
 
 const defaultComments: ProjectComment[] = [
   {
@@ -55,20 +67,6 @@ const defaultComments: ProjectComment[] = [
   },
 ];
 
-function readStorageList(key: string) {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const stored = window.localStorage.getItem(key);
-    if (!stored) return [];
-
-    const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
-  } catch {
-    return [];
-  }
-}
-
 function readStoredComments(key: string) {
   if (typeof window === "undefined") return defaultComments;
 
@@ -83,38 +81,93 @@ function readStoredComments(key: string) {
   }
 }
 
+function getCurrentCommentAuthor(profile: JobSeekerProfile) {
+  return {
+    avatar: profile.avatarPreview,
+    name:
+      profile.fullName ||
+      [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
+      "Job Seeker",
+  };
+}
+
+function isCurrentUserComment(comment: ProjectComment) {
+  return (
+    comment.isCurrentUser ||
+    comment.name === "You" ||
+    comment.avatar === legacyCurrentUserAvatar
+  );
+}
+
 export default function JobSeekerWorkDetailPage() {
   const params = useParams<{ id: string }>();
   const work = getPublicWorkBySlug(params.id);
+  const commentsStorageKey = `mediahire_jobseeker_project_comments_${params.id}`;
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
-  const [comments, setComments] = useState<ProjectComment[]>(defaultComments);
+  const [comments, setComments] = useState<ProjectComment[]>(() =>
+    readStoredComments(commentsStorageKey),
+  );
   const [isSaved, setIsSaved] = useState(false);
-
-  const commentsStorageKey = `mediahire_jobseeker_project_comments_${params.id}`;
+  const [profile, setProfile] = useState<JobSeekerProfile>(() =>
+    getStoredJobSeekerProfile(),
+  );
+  const currentCommentAuthor = getCurrentCommentAuthor(profile);
 
   useEffect(() => {
-    setComments(readStoredComments(commentsStorageKey));
+    const syncSavedProject = () => {
+      setIsSaved(isProjectSaved(params.id));
+    };
 
-    const savedProjects = readStorageList("mediahire_jobseeker_saved_projects");
-    setIsSaved(savedProjects.includes(params.id));
-  }, [commentsStorageKey, params.id]);
+    syncSavedProject();
+    window.addEventListener(SAVED_PROJECTS_CHANGED_EVENT, syncSavedProject);
+    window.addEventListener("storage", syncSavedProject);
 
-  function toggleSavedProject() {
-    const savedProjects = readStorageList("mediahire_jobseeker_saved_projects");
+    return () => {
+      window.removeEventListener(SAVED_PROJECTS_CHANGED_EVENT, syncSavedProject);
+      window.removeEventListener("storage", syncSavedProject);
+    };
+  }, [params.id]);
 
-    const next = savedProjects.includes(params.id)
-      ? savedProjects.filter((slug) => slug !== params.id)
-      : [...savedProjects, params.id];
+  useEffect(() => {
+    function syncProfile() {
+      const nextProfile = getStoredJobSeekerProfile();
+      const nextAuthor = getCurrentCommentAuthor(nextProfile);
 
-    window.localStorage.setItem(
-      "mediahire_jobseeker_saved_projects",
-      JSON.stringify(next),
-    );
+      setProfile(nextProfile);
+      setComments((current) =>
+        current.map((comment) =>
+          isCurrentUserComment(comment)
+            ? {
+                ...comment,
+                avatar: nextAuthor.avatar,
+                isCurrentUser: true,
+                name: nextAuthor.name,
+              }
+            : comment,
+        ),
+      );
+    }
 
-    setIsSaved(next.includes(params.id));
+    syncProfile();
+    window.addEventListener("mediahire:jobseeker-profile-updated", syncProfile);
+    window.addEventListener("mediahire:user-state-updated", syncProfile);
+    window.addEventListener("storage", syncProfile);
+
+    return () => {
+      window.removeEventListener(
+        "mediahire:jobseeker-profile-updated",
+        syncProfile,
+      );
+      window.removeEventListener("mediahire:user-state-updated", syncProfile);
+      window.removeEventListener("storage", syncProfile);
+    };
+  }, []);
+
+  function handleToggleSavedProject() {
+    setIsSaved(toggleSavedProject(params.id));
   }
 
   function handlePostComment() {
@@ -123,14 +176,14 @@ export default function JobSeekerWorkDetailPage() {
     if (!value) return;
 
     const newComment: ProjectComment = {
-      avatar:
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
-      name: "You",
+      avatar: currentCommentAuthor.avatar,
       date: new Date().toLocaleDateString("en-US", {
         day: "numeric",
         month: "long",
         year: "numeric",
       }),
+      isCurrentUser: true,
+      name: currentCommentAuthor.name,
       text: value,
     };
 
@@ -148,7 +201,7 @@ export default function JobSeekerWorkDetailPage() {
   if (!work) {
     return (
       <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
-        <div className="mx-auto min-h-screen w-full px-4 py-8 sm:px-8 lg:px-12">
+        <div className="mx-auto min-h-screen w-full px-4 pt-6 pb-8 sm:px-8 lg:px-12">
           <DashboardHeader
             isMenuOpen={isMenuOpen}
             isUserMenuOpen={isUserMenuOpen}
@@ -178,8 +231,6 @@ export default function JobSeekerWorkDetailPage() {
             </Link>
           </section>
         </div>
-
-        <DashboardFooter />
       </main>
     );
   }
@@ -195,7 +246,7 @@ export default function JobSeekerWorkDetailPage() {
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
-      <div className="mx-auto min-h-screen w-full px-4 py-8 sm:px-8 lg:px-12">
+      <div className="mx-auto min-h-screen w-full px-4 pt-6 pb-8 sm:px-8 lg:px-12">
         <DashboardHeader
           isMenuOpen={isMenuOpen}
           isUserMenuOpen={isUserMenuOpen}
@@ -203,55 +254,57 @@ export default function JobSeekerWorkDetailPage() {
           onToggleUserMenu={() => setIsUserMenuOpen((current) => !current)}
         />
 
-        <section className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
-          <Link
-            href="/home/jobseeker"
-            className="mb-6 inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Link>
+        <section className="mx-auto w-full max-w-4xl px-4 pb-12 pt-6 sm:px-6 lg:px-5">
+          <div className="mb-5 flex flex-col gap-3 sm:grid sm:grid-cols-[auto_1fr] sm:items-center lg:grid-cols-[0px_1fr]">
+            <Link
+              href="/home/jobseeker"
+              className="inline-flex h-10 w-fit items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 lg:-translate-x-20"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Link>
 
-          <Link
-            href={authorProfileHref}
-            className="mb-4 flex w-fit items-center gap-3 rounded-[1.4rem] bg-white px-4 py-3 shadow-[0_14px_40px_rgba(15,23,42,0.07)] transition hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]"
-          >
-            <div className="h-14 w-14 overflow-hidden rounded-[1rem] bg-slate-200">
-              <img
-                src={authorAvatar}
-                alt={work.author}
-                className="h-full w-full object-cover"
-              />
-            </div>
+            <Link
+              href={authorProfileHref}
+              className="flex w-fit items-center gap-3.5 rounded-2xl bg-white px-3.5 py-2.5 shadow-[0_12px_34px_rgba(15,23,42,0.07)] transition hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-[0_16px_42px_rgba(37,99,235,0.12)] sm:justify-self-start"
+            >
+              <div className="h-12 w-14 overflow-hidden rounded-xl bg-slate-200">
+                <img
+                  src={authorAvatar}
+                  alt={work.author}
+                  className="h-full w-full object-cover"
+                />
+              </div>
 
-            <div>
-              <h2 className="text-lg font-black text-slate-950">
-                {work.title}
-              </h2>
+              <div>
+                <h2 className="text-sm font-black text-slate-950">
+                  {work.title}
+                </h2>
 
-              <p className="mt-0.5 text-base font-black text-slate-500 transition hover:text-blue-600">
-                {work.author}
-              </p>
-            </div>
-          </Link>
+                <p className="mt-0.5 text-xs font-black text-slate-500 transition hover:text-blue-600">
+                  {work.author}
+                </p>
+              </div>
+            </Link>
+          </div>
 
-          <article className="overflow-hidden rounded-[2rem] border border-white bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-            <div className="bg-[#eaf3ff] px-5 py-6 sm:px-8 md:px-8">
-              <header className="mx-auto max-w-3xl text-center">
-                <p className="mb-4 inline-flex rounded-full bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-blue-600 shadow-sm">
+          <article className="overflow-hidden rounded-2xl border border-white bg-white shadow-[0_18px_56px_rgba(15,23,42,0.08)]">
+            <div className="bg-[#eaf3ff] px-4 py-5 sm:px-5">
+              <header className="mx-auto max-w-2xl text-center">
+                <p className="mb-3 inline-flex rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-blue-600 shadow-sm">
                   Project details
                 </p>
 
-                <h1 className="text-3xl font-black italic text-blue-600 md:text-4xl">
+                <h1 className="text-2xl font-black italic text-blue-600">
                   {work.title}
                 </h1>
 
-                <p className="mx-auto mt-5 max-w-2xl text-sm font-bold italic leading-7 text-slate-700 md:text-base">
+                <p className="mx-auto mt-3 max-w-xl text-xs font-bold italic leading-6 text-slate-700 sm:text-sm">
                   {work.description}
                 </p>
               </header>
 
-              <div className="mx-auto mt-10 flex max-w-3xl flex-col gap-6">
+              <div className="mx-auto mt-6 flex max-w-2xl flex-col gap-4">
                 {work.gallery.map((media, index) => (
                   <ProjectMediaItem
                     key={`${media.type}-${media.src}-${index}`}
@@ -262,8 +315,8 @@ export default function JobSeekerWorkDetailPage() {
                 ))}
               </div>
 
-              <footer className="mx-auto mt-10 max-w-3xl text-center">
-                <div className="mx-auto h-14 w-14 overflow-hidden rounded-2xl bg-slate-200 shadow-sm">
+              <footer className="mx-auto mt-6 max-w-2xl text-center">
+                <div className="mx-auto h-9 w-12 overflow-hidden rounded-xl bg-slate-200 shadow-sm">
                   <img
                     src={authorAvatar}
                     alt={work.author}
@@ -271,54 +324,54 @@ export default function JobSeekerWorkDetailPage() {
                   />
                 </div>
 
-                <p className="mt-4 text-xs font-black text-slate-600">
+                <p className="mt-3 text-[11px] font-black text-slate-600">
                   {work.author}
                 </p>
 
-                <h2 className="mt-1 text-2xl font-black italic text-slate-950">
+                <h2 className="mt-1 text-lg font-black italic text-slate-950">
                   {work.title}
                 </h2>
 
-                <p className="mt-2 text-xs font-semibold text-slate-500">
+                <p className="mt-1.5 text-[11px] font-semibold text-slate-500">
                   Published: {work.createdAt}
                 </p>
 
                 <button
                   type="button"
-                  onClick={toggleSavedProject}
-                  className="mx-auto mt-6 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition hover:scale-105 hover:bg-blue-600"
+                  onClick={handleToggleSavedProject}
+                  className="mx-auto mt-5 flex h-9 w-9 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition hover:scale-105 hover:bg-blue-600"
                   title={isSaved ? "Remove from saved" : "Save project"}
                 >
-                  <Heart className={`h-6 w-6 ${isSaved ? "fill-white" : ""}`} />
+                  <Heart className={`h-5 w-5 ${isSaved ? "fill-white" : ""}`} />
                 </button>
               </footer>
             </div>
           </article>
 
-          <section className="mt-8 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.06)]">
-            <div className="border-b border-slate-200 p-5 md:p-6">
-              <div className="flex gap-4">
-                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-slate-200">
-                  <img
-                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80"
-                    alt="Current user"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
+          <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
+            <div className="border-b border-slate-200 p-4">
+              <div className="flex gap-3">
+                <JobSeekerAvatar
+                  alt={currentCommentAuthor.name}
+                  className="h-9 w-9 shrink-0 overflow-hidden rounded-full"
+                  iconSize={16}
+                  size={36}
+                  src={currentCommentAuthor.avatar}
+                />
 
                 <div className="flex-1">
                   <textarea
                     value={commentText}
                     onChange={(event) => setCommentText(event.target.value)}
                     placeholder="Write a comment about the project."
-                    className="h-24 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-blue-300 focus:bg-white"
+                    className="h-16 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-medium text-slate-700 outline-none transition focus:border-blue-300 focus:bg-white"
                   />
 
-                  <div className="mt-3 flex justify-end">
+                  <div className="mt-2.5 flex justify-end">
                     <button
                       type="button"
                       onClick={handlePostComment}
-                      className="inline-flex h-9 items-center justify-center rounded-full bg-blue-600 px-5 text-xs font-black text-white transition hover:bg-blue-700"
+                      className="inline-flex h-8 items-center justify-center rounded-full bg-blue-600 px-4 text-[11px] font-black text-white transition hover:bg-blue-700"
                     >
                       <Send className="mr-2 h-3.5 w-3.5" />
                       Post comment
@@ -328,11 +381,12 @@ export default function JobSeekerWorkDetailPage() {
               </div>
             </div>
 
-            <div className="space-y-5 p-5 md:p-6">
+            <div className="space-y-4 p-4">
               {comments.map((comment, index) => (
                 <CommentItem
                   key={`${comment.name}-${comment.date}-${index}`}
                   avatar={comment.avatar}
+                  isCurrentUser={isCurrentUserComment(comment)}
                   name={comment.name}
                   date={comment.date}
                   text={comment.text}
@@ -341,49 +395,27 @@ export default function JobSeekerWorkDetailPage() {
             </div>
           </section>
 
-          <section className="mt-8 grid gap-5 md:grid-cols-3">
+          <section className="mt-6 grid gap-4 md:grid-cols-3">
             <InfoBox
-              icon={<BriefcaseBusiness className="h-5 w-5" />}
+              icon={<BriefcaseBusiness className="h-4 w-4" />}
               label="Category"
               value={work.category}
             />
 
             <InfoBox
-              icon={<CalendarDays className="h-5 w-5" />}
+              icon={<CalendarDays className="h-4 w-4" />}
               label="Type"
               value={work.type}
             />
 
             <InfoBox
-              icon={<LockKeyhole className="h-5 w-5" />}
+              icon={<LockKeyhole className="h-4 w-4" />}
               label="Access"
               value="Job seeker account"
             />
           </section>
-
-          <section className="mt-8 rounded-[2rem] border border-blue-100 bg-blue-50 p-6 text-center">
-            <MessageCircle className="mx-auto h-7 w-7 text-blue-600" />
-
-            <h2 className="mt-3 text-xl font-black text-slate-950">
-              Want to contact the creator?
-            </h2>
-
-            <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-slate-500">
-              You can open the creator profile and start communication from
-              their profile page.
-            </p>
-
-            <Link
-              href={authorProfileHref}
-              className="mt-5 inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700"
-            >
-              Open creator profile
-            </Link>
-          </section>
         </section>
       </div>
-
-      <DashboardFooter />
     </main>
   );
 }
@@ -408,11 +440,11 @@ function ProjectMediaItem({
 }) {
   if (media.type === "image") {
     return (
-      <div className="overflow-hidden rounded-[1.5rem] bg-slate-100 shadow-sm ring-1 ring-white">
+      <div className="h-[360px] overflow-hidden rounded-2xl bg-slate-100 shadow-sm ring-1 ring-white sm:h-[420px]">
         <img
           src={media.src}
           alt={media.alt || `${title} ${index + 1}`}
-          className="w-full object-cover"
+          className="h-full w-full object-cover"
         />
       </div>
     );
@@ -422,8 +454,8 @@ function ProjectMediaItem({
     const embedUrl = getYouTubeEmbedUrl(media.src);
 
     return (
-      <div className="overflow-hidden rounded-[1.5rem] bg-black shadow-sm ring-1 ring-white">
-        <div className="flex items-center gap-2 bg-slate-950 px-4 py-3 text-sm font-black text-white">
+      <div className="overflow-hidden rounded-2xl bg-black shadow-sm ring-1 ring-white">
+        <div className="flex items-center gap-2 bg-slate-950 px-3.5 py-2.5 text-xs font-black text-white">
           <Play className="h-4 w-4" />
           {media.title}
         </div>
@@ -437,7 +469,7 @@ function ProjectMediaItem({
             allowFullScreen
           />
         ) : (
-          <div className="flex aspect-video items-center justify-center bg-slate-900 px-6 text-center text-sm font-bold text-white">
+          <div className="flex aspect-video items-center justify-center bg-slate-900 px-5 text-center text-xs font-bold text-white">
             Invalid YouTube link
           </div>
         )}
@@ -446,10 +478,10 @@ function ProjectMediaItem({
   }
 
   return (
-    <div className="overflow-hidden rounded-[1.5rem] bg-white shadow-sm ring-1 ring-slate-200">
-      <div className="flex items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-          <FileText className="h-5 w-5 text-blue-600" />
+    <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-3.5 py-2.5">
+        <div className="flex items-center gap-2 text-xs font-black text-slate-900">
+          <FileText className="h-4 w-4 text-blue-600" />
           {media.title}
         </div>
 
@@ -457,7 +489,7 @@ function ProjectMediaItem({
           href={media.src}
           target="_blank"
           rel="noreferrer"
-          className="rounded-full bg-blue-600 px-4 py-2 text-xs font-black text-white transition hover:bg-blue-700"
+          className="rounded-full bg-blue-600 px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-blue-700"
         >
           Open PDF
         </a>
@@ -466,7 +498,7 @@ function ProjectMediaItem({
       <iframe
         src={`${media.src}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`}
         title={media.title}
-        className="h-[85vh] min-h-[760px] w-full bg-white"
+        className="h-[520px] w-full bg-white"
       />
     </div>
   );
@@ -509,30 +541,42 @@ function getYouTubeEmbedUrl(url: string) {
 
 function CommentItem({
   avatar,
+  isCurrentUser = false,
   name,
   date,
   text,
 }: {
   avatar: string;
+  isCurrentUser?: boolean;
   name: string;
   date: string;
   text: string;
 }) {
   return (
-    <div className="flex gap-4">
-      <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-slate-200">
-        <img src={avatar} alt={name} className="h-full w-full object-cover" />
-      </div>
+    <div className="flex gap-3">
+      {isCurrentUser ? (
+        <JobSeekerAvatar
+          alt={name}
+          className="h-9 w-9 shrink-0 overflow-hidden rounded-full"
+          iconSize={16}
+          size={36}
+          src={avatar}
+        />
+      ) : (
+        <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-slate-200">
+          <img src={avatar} alt={name} className="h-full w-full object-cover" />
+        </div>
+      )}
 
       <div>
-        <p className="text-lg font-black text-slate-950">
+        <p className="text-sm font-black text-slate-950">
           {name}
-          <span className="ml-2 text-xs font-semibold text-slate-400">
+          <span className="ml-2 text-[11px] font-semibold text-slate-400">
             · {date}
           </span>
         </p>
 
-        <p className="mt-1 text-sm font-medium text-slate-600">{text}</p>
+        <p className="mt-1 text-xs font-medium text-slate-600">{text}</p>
       </div>
     </div>
   );
@@ -548,16 +592,16 @@ function InfoBox({
   value: string;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-2.5 flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
         {icon}
       </div>
 
-      <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
         {label}
       </p>
 
-      <p className="mt-1 text-sm font-black text-slate-800">{value}</p>
+      <p className="mt-1 text-xs font-black text-slate-800">{value}</p>
     </div>
   );
 }

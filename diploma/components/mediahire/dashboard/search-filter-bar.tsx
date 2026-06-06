@@ -20,31 +20,31 @@ export function SearchFilterBar({
   onOpenFilter,
 }: SearchFilterBarProps) {
   return (
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+    <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
       <button
         type="button"
         onClick={onOpenFilter}
-        className="flex h-10 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-xs font-black text-slate-900 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+        className="jobseeker-filter-text flex h-8 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-[9px] font-semibold leading-none text-slate-900 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
       >
-        <SlidersHorizontal className="h-4 w-4" />
+        <SlidersHorizontal className="h-3.5 w-3.5" />
         Filter
       </button>
 
-      <div className="flex h-10 flex-1 items-center gap-3 rounded-full bg-slate-100 px-4">
-        <Search className="h-4 w-4 text-slate-500" />
+      <div className="flex h-8 flex-1 items-center gap-2 rounded-full bg-slate-100 px-3">
+        <Search className="h-3.5 w-3.5 text-slate-500" />
         <input
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={mode === "Projects" ? "Search projects" : "Search people"}
-          className="h-full flex-1 bg-transparent text-xs font-semibold text-slate-900 outline-none placeholder:text-slate-400"
+          className="jobseeker-filter-input h-full flex-1 bg-transparent text-[9px] font-medium leading-none text-slate-900 outline-none placeholder:text-slate-400"
         />
       </div>
 
-      <div className="grid h-10 grid-cols-2 rounded-full bg-slate-100 p-1 lg:w-[210px]">
+      <div className="grid h-8 grid-cols-2 rounded-full bg-slate-100 p-1 lg:w-[170px]">
         <button
           type="button"
           onClick={() => onModeChange("Projects")}
-          className={`rounded-full text-xs font-black transition ${
+          className={`jobseeker-filter-text rounded-full text-[9px] font-semibold leading-none transition ${
             mode === "Projects"
               ? "bg-white text-slate-950 shadow-sm"
               : "text-slate-500 hover:text-slate-800"
@@ -56,7 +56,7 @@ export function SearchFilterBar({
         <button
           type="button"
           onClick={() => onModeChange("People")}
-          className={`rounded-full text-xs font-black transition ${
+          className={`jobseeker-filter-text rounded-full text-[9px] font-semibold leading-none transition ${
             mode === "People"
               ? "bg-white text-slate-950 shadow-sm"
               : "text-slate-500 hover:text-slate-800"

@@ -13,20 +13,7 @@ const nextAuthPaths = new Set([
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith("/home/jobseeker/people/")) {
-    const rewriteUrl = request.nextUrl.clone();
-    rewriteUrl.pathname = pathname.replace(
-      "/home/jobseeker/people",
-      "/home/jobseeker/specialists",
-    );
-
-    return NextResponse.rewrite(rewriteUrl);
-  }
-
-  if (
-    pathname === "/profile/jobseeker" ||
-    pathname === "/dashboard/jobseeker/profile"
-  ) {
+  if (pathname === "/dashboard/jobseeker/profile") {
     const rewriteUrl = request.nextUrl.clone();
     rewriteUrl.pathname = "/home/jobseeker/my-profile";
 
@@ -55,8 +42,6 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/api/auth/:path*",
-    "/home/jobseeker/people/:path*",
-    "/profile/jobseeker",
     "/dashboard/jobseeker/profile",
   ],
 };

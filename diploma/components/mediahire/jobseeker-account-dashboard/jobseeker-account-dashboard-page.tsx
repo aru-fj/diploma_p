@@ -18,24 +18,26 @@ import {
 } from "../ui/design-system";
 
 export function JobSeekerAccountDashboardPage() {
-  const [activeItem, setActiveItem] = useState("Dashboard");
+  const [activeItem, setActiveItem] = useState("Activity");
   const [search, setSearch] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
     <motion.main
       animate="show"
-      className={`${mediaHireClassNames.appShell} p-4 sm:p-6`}
+      className={`${mediaHireClassNames.appShell} overflow-x-hidden px-4 py-4 sm:px-5 lg:px-6`}
       initial="hidden"
       transition={mediaHireMotion.page}
       variants={fadeIn}
     >
-      <div className="mx-auto grid max-w-[1480px] gap-6 lg:grid-cols-[245px_1fr]">
+      <div className="mx-auto grid w-full max-w-[1240px] gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
         <div className="hidden lg:block">
-          <DashboardSidebar
-            activeItem={activeItem}
-            onNavigate={() => setActiveItem("Dashboard")}
-          />
+          <div className="fixed left-[max(1.5rem,calc((100vw-1240px)/2))] top-4 z-20 h-[calc(100vh-2rem)] max-h-[760px] w-[220px]">
+            <DashboardSidebar
+              activeItem={activeItem}
+              onNavigate={() => setActiveItem("Activity")}
+            />
+          </div>
         </div>
 
         <AnimatePresence>
@@ -80,14 +82,14 @@ export function JobSeekerAccountDashboardPage() {
             search={search}
           />
 
-          <div className="mt-8 grid gap-6 xl:grid-cols-[1fr_350px]">
-            <div className="grid gap-6">
+          <div className="mt-5 grid min-w-0 gap-5 min-[1180px]:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="grid min-w-0 gap-4">
               <ProfileSummaryCard />
               <SavedJobsCard />
               <ApplicationStatusCard />
             </div>
 
-            <aside className="grid content-start gap-6">
+            <aside className="grid min-w-0 content-start items-start gap-4">
               <StatusDonutCard />
               <MessagesPreviewCard />
             </aside>

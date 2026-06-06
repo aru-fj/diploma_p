@@ -20,5 +20,5 @@ export default async function JobSeekerHomeRoute({
   const initialMode =
     resolvedSearchParams?.tab === "people" ? "People" : "Projects";
 
-  return <JobSeekerDashboardPage initialMode={initialMode} />;
+  return <JobSeekerDashboardPage initialMode={initialMode} showFooter={false} />;
 }

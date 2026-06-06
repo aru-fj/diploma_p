@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { DashboardHeader } from "@/components/mediahire/dashboard/dashboard-header";
 import { ChatSidebar } from "./chat-sidebar";
@@ -11,6 +11,7 @@ import {
   type ChatMessage,
   type Conversation,
 } from "./community-data";
+import { mediaHireCompanies } from "@/components/mediahire/jobs-data";
 import { publicPeople } from "@/components/mediahire/public/public-people-data";
 import {
   fadeIn,
@@ -37,10 +38,24 @@ function readStoredConversations() {
     const raw = window.localStorage.getItem(jobSeekerChatsStorageKey);
     const parsed = raw ? JSON.parse(raw) : null;
 
-    return Array.isArray(parsed) ? parsed : initialConversations;
+    return Array.isArray(parsed)
+      ? getPersistableConversations(parsed as Conversation[])
+      : initialConversations;
   } catch {
     return initialConversations;
   }
+}
+
+function getPersistableConversations(conversations: Conversation[]) {
+  const seededConversationIds = new Set(
+    initialConversations.map((conversation) => conversation.id),
+  );
+
+  return conversations.filter(
+    (conversation) =>
+      seededConversationIds.has(conversation.id) ||
+      conversation.messages.length > 0,
+  );
 }
 
 function persistConversations(conversations: Conversation[]) {
@@ -50,43 +65,89 @@ function persistConversations(conversations: Conversation[]) {
 
   window.localStorage.setItem(
     jobSeekerChatsStorageKey,
-    JSON.stringify(conversations),
+    JSON.stringify(getPersistableConversations(conversations)),
   );
+}
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 }
 
 function createConversationFromSlug(slug: string): Conversation | null {
   const person = publicPeople.find((item) => item.slug === slug);
 
-  if (!person) {
-    return null;
+  if (person) {
+    return {
+      avatar: person.avatar,
+      color: "bg-blue-50 text-blue-700",
+      id: person.slug,
+      initials: getInitials(person.name),
+      lastSeen: "Online",
+      messages: [],
+      name: person.name,
+      preview: "Start the conversation.",
+      time: "Now",
+      unread: 0,
+    };
   }
 
-  return {
-    avatar: person.avatar,
-    color: "bg-blue-50 text-blue-700",
-    id: person.slug,
-    initials: person.name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase(),
-    lastSeen: "Online",
-    messages: [],
-    name: person.name,
-    preview: "Start the conversation.",
-    time: "Now",
-    unread: 0,
-  };
+  const company = mediaHireCompanies.find((item) => item.id === slug);
+
+  if (company) {
+    return {
+      avatar: company.logo,
+      color: "bg-blue-50 text-blue-700",
+      id: company.id,
+      initials: getInitials(company.name),
+      lastSeen: "Online",
+      messages: [],
+      name: company.name,
+      preview: "Start the conversation.",
+      time: "Now",
+      unread: 0,
+    };
+  }
+
+  return null;
 }
 
-export function CommunityPage() {
+function getInitialConversations(initialChatId: string | null) {
+  const storedConversations = readStoredConversations();
+
+  if (
+    !initialChatId ||
+    storedConversations.some((item) => item.id === initialChatId)
+  ) {
+    return storedConversations;
+  }
+
+  const createdConversation = createConversationFromSlug(initialChatId);
+
+  if (!createdConversation) {
+    return storedConversations;
+  }
+
+  const nextConversations = [createdConversation, ...storedConversations];
+
+  return nextConversations;
+}
+
+type CommunityPageProps = {
+  initialChatId?: string | null;
+};
+
+export function CommunityPage({ initialChatId = null }: CommunityPageProps) {
   const [conversations, setConversations] =
-    useState<Conversation[]>(initialConversations);
+    useState<Conversation[]>(() => getInitialConversations(initialChatId));
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialChatId);
 
   const filteredConversations = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -105,28 +166,6 @@ export function CommunityPage() {
   const selectedConversation =
     conversations.find((conversation) => conversation.id === selectedId) ??
     null;
-
-  useEffect(() => {
-    const storedConversations = readStoredConversations();
-    const params = new URLSearchParams(window.location.search);
-    const chatSlug = params.get("chat");
-
-    let nextConversations = storedConversations;
-
-    if (chatSlug && !nextConversations.some((item) => item.id === chatSlug)) {
-      const createdConversation = createConversationFromSlug(chatSlug);
-
-      if (createdConversation) {
-        nextConversations = [createdConversation, ...nextConversations];
-      }
-    }
-
-    setConversations(nextConversations);
-
-    if (chatSlug) {
-      setSelectedId(chatSlug);
-    }
-  }, []);
 
   function handleSelect(conversationId: string) {
     setSelectedId(conversationId);
@@ -150,25 +189,38 @@ export function CommunityPage() {
     }
 
     setConversations((currentConversations) => {
-      const nextConversations = currentConversations.map((conversation) =>
-        conversation.id === selectedConversation.id
-          ? {
-              ...conversation,
-              messages: [
-                ...conversation.messages,
-                {
-                  id: `${conversation.id}-${Date.now()}`,
-                  sender: "me",
-                  text: message,
-                  time: formatMessageTime(),
-                  type: "text",
-                } satisfies ChatMessage,
-              ],
-              preview: message,
-              time: "Now",
-            }
-          : conversation,
+      let updatedConversation: Conversation | null = null;
+      const nextConversations = currentConversations.reduce<Conversation[]>(
+        (items, conversation) => {
+          if (conversation.id !== selectedConversation.id) {
+            items.push(conversation);
+            return items;
+          }
+
+          updatedConversation = {
+            ...conversation,
+            messages: [
+              ...conversation.messages,
+              {
+                id: `${conversation.id}-${Date.now()}`,
+                sender: "me",
+                text: message,
+                time: formatMessageTime(),
+                type: "text",
+              } satisfies ChatMessage,
+            ],
+            preview: message,
+            time: "Now",
+          };
+
+          return items;
+        },
+        [],
       );
+
+      if (updatedConversation) {
+        nextConversations.unshift(updatedConversation);
+      }
 
       persistConversations(nextConversations);
       return nextConversations;

@@ -4,6 +4,7 @@ export type JobSeekerProfile = {
   city: string;
   country: string;
   email: string;
+  experienceYears: string;
   expectedSalary: string;
   firstName: string;
   fullName: string;
@@ -12,6 +13,7 @@ export type JobSeekerProfile = {
   lastName: string;
   location: string;
   minimumSalary: string;
+  minimumSalaryCurrency: string;
   mobile: string;
   paymentPeriod: string;
   postalCode: string;
@@ -20,6 +22,7 @@ export type JobSeekerProfile = {
   resumeUrl: string;
   role: string;
   skills: string;
+  software: string;
   yearOfBirth: string;
 };
 
@@ -28,26 +31,29 @@ export const jobSeekerProfileStorageKey = "mediahire.jobseeker.profile";
 export const defaultJobSeekerProfile: JobSeekerProfile = {
   avatarPreview: "",
   bio: "",
-  city: "Astana",
-  country: "Kazakhstan",
-  email: "No email added",
+  city: "",
+  country: "",
+  email: "",
+  experienceYears: "",
   expectedSalary: "",
-  firstName: "Job",
-  fullName: "Job Seeker",
-  gender: "Female",
-  jobTitle: "Creative Specialist",
-  lastName: "Seeker",
-  location: "Astana, Kazakhstan",
+  firstName: "",
+  fullName: "",
+  gender: "",
+  jobTitle: "",
+  lastName: "",
+  location: "",
   minimumSalary: "",
-  mobile: "No phone added",
+  minimumSalaryCurrency: "Dollar",
+  mobile: "",
   paymentPeriod: "",
   postalCode: "",
   preferredLocation: "",
   preferredPostalCode: "",
   resumeUrl: "",
-  role: "Creative Specialist",
+  role: "",
   skills: "",
-  yearOfBirth: "2005",
+  software: "",
+  yearOfBirth: "",
 };
 
 export function getStoredJobSeekerProfile(): JobSeekerProfile {

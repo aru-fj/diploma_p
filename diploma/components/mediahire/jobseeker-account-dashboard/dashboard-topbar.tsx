@@ -1,19 +1,16 @@
 "use client";
 
-import Image from "next/image";
 import { Bell, Menu, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { mediaHireClassNames } from "../ui/design-system";
 import { getStoredJobSeekerProfile } from "../account-settings/profile-store";
+import { JobSeekerAvatar } from "../jobseeker-avatar-placeholder";
 
 type DashboardTopbarProps = {
   onOpenSidebar: () => void;
   onSearchChange: (value: string) => void;
   search: string;
 };
-
-const avatar =
-  "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=160&q=85";
 
 export function DashboardTopbar({
   onOpenSidebar,
@@ -25,7 +22,7 @@ export function DashboardTopbar({
     profile.fullName ||
     [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
     "Job Seeker";
-  const avatarSrc = profile.avatarPreview || avatar;
+  const avatarSrc = profile.avatarPreview;
   const email = profile.email || "No email added";
 
   useEffect(() => {
@@ -46,7 +43,7 @@ export function DashboardTopbar({
   }, []);
 
   return (
-    <header className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+    <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex items-start gap-3">
         <button
           aria-label="Open dashboard menu"
@@ -57,19 +54,19 @@ export function DashboardTopbar({
           <Menu size={20} />
         </button>
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-2xl">
-            Dashboard
+          <h1 className="text-2xl font-black tracking-tight text-slate-950">
+            Activity
           </h1>
-          <p className="mt-1 text-sm font-medium text-slate-500">
+          <p className="mt-1 max-w-xl text-sm font-medium leading-5 text-slate-500">
             View your activity, applications, and latest updates in one place
           </p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <label className="relative block w-full sm:w-80">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+        <label className="relative block w-full min-w-0 sm:w-64 lg:w-56 xl:w-64">
           <input
-            className={`${mediaHireClassNames.input} w-full pr-12`}
+            className={`${mediaHireClassNames.input} h-9 w-full pr-10 text-xs`}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search"
             type="search"
@@ -77,33 +74,32 @@ export function DashboardTopbar({
           />
           <Search
             className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-950"
-            size={20}
+            size={17}
           />
         </label>
 
         <button
           aria-label="Notifications"
-          className="relative grid h-10 w-10 place-items-center rounded-2xl bg-white text-slate-700 shadow-sm transition hover:text-[#0B63E5]"
+          className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-slate-700 shadow-sm transition hover:text-[#0B63E5]"
           type="button"
         >
-          <Bell size={20} />
+          <Bell size={17} />
           <span className="absolute right-2 top-2 grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
             1
           </span>
         </button>
 
-        <div className="flex items-center gap-3 rounded-2xl bg-white px-3 py-2 shadow-sm">
-          <Image
+        <div className="flex min-w-0 items-center gap-2 rounded-xl bg-white px-2 py-1.5 shadow-sm sm:max-w-[220px]">
+          <JobSeekerAvatar
             alt={fullName}
-            className="h-10 w-10 rounded-xl object-cover"
-            height={48}
+            className="h-8 w-8 shrink-0 rounded-xl"
+            iconSize={15}
+            size={32}
             src={avatarSrc}
-            unoptimized={avatarSrc.startsWith("data:")}
-            width={48}
           />
-          <div>
-            <p className="text-sm font-black text-slate-950">{fullName}</p>
-            <p className="text-xs font-medium text-slate-400">
+          <div className="min-w-0">
+            <p className="truncate text-[11px] font-black text-slate-950">{fullName}</p>
+            <p className="truncate text-[10px] font-medium text-slate-400">
               {email}
             </p>
           </div>

@@ -1,18 +1,17 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Bell,
   CircleHelp,
   FileText,
+  House,
   LayoutDashboard,
   LogOut,
   Menu,
   Search,
   Settings,
-  UserCog,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -25,13 +24,13 @@ import {
   mediaHireMotion,
   slideInLeft,
 } from "../ui/design-system";
-import { profileAvatar } from "../jobseeker-dashboard/dashboard-data";
 import {
   getCurrentUserProfile,
   getSettings,
   updateSettings,
   type JobSeekerSettings,
 } from "../shared/user-state";
+import { JobSeekerAvatar } from "../jobseeker-avatar-placeholder";
 
 type SidebarItem = {
   href: string;
@@ -40,10 +39,10 @@ type SidebarItem = {
 };
 
 const sidebarItems: SidebarItem[] = [
-  { href: "/account/jobseeker", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/home/jobseeker", icon: House, label: "Home" },
+  { href: "/account/jobseeker", icon: LayoutDashboard, label: "Activity" },
   { href: "/account/jobseeker/resume", icon: FileText, label: "My Resume" },
   { href: "/settings/jobseeker", icon: Settings, label: "Settings" },
-  { href: "/account/jobseeker/settings", icon: UserCog, label: "Account Setting" },
 ];
 
 function AccountSidebar({
@@ -56,22 +55,22 @@ function AccountSidebar({
   const sidebar = (
     <motion.aside
       animate="show"
-      className="flex h-full w-full flex-col rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_22px_70px_rgba(15,23,42,0.06)]"
+      className="flex h-full w-full flex-col rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_14px_44px_rgba(15,23,42,0.045)]"
       initial="hidden"
       transition={mediaHireMotion.panel}
       variants={slideInLeft}
     >
       <div className="flex items-center justify-between gap-4">
-        <Link className="flex items-center gap-3" href="/account/jobseeker">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#0B63E5] text-2xl font-black text-white shadow-[0_16px_36px_rgba(11,99,229,0.22)]">
+        <Link className="flex items-center gap-2.5" href="/account/jobseeker">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#0B63E5] text-xl font-black text-white shadow-[0_12px_28px_rgba(11,99,229,0.18)]">
             M
           </span>
           <span className="leading-tight">
-            <span className="block text-sm font-black text-slate-950">
+            <span className="block text-[11px] font-black text-slate-950">
               <span className="text-[#0B63E5]">Media</span>Hire
             </span>
-            <span className="block text-[11px] font-bold text-slate-400">
-              Dashboard
+            <span className="block text-[10px] font-bold text-slate-400">
+              Activity
             </span>
           </span>
         </Link>
@@ -85,42 +84,42 @@ function AccountSidebar({
         </button>
       </div>
 
-      <p className="mt-8 px-4 text-xs font-bold text-slate-400">Main</p>
-      <nav className="mt-3 grid gap-2">
+      <p className="mt-6 px-3 text-[11px] font-bold text-slate-400">Main</p>
+      <nav className="mt-2 grid gap-1.5">
         {sidebarItems.map((item) => {
           const isActive = item.label === "Settings";
 
           return (
             <Link
-              className={`flex h-10 items-center gap-3 rounded-2xl px-4 text-sm font-black transition ${
+              className={`flex h-9 items-center gap-2 rounded-xl px-3 text-[11px] font-black transition ${
                 isActive
-                  ? "bg-[#0B63E5] text-white shadow-[0_16px_34px_rgba(11,99,229,0.22)]"
+                  ? "bg-[#0B63E5] text-white shadow-[0_12px_26px_rgba(11,99,229,0.18)]"
                   : "text-slate-600 hover:bg-[#eef4ff] hover:text-[#0B63E5]"
               }`}
               href={item.href}
               key={item.label}
               onClick={onClose}
             >
-              <item.icon size={18} />
+              <item.icon size={15} />
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="mt-auto grid gap-2 border-t border-slate-100 pt-5">
+      <div className="mt-auto grid gap-1.5 border-t border-slate-100 pt-4">
         <Link
-          className="flex h-10 items-center gap-3 rounded-2xl px-4 text-sm font-black text-red-500 transition hover:bg-red-50"
+          className="flex h-9 items-center gap-2 rounded-xl px-3 text-[11px] font-black text-red-500 transition hover:bg-red-50"
           href="/"
         >
-          <LogOut size={18} />
+          <LogOut size={15} />
           Log out
         </Link>
         <Link
-          className="flex h-10 items-center gap-3 rounded-2xl px-4 text-sm font-black text-slate-500 transition hover:bg-[#eef4ff] hover:text-[#0B63E5]"
+          className="flex h-9 items-center gap-2 rounded-xl px-3 text-[11px] font-black text-slate-500 transition hover:bg-[#eef4ff] hover:text-[#0B63E5]"
           href="#help"
         >
-          <CircleHelp size={18} />
+          <CircleHelp size={15} />
           Help
         </Link>
       </div>
@@ -129,8 +128,10 @@ function AccountSidebar({
 
   return (
     <>
-      <div className="hidden lg:sticky lg:top-5 lg:block lg:h-[calc(100vh-3rem)]">
-        {sidebar}
+      <div className="hidden lg:block">
+        <div className="fixed left-[max(1.5rem,calc((100vw-1240px)/2))] top-4 z-20 h-[calc(100vh-2rem)] max-h-[760px] w-[220px]">
+          {sidebar}
+        </div>
       </div>
       <AnimatePresence>
         {isOpen ? (
@@ -160,18 +161,18 @@ function ToggleRow({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-[#f8fbff] p-4">
-      <span className="text-sm font-black text-slate-700">{label}</span>
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-[#f8fbff] p-3">
+      <span className="text-xs font-black text-slate-700">{label}</span>
       <button
-        className={`relative h-8 w-14 rounded-full transition ${
+        className={`relative h-7 w-12 rounded-full transition ${
           checked ? "bg-[#0B63E5]" : "bg-slate-300"
         }`}
         onClick={() => onChange(!checked)}
         type="button"
       >
         <span
-          className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${
-            checked ? "left-7" : "left-1"
+          className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow transition ${
+            checked ? "translate-x-5" : "translate-x-0"
           }`}
         />
       </button>
@@ -180,17 +181,12 @@ function ToggleRow({
 }
 
 export function JobSeekerSettingsPage() {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [settings, setSettings] = useState<JobSeekerSettings>(() => getSettings());
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
   const profile = useMemo(() => getCurrentUserProfile(), []);
-  const avatarSrc = profile.avatarPreview || profileAvatar;
+  const avatarSrc = profile.avatarPreview;
   const passwordError =
     settings.password && settings.password.length < 8
       ? "Password must be at least 8 characters"
@@ -215,60 +211,64 @@ export function JobSeekerSettingsPage() {
   return (
     <motion.main
       animate="show"
-      className="min-h-screen bg-[#f5f7fb] px-4 py-6 text-slate-950 sm:px-6 lg:px-5"
+      className="min-h-screen overflow-x-hidden bg-[#f5f7fb] px-4 py-4 text-slate-950 sm:px-5 lg:px-6"
       initial="hidden"
       variants={fadeIn}
     >
-      <div className="mx-auto grid max-w-[1500px] gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="mx-auto grid w-full max-w-[1240px] gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
         <AccountSidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
         />
 
         <div className="min-w-0">
-          <header className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+          <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-3">
               <button
                 aria-label="Open menu"
-                className="mt-1 grid h-11 w-11 place-items-center rounded-2xl bg-white text-slate-800 shadow-sm lg:hidden"
+                className="mt-1 grid h-10 w-10 place-items-center rounded-xl bg-white text-slate-800 shadow-sm lg:hidden"
                 onClick={() => setIsSidebarOpen(true)}
                 type="button"
               >
                 <Menu size={20} />
               </button>
               <div>
-                <h1 className={mediaHireClassNames.h1}>Settings</h1>
-                <p className="mt-2 max-w-xl text-sm font-medium leading-6 text-slate-500">
+                <h1 className="text-2xl font-black tracking-tight text-slate-950">
+                  Settings
+                </h1>
+                <p className="mt-1 max-w-xl text-sm font-medium leading-5 text-slate-500">
                   Manage notifications, profile visibility, integrations, and security.
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <label className="flex h-10 min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)] sm:w-72">
+            <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+              <label className="flex h-9 min-w-0 items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 shadow-[0_10px_26px_rgba(15,23,42,0.035)] sm:w-64 lg:w-56 xl:w-64">
                 <input
-                  className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
+                  className="min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-900 outline-none placeholder:text-slate-400"
                   placeholder="Search"
                   type="search"
                 />
-                <Search className="text-slate-500" size={18} />
+                <Search className="text-slate-400" size={16} />
               </label>
-              <div className="flex items-center gap-3 rounded-2xl bg-white p-2 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
-                <Bell className="text-[#0B63E5]" size={18} />
-                <Image
+              <div className="flex min-w-0 items-center gap-2 rounded-xl bg-white p-1.5 shadow-[0_10px_26px_rgba(15,23,42,0.035)] sm:max-w-[220px]">
+                <span className="relative grid h-8 w-8 place-items-center rounded-full bg-[#eef4ff] text-[#0B63E5]">
+                  <Bell size={15} />
+                  <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                </span>
+                <JobSeekerAvatar
                   alt="Job seeker avatar"
-                  className="h-11 w-11 rounded-full object-cover"
-                  height={44}
+                  className="h-8 w-8 rounded-full"
+                  iconSize={15}
+                  size={32}
                   src={avatarSrc}
-                  width={44}
-                  unoptimized={avatarSrc.startsWith("data:")}
                 />
-                <div className="hidden min-w-0 pr-2 sm:block">
-                  <p className="truncate text-sm font-black text-slate-950">
-                    {isMounted ? profile.fullName : "Job Seeker"}
+                <div className="hidden min-w-0 pr-1.5 sm:block">
+                  <p className="truncate text-[11px] font-black text-slate-950">
+                    {profile.fullName}
                   </p>
-                  <p className="truncate text-xs font-semibold text-slate-400">
-                    {isMounted ? profile.email : "jobseeker@mediahire.kz"}
+                  <p className="truncate text-[10px] font-semibold text-slate-400">
+                    {profile.email}
                   </p>
                 </div>
               </div>
@@ -277,12 +277,12 @@ export function JobSeekerSettingsPage() {
 
           <motion.section
             animate="show"
-            className={`mt-8 max-w-5xl p-5 sm:p-5 ${mediaHireClassNames.card}`}
+            className={`mt-5 max-w-[860px] p-4 ${mediaHireClassNames.card}`}
             initial="hidden"
             transition={mediaHireMotion.item(0)}
             variants={fadeInUp}
           >
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2">
               <ToggleRow
                 checked={settings.jobAlerts}
                 label="Job Alerts"
@@ -315,13 +315,13 @@ export function JobSeekerSettingsPage() {
               />
             </div>
 
-            <div className="mt-8 grid gap-5 md:grid-cols-2">
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
               <label>
-                <span className="mb-2 block text-sm font-black text-slate-800">
+                <span className="mb-2 block text-xs font-black text-slate-800">
                   Language
                 </span>
                 <select
-                  className="h-10 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold outline-none focus:border-[#0B63E5] focus:ring-4 focus:ring-blue-100"
+                  className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold outline-none focus:border-[#0B63E5] focus:ring-4 focus:ring-blue-100"
                   onChange={(event) =>
                     patchSettings({ language: event.target.value })
                   }
@@ -333,11 +333,11 @@ export function JobSeekerSettingsPage() {
                 </select>
               </label>
               <label>
-                <span className="mb-2 block text-sm font-black text-slate-800">
+                <span className="mb-2 block text-xs font-black text-slate-800">
                   Theme
                 </span>
                 <select
-                  className="h-10 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold outline-none focus:border-[#0B63E5] focus:ring-4 focus:ring-blue-100"
+                  className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold outline-none focus:border-[#0B63E5] focus:ring-4 focus:ring-blue-100"
                   onChange={(event) => patchSettings({ theme: event.target.value })}
                   value={settings.theme}
                 >
@@ -346,11 +346,11 @@ export function JobSeekerSettingsPage() {
                 </select>
               </label>
               <label>
-                <span className="mb-2 block text-sm font-black text-slate-800">
+                <span className="mb-2 block text-xs font-black text-slate-800">
                   New Password
                 </span>
                 <input
-                  className="h-10 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold outline-none focus:border-[#0B63E5] focus:ring-4 focus:ring-blue-100"
+                  className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold outline-none focus:border-[#0B63E5] focus:ring-4 focus:ring-blue-100"
                   onChange={(event) =>
                     patchSettings({ password: event.target.value })
                   }
@@ -360,11 +360,11 @@ export function JobSeekerSettingsPage() {
                 />
               </label>
               <label>
-                <span className="mb-2 block text-sm font-black text-slate-800">
+                <span className="mb-2 block text-xs font-black text-slate-800">
                   Confirm Password
                 </span>
                 <input
-                  className="h-10 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold outline-none focus:border-[#0B63E5] focus:ring-4 focus:ring-blue-100"
+                  className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold outline-none focus:border-[#0B63E5] focus:ring-4 focus:ring-blue-100"
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   placeholder="Confirm password"
                   type="password"
@@ -379,14 +379,14 @@ export function JobSeekerSettingsPage() {
             </div>
 
             {savedMessage ? (
-              <p className="mt-6 rounded-2xl bg-emerald-50 px-5 py-4 text-sm font-black text-emerald-700">
+              <p className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-xs font-black text-emerald-700">
                 {savedMessage}
               </p>
             ) : null}
 
-            <div className="mt-8 flex gap-3">
+            <div className="mt-5 flex gap-2">
               <button
-                className="h-11 rounded-xl border border-[#0B63E5] bg-white px-5 text-sm font-black text-[#0B63E5] transition hover:bg-[#eef4ff]"
+                className="h-9 rounded-xl border border-[#0B63E5] bg-white px-4 text-xs font-black text-[#0B63E5] transition hover:bg-[#eef4ff]"
                 onClick={() => {
                   setSettings(getSettings());
                   setConfirmPassword("");
@@ -396,7 +396,7 @@ export function JobSeekerSettingsPage() {
                 Cancel
               </button>
               <button
-                className="h-11 rounded-xl bg-[#0B63E5] px-6 text-sm font-black text-white shadow-[0_14px_30px_rgba(11,99,229,0.22)] transition hover:bg-[#0957ca] disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-9 rounded-xl bg-[#0B63E5] px-5 text-xs font-black text-white shadow-[0_12px_26px_rgba(11,99,229,0.18)] transition hover:bg-[#0957ca] disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={Boolean(passwordError)}
                 onClick={handleSave}
                 type="button"

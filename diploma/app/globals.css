@@ -34,3 +34,16 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+.jobseeker-home-filter-panel .jobseeker-filter-text,
+.jobseeker-home-filter-panel .jobseeker-filter-input {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+.jobseeker-home-filter-panel .jobseeker-filter-input::placeholder {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}

@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { MyProfileProjectsPage } from "@/components/mediahire/profile-projects/my-profile-projects-page";
 
 export default function Page() {
-  redirect("/dashboard/jobseeker/profile");
+  return <MyProfileProjectsPage />;
 }

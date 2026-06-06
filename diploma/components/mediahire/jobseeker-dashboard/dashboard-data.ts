@@ -2,11 +2,11 @@ import {
   Bell,
   CircleHelp,
   FileText,
+  House,
   LayoutDashboard,
   LogOut,
   Settings,
   SlidersHorizontal,
-  UserCog,
   type LucideIcon,
 } from "lucide-react";
 
@@ -49,10 +49,10 @@ export type Application = {
 };
 
 export const sidebarMenuItems: DashboardMenuItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard" },
+  { icon: House, label: "Home" },
+  { icon: LayoutDashboard, label: "Activity" },
   { icon: FileText, label: "My Resume" },
   { icon: Settings, label: "Settings" },
-  { icon: UserCog, label: "Account Setting" },
 ];
 
 export const sidebarBottomItems: DashboardMenuItem[] = [
@@ -155,7 +155,7 @@ export const filterPills = [
 ];
 
 export const statusSummary = [
-  { color: "bg-[#0B63E5]", label: "Total job", value: 2 },
+  { color: "bg-[#0B63E5]", label: "Total Jobs", value: 2 },
   { color: "bg-amber-400", label: "Under Review", value: 2 },
   { color: "bg-emerald-400", label: "Accepted", value: 0 },
   { color: "bg-rose-400", label: "Rejected", value: 0 },

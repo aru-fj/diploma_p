@@ -9,15 +9,15 @@ export function MessagesPreviewCard() {
   return (
     <motion.section
       animate="show"
-      className={`p-5 ${mediaHireClassNames.card}`}
+      className={`h-fit p-4 ${mediaHireClassNames.card}`}
       initial="hidden"
       transition={mediaHireMotion.item(2)}
       variants={fadeInUp}
     >
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-xl font-black text-slate-950">Messages</h2>
+        <h2 className="text-sm font-black text-slate-950">Messages</h2>
         <Link
-          className="inline-flex items-center gap-1 text-sm font-black text-[#0B63E5] transition hover:gap-2"
+          className="inline-flex items-center gap-1 text-xs font-black text-[#0B63E5] transition hover:gap-2"
           href="/dashboard/jobseeker/community"
         >
           More <ChevronRight size={16} />

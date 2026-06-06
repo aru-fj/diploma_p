@@ -10,9 +10,21 @@ import { PrimaryButton } from "./primary-button";
 import { ProgressSteps } from "./progress-steps";
 import { ResumeUploadBox } from "./resume-upload-box";
 import { TestimonialCard } from "./testimonial-card";
+import { updateJobSeekerSignupProfile } from "./jobseeker-signup-profile";
 
 const jobSeekerHomeRoute = "/home/jobseeker";
 const maxResumeSize = 10 * 1024 * 1024;
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => reject(new Error("Could not read resume file."));
+    reader.onload = () =>
+      resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.readAsDataURL(file);
+  });
+}
 
 export function JobSeekerResumePage() {
   const router = useRouter();
@@ -56,6 +68,9 @@ export function JobSeekerResumePage() {
       return;
     }
 
+    updateJobSeekerSignupProfile({
+      pdfName: resumeFile.name,
+    });
     setError("");
     setIsUploadConfirmed(true);
   }
@@ -65,12 +80,27 @@ export function JobSeekerResumePage() {
     router.push(jobSeekerHomeRoute);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!resumeFile) {
       setError("Please upload your resume or choose Skip");
       return;
+    }
+
+    try {
+      const pdfUrl = await readFileAsDataUrl(resumeFile);
+      updateJobSeekerSignupProfile({
+        pdfName: resumeFile.name,
+        pdfUrl,
+        resumeUrl: pdfUrl,
+      });
+    } catch {
+      updateJobSeekerSignupProfile({
+        pdfName: resumeFile.name,
+        pdfUrl: "",
+        resumeUrl: "",
+      });
     }
 
     goToJobSeekerHome();

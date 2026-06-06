@@ -14,21 +14,21 @@ export function MessagePreviewItem({ message }: MessagePreviewItemProps) {
 
   return (
     <motion.button
-      className="grid w-full grid-cols-[44px_1fr_auto] items-center gap-3 rounded-xl px-2 py-3 text-left transition hover:bg-slate-50"
+      className="grid w-full grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-xl px-2 py-2 text-left transition hover:bg-slate-50"
       onClick={() => router.push("/dashboard/jobseeker/community")}
       type="button"
       whileHover={{ x: 3, transition: mediaHireMotion.fast }}
     >
       <span
-        className={`grid h-11 w-11 place-items-center rounded-full text-base font-black ${message.avatarClass}`}
+        className={`grid h-9 w-9 place-items-center rounded-full text-xs font-black ${message.avatarClass}`}
       >
         {message.initials}
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-sm font-black text-slate-950">
+        <span className="block truncate text-xs font-black text-slate-950">
           {message.name}
         </span>
-        <span className="mt-1 block truncate text-xs font-medium text-slate-500">
+        <span className="mt-0.5 block truncate text-[11px] font-medium text-slate-500">
           {message.preview}
         </span>
       </span>

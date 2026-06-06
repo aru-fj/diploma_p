@@ -13,6 +13,21 @@ import {
 import { supabase } from "@/lib/supabase-client";
 import { JobSeekerNav, MediaHireFooter } from "../jobseeker-jobs/job-shared-ui";
 import { requireJobSeekerAuth } from "../shared/guest-permissions";
+import {
+  getStoredJobSeekerProfile,
+  type JobSeekerProfile,
+} from "../account-settings/profile-store";
+import { JobSeekerAvatar } from "../jobseeker-avatar-placeholder";
+
+function getCurrentCommentAuthor(profile: JobSeekerProfile) {
+  return {
+    avatar: profile.avatarPreview,
+    name:
+      profile.fullName ||
+      [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
+      "Job Seeker",
+  };
+}
 
 function renderBlock(project: MediaHireProject) {
   return project.media
@@ -73,6 +88,10 @@ function renderBlock(project: MediaHireProject) {
 export function ProjectDetailPage({ projectId }: { projectId: string }) {
   const [projects, setProjects] = useState<MediaHireProject[]>([]);
   const [comment, setComment] = useState("");
+  const [profile, setProfile] = useState<JobSeekerProfile>(() =>
+    getStoredJobSeekerProfile(),
+  );
+  const currentCommentAuthor = getCurrentCommentAuthor(profile);
 
   useEffect(() => {
     let isMounted = true;
@@ -161,6 +180,26 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
     };
   }, [projectId]);
 
+  useEffect(() => {
+    function syncProfile() {
+      setProfile(getStoredJobSeekerProfile());
+    }
+
+    syncProfile();
+    window.addEventListener("mediahire:jobseeker-profile-updated", syncProfile);
+    window.addEventListener("mediahire:user-state-updated", syncProfile);
+    window.addEventListener("storage", syncProfile);
+
+    return () => {
+      window.removeEventListener(
+        "mediahire:jobseeker-profile-updated",
+        syncProfile,
+      );
+      window.removeEventListener("mediahire:user-state-updated", syncProfile);
+      window.removeEventListener("storage", syncProfile);
+    };
+  }, []);
+
   const project = useMemo(
     () =>
       projects.find(
@@ -197,13 +236,12 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
 
       <article className="mx-auto w-[min(1040px,calc(100%-32px))]">
         <header className="mb-8 flex items-center gap-3">
-          <img
+          <JobSeekerAvatar
             alt={project.authorName}
-            className="h-12 w-12 rounded-full object-cover"
-            src={
-              project.authorAvatar ||
-              "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=85"
-            }
+            className="h-12 w-12 shrink-0 overflow-hidden rounded-full"
+            iconSize={20}
+            size={48}
+            src={project.authorAvatar}
           />
           <div>
             <h1 className="text-xl font-black text-slate-950">{project.title}</h1>
@@ -250,13 +288,12 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
 
         <section className="mt-10 rounded-[1.5rem] border border-slate-200 bg-white p-6">
           <div className="flex gap-4">
-            <img
-              alt={project.authorName}
-              className="h-11 w-11 rounded-full object-cover"
-              src={
-                project.authorAvatar ||
-                "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=85"
-              }
+            <JobSeekerAvatar
+              alt={currentCommentAuthor.name}
+              className="h-11 w-11 shrink-0 overflow-hidden rounded-full"
+              iconSize={18}
+              size={44}
+              src={currentCommentAuthor.avatar}
             />
             <textarea
               className="min-h-24 flex-1 rounded-xl border border-slate-200 p-4 text-sm font-semibold outline-none focus:border-[#0B63E5]"

@@ -9,15 +9,15 @@ export function SavedJobsCard() {
   return (
     <motion.section
       animate="show"
-      className={`p-5 ${mediaHireClassNames.card}`}
+      className={`p-4 ${mediaHireClassNames.card}`}
       initial="hidden"
       transition={mediaHireMotion.item(1)}
       variants={fadeInUp}
     >
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-xl font-black text-slate-950">Save job</h2>
+        <h2 className="text-sm font-black text-slate-950">Saved Jobs</h2>
         <Link
-          className="inline-flex items-center gap-1 text-sm font-black text-[#0B63E5] transition hover:gap-2"
+          className="inline-flex items-center gap-1 text-xs font-black text-[#0B63E5] transition hover:gap-2"
           href="/saved-jobs"
         >
           View all <ChevronRight size={16} />

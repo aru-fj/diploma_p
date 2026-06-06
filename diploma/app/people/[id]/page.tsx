@@ -9,13 +9,15 @@ import {
   Bookmark,
   BriefcaseBusiness,
   CalendarDays,
-  FileText,
+  Globe2,
   GraduationCap,
   Heart,
+  LinkIcon,
   Mail,
   MapPin,
   MessageCircle,
   Star,
+  Sparkles,
   UserRound,
 } from "lucide-react";
 import { Footer } from "@/components/mediahire/footer";
@@ -95,15 +97,15 @@ export default function PublicPersonProfilePage() {
           <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px]" />
         </div>
 
-        <div className="relative z-10 pb-32 pt-6">
+        <div className="relative z-10 pb-24 pt-5">
           <Header />
         </div>
       </section>
 
-      <section className="mx-auto grid w-full max-w-7xl gap-5 px-4 pb-20 sm:px-6 lg:grid-cols-[260px_1fr] lg:px-5">
-        <aside className="-mt-16 lg:-mt-20">
-          <div className="sticky top-5 rounded-[1.5rem] bg-white p-5">
-            <div className="h-24 w-24 overflow-hidden rounded-2xl bg-slate-200 shadow-xl">
+      <section className="mx-auto grid w-full max-w-6xl gap-5 px-4 pb-16 sm:px-6 lg:grid-cols-[230px_1fr] lg:px-5">
+        <aside className="-mt-12 lg:-mt-16">
+          <div className="sticky top-5 rounded-2xl bg-white p-4">
+            <div className="h-20 w-20 overflow-hidden rounded-xl bg-slate-200 shadow-lg">
               <img
                 src={person.avatar}
                 alt={person.name}
@@ -111,15 +113,15 @@ export default function PublicPersonProfilePage() {
               />
             </div>
 
-            <h1 className="mt-5 text-3xl font-black tracking-tight text-slate-950">
+            <h1 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
               {person.name}
             </h1>
 
-            <p className="mt-1 text-sm font-semibold text-slate-500">
+            <p className="mt-1 text-xs font-semibold text-slate-500">
               {person.availability}
             </p>
 
-            <div className="mt-5 space-y-3 text-sm font-semibold text-slate-600">
+            <div className="mt-4 space-y-2.5 text-xs font-semibold text-slate-600">
               <ProfileInfoRow icon={<MapPin />} text={person.location} />
               <ProfileInfoRow icon={<BriefcaseBusiness />} text={person.role} />
               <ProfileInfoRow icon={<CalendarDays />} text={person.experience} />
@@ -129,32 +131,32 @@ export default function PublicPersonProfilePage() {
               />
             </div>
 
-            <div className="mt-6 space-y-3">
+            <div className="mt-5 space-y-2.5">
               <Link
                 href={publicAuthLinks.login}
-                className="flex h-10 items-center justify-center gap-2 rounded-full bg-blue-600 text-sm font-black text-white transition hover:bg-blue-700"
+                className="flex h-9 items-center justify-center gap-2 rounded-full bg-blue-600 text-xs font-black text-white transition hover:bg-blue-700"
               >
-                <Bookmark className="h-4 w-4" />
+                <Bookmark className="h-3.5 w-3.5" />
                 Save
               </Link>
 
               <Link
                 href={publicAuthLinks.login}
-                className="flex h-10 items-center justify-center gap-2 rounded-full border border-blue-500 bg-blue-50 text-sm font-black text-blue-600 transition hover:bg-blue-100"
+                className="flex h-9 items-center justify-center gap-2 rounded-full border border-blue-500 bg-blue-50 text-xs font-black text-blue-600 transition hover:bg-blue-100"
               >
-                <MessageCircle className="h-4 w-4" />
+                <MessageCircle className="h-3.5 w-3.5" />
                 Message
               </Link>
             </div>
 
-            <div className="mt-8">
-              <h2 className="text-xl font-black text-slate-950">Skills</h2>
+            <div className="mt-6">
+              <h2 className="text-lg font-black text-slate-950">Skills</h2>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 {person.skills.map((skill) => (
                   <span
                     key={skill}
-                    className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600"
+                    className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
                   >
                     {skill}
                   </span>
@@ -162,14 +164,14 @@ export default function PublicPersonProfilePage() {
               </div>
             </div>
 
-            <div className="mt-8">
-              <h2 className="text-xl font-black text-slate-950">Software</h2>
+            <div className="mt-6">
+              <h2 className="text-lg font-black text-slate-950">Software</h2>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 {software.map((item) => (
                   <span
                     key={item}
-                    className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600"
+                    className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
                   >
                     {item}
                   </span>
@@ -179,16 +181,16 @@ export default function PublicPersonProfilePage() {
           </div>
         </aside>
 
-        <section className="pt-8 lg:pt-10">
+        <section className="pt-6 lg:pt-8">
           <Link
             href="/"
-            className="mb-6 inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+            className="mb-5 inline-flex h-9 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-xs font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="mr-2 h-3.5 w-3.5" />
             Back
           </Link>
 
-          <div className="mb-8 flex items-center gap-5 border-b border-slate-200">
+          <div className="mb-6 flex items-center gap-5 border-b border-slate-200">
             <TabButton
               label="Portfolio"
               active={activeTab === "portfolio"}
@@ -209,14 +211,14 @@ export default function PublicPersonProfilePage() {
           </div>
 
           {activeTab === "portfolio" && (
-            <div className="grid gap-x-8 gap-y-10 md:grid-cols-2 portfolio-panel-bg rounded-2xl bg-white/85 p-4 shadow-[0_22px_70px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 backdrop-blur sm:p-5">
+            <div className="portfolio-panel-bg grid gap-x-6 gap-y-7 rounded-2xl bg-white/85 p-3 shadow-[0_18px_55px_rgba(15,23,42,0.07)] ring-1 ring-slate-200/70 backdrop-blur sm:p-4 md:grid-cols-2">
               {portfolioWorks.map((work) => (
                 <Link
                   key={work.slug}
                   href={`/work/${work.slug}`}
-                  className="group block portfolio-project-card rounded-[1.5rem] bg-white p-3 shadow-[0_14px_40px_rgba(15,23,42,0.07)] ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(37,99,235,0.14)]"
+                  className="portfolio-project-card group block rounded-2xl bg-white p-2.5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(37,99,235,0.13)]"
                 >
-                  <div className="h-72 overflow-hidden bg-slate-100 shadow-sm">
+                  <div className="h-52 overflow-hidden rounded-xl bg-slate-100 shadow-sm">
                     <img
                       src={work.coverImage}
                       alt={work.title}
@@ -224,11 +226,11 @@ export default function PublicPersonProfilePage() {
                     />
                   </div>
 
-                  <h3 className="mt-4 text-xl font-black text-slate-950 group-hover:text-blue-600">
+                  <h3 className="mt-3 text-base font-black text-slate-950 group-hover:text-blue-600">
                     {work.title}
                   </h3>
 
-                  <p className="mt-1 text-sm font-semibold text-slate-500">
+                  <p className="mt-1 text-xs font-semibold text-slate-500">
                     {person.name}
                   </p>
                 </Link>
@@ -237,157 +239,177 @@ export default function PublicPersonProfilePage() {
           )}
 
           {activeTab === "resume" && (
-            <div className="grid gap-5 lg:grid-cols-[1fr_0.75fr]">
-              <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="mb-6 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                    <FileText className="h-6 w-6" />
-                  </div>
-
-                  <div>
-                    <h2 className="text-2xl font-black text-slate-950">
-                      Resume
-                    </h2>
-                    <p className="text-sm font-semibold text-slate-500">
-                      Public resume preview
-                    </p>
-                  </div>
+            <div className="max-w-2xl space-y-4">
+              <ResumeCard
+                icon={<UserRound className="h-5 w-5" />}
+                title="Personal Information"
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <ResumeField label="Year of Birth" value="2005" />
+                  <ResumeField
+                    label="City"
+                    value={person.location.split(",")[0] || person.location}
+                  />
+                  <ResumeField
+                    label="Mobile Number"
+                    value="Available after login"
+                  />
+                  <ResumeField label="Gender" value="Not specified" />
                 </div>
+              </ResumeCard>
 
-                <div className="space-y-5">
-                  {resumeItems.map((item) => (
-                    <div
-                      key={item.title}
-                      className="rounded-2xl bg-slate-50 p-5"
-                    >
-                      <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-600">
-                        {item.period}
-                      </p>
-
-                      <h3 className="mt-2 text-lg font-black text-slate-950">
-                        {item.title}
-                      </h3>
-
-                      <p className="mt-1 text-sm font-bold text-slate-500">
-                        {item.company}
-                      </p>
-
-                      <p className="mt-3 text-sm font-medium leading-6 text-slate-600">
-                        {item.description}
-                      </p>
-                    </div>
-                  ))}
+              <ResumeCard
+                icon={<UserRound className="h-5 w-5" />}
+                title="About me"
+              >
+                <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs font-medium leading-5 text-slate-700">
+                  {extendedPerson.about || person.shortBio}
                 </div>
-              </section>
+              </ResumeCard>
 
-              <aside className="space-y-6">
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
-                  <h2 className="text-xl font-black text-slate-950">
-                    Education
-                  </h2>
-
-                  <div className="mt-4 rounded-2xl bg-slate-50 p-5">
-                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-blue-600 shadow-sm">
-                      <GraduationCap className="h-5 w-5" />
-                    </div>
-
-                    <h3 className="text-base font-black text-slate-950">
-                      Media and Creative Technologies
-                    </h3>
-
-                    <p className="mt-1 text-sm font-semibold text-slate-500">
-                      Astana IT University
-                    </p>
-                  </div>
-                </div>
-
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
-                  <h2 className="text-xl font-black text-slate-950">
-                    Languages
-                  </h2>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {(extendedPerson.languages || [
-                      "Kazakh",
-                      "Russian",
-                      "English",
-                    ]).map((language) => (
-                      <span
-                        key={language}
-                        className="rounded-full bg-blue-50 px-4 py-2 text-xs font-black text-blue-600"
-                      >
-                        {language}
-                      </span>
+              <ResumeCard
+                icon={<BriefcaseBusiness className="h-5 w-5" />}
+                title="Work Experience"
+              >
+                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                  <div className="space-y-4">
+                    {resumeItems.map((item) => (
+                      <div key={`${item.period}-${item.title}`}>
+                        <p className="text-xs font-black text-slate-800">
+                          {item.period}
+                        </p>
+                        <p className="text-xs font-bold text-slate-700">
+                          {item.title}
+                        </p>
+                        <p className="text-xs font-semibold text-slate-500">
+                          {item.company}
+                        </p>
+                        <p className="mt-1 text-xs font-medium leading-5 text-slate-600">
+                          {item.description}
+                        </p>
+                      </div>
                     ))}
                   </div>
                 </div>
+              </ResumeCard>
 
-                <div className="rounded-[1.5rem] border border-blue-100 bg-blue-50 p-5">
-                  <h2 className="text-xl font-black text-slate-950">
-                    Contact access
-                  </h2>
-
-                  <p className="mt-2 text-sm font-medium leading-6 text-slate-600">
-                    Guests can view the resume, but messaging and saving are
-                    available after registration.
+              <ResumeCard
+                icon={<GraduationCap className="h-5 w-5" />}
+                title="Education"
+              >
+                <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-700">
+                  <p className="font-black">Astana IT University</p>
+                  <p>Media Technology</p>
+                  <p>2022 — 2026</p>
+                  <p className="mt-1">
+                    Focus on digital media, visual communication, and
+                    interactive platforms.
                   </p>
-
-                  <Link
-                    href={publicAuthLinks.login}
-                    className="mt-5 inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700"
-                  >
-                    Create account
-                  </Link>
                 </div>
-              </aside>
+              </ResumeCard>
+
+              <ResumeCard
+                icon={<LinkIcon className="h-5 w-5" />}
+                title="Links"
+              >
+                <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-700">
+                  <p className="font-black">Portfolio</p>
+                  <p className="break-all text-slate-600">
+                    https://mediahire.kz/people/{person.slug}
+                  </p>
+                </div>
+              </ResumeCard>
+
+              <ResumeCard
+                icon={<Globe2 className="h-5 w-5" />}
+                title="Languages"
+              >
+                <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-700">
+                  {(extendedPerson.languages || [
+                    "Kazakh",
+                    "Russian",
+                    "English",
+                  ]).map((language, index) => (
+                    <p key={language}>
+                      {language} —{" "}
+                      {index === 0
+                        ? "Native"
+                        : index === 1
+                          ? "Fluent"
+                          : "Intermediate"}
+                    </p>
+                  ))}
+                </div>
+              </ResumeCard>
+
+              <ResumeCard
+                icon={<BriefcaseBusiness className="h-5 w-5" />}
+                title="Job Preferences"
+              >
+                <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-700">
+                  <p>Preferred role: {person.role}</p>
+                  <p>Work format: Remote, Hybrid, On-site</p>
+                  <p>Employment type: Freelance, Part-time, Full-time</p>
+                  <p>Expected salary: from 250,000 KZT</p>
+                </div>
+              </ResumeCard>
+
+              <ResumeCard
+                icon={<Sparkles className="h-5 w-5" />}
+                title="Preferred Job Benefits"
+              >
+                <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-700">
+                  <p>Flexible working hours</p>
+                  <p>Remote work opportunity</p>
+                  <p>Professional growth</p>
+                  <p>Training and workshops</p>
+                </div>
+              </ResumeCard>
             </div>
           )}
 
           {activeTab === "reviews" && (
-            <div className="space-y-5">
+            <div className="max-w-2xl space-y-4">
               {reviews.map((review) => (
                 <article
                   key={review.company}
-                  className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm"
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
                 >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <h3 className="text-xl font-black text-slate-950">
+                      <h3 className="text-base font-black text-slate-950">
                         {review.company}
                       </h3>
 
-                      <p className="mt-1 text-sm font-bold text-slate-500">
+                      <p className="mt-1 text-xs font-bold text-slate-500">
                         {review.role}
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-sm font-black text-amber-600">
-                      <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                      {review.rating}
-                    </div>
+                    <StarRating />
                   </div>
 
-                  <p className="mt-4 text-sm font-medium leading-7 text-slate-600">
+                  <p className="mt-3 text-xs font-medium leading-6 text-slate-600">
                     {review.text}
                   </p>
                 </article>
               ))}
 
-              <div className="rounded-[1.5rem] border border-blue-100 bg-blue-50 p-5 text-center">
-                <Heart className="mx-auto h-7 w-7 text-blue-600" />
+              <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-center">
+                <Heart className="mx-auto h-6 w-6 text-blue-600" />
 
-                <h2 className="mt-3 text-xl font-black text-slate-950">
+                <h2 className="mt-3 text-lg font-black text-slate-950">
                   Want to leave a review?
                 </h2>
 
-                <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-slate-600">
+                <p className="mx-auto mt-2 max-w-xl text-xs font-medium leading-5 text-slate-600">
                   Reviews can be written only by registered employers or
                   collaborators.
                 </p>
 
                 <Link
                   href={publicAuthLinks.login}
-                  className="mt-5 inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700"
+                  className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-blue-600 px-5 text-xs font-black text-white transition hover:bg-blue-700"
                 >
                   Sign up to review
                 </Link>
@@ -415,7 +437,7 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`relative pb-4 text-base font-black transition ${
+      className={`relative pb-3 text-sm font-black transition ${
         active ? "text-blue-600" : "text-slate-400 hover:text-slate-700"
       }`}
     >
@@ -437,10 +459,52 @@ function ProfileInfoRow({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="flex h-5 w-5 items-center justify-center text-slate-600 [&>svg]:h-4 [&>svg]:w-4">
+      <span className="flex h-4 w-4 items-center justify-center text-slate-600 [&>svg]:h-3.5 [&>svg]:w-3.5">
         {icon}
       </span>
       <span>{text}</span>
+    </div>
+  );
+}
+
+function ResumeCard({
+  icon,
+  title,
+  children,
+}: {
+  icon: ReactNode;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
+      <h3 className="mb-4 flex items-center gap-2 text-sm font-black text-slate-800">
+        <span className="text-slate-500 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+function ResumeField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[11px] font-bold text-slate-400">{label}</p>
+      <p className="mt-1 text-xs font-black text-slate-700">{value}</p>
+    </div>
+  );
+}
+
+function StarRating() {
+  return (
+    <div className="flex items-center gap-1" aria-label="5 out of 5 stars">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <Star
+          key={index}
+          className="h-3.5 w-3.5 fill-amber-400 text-amber-400"
+        />
+      ))}
     </div>
   );
 }

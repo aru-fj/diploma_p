@@ -12,6 +12,7 @@ import { PasswordInput } from "./password-input";
 import { PrimaryButton } from "./primary-button";
 import { ProgressSteps } from "./progress-steps";
 import { TestimonialCard } from "./testimonial-card";
+import { updateJobSeekerSignupProfile } from "./jobseeker-signup-profile";
 
 type GoogleUser = {
   avatar: string | null;
@@ -199,6 +200,12 @@ export function JobSeekerGoogleDetailsPage({
           provider: "google",
         }),
       );
+      updateJobSeekerSignupProfile({
+        avatarPreview: avatar,
+        email,
+        firstName,
+        lastName,
+      });
       router.push("/signup/jobseeker/location");
     } catch (error) {
       setSubmitError(

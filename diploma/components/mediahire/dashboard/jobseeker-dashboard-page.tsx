@@ -4,14 +4,12 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { CategoryPills } from "./category-pills";
 import { DashboardFooter } from "./dashboard-footer";
-import type { DashboardPerson } from "./dashboard-data";
 import { DashboardHeader } from "./dashboard-header";
 import {
   peopleSortOptions,
   projectSortOptions,
   type SortOption,
 } from "./filter-modal";
-import { MessageModal } from "./message-modal";
 import { PeopleGrid } from "./people-grid";
 import { ProjectGrid } from "./project-grid";
 import {
@@ -26,10 +24,12 @@ import {
 
 type JobSeekerDashboardPageProps = {
   initialMode?: DashboardMode;
+  showFooter?: boolean;
 };
 
 export function JobSeekerDashboardPage({
   initialMode = "Projects",
+  showFooter = true,
 }: JobSeekerDashboardPageProps) {
   const [search, setSearch] = useState("");
   const [mode, setMode] = useState<DashboardMode>(initialMode);
@@ -38,9 +38,6 @@ export function JobSeekerDashboardPage({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [messagePerson, setMessagePerson] = useState<DashboardPerson | null>(
-    null,
-  );
 
   function handleModeChange(nextMode: DashboardMode) {
     setMode(nextMode);
@@ -62,20 +59,22 @@ export function JobSeekerDashboardPage({
     <main className={mediaHireClassNames.appShell}>
       <motion.div
         animate="show"
-        className="mx-auto min-h-screen w-full px-4 py-6 sm:px-5 lg:px-12"
+        className="mx-auto min-h-screen w-full px-4 py-6 sm:px-6 lg:px-10"
         initial="hidden"
         transition={mediaHireMotion.page}
         variants={fadeInUp}
       >
         <DashboardHeader
+          compact
           isMenuOpen={isMenuOpen}
           isUserMenuOpen={isUserMenuOpen}
           onToggleMenu={() => setIsMenuOpen((current) => !current)}
           onToggleUserMenu={() => setIsUserMenuOpen((current) => !current)}
+          wide
         />
 
         <section
-          className={`mx-auto mt-8 w-full max-w-5xl p-4 sm:p-5 ${mediaHireClassNames.sectionCard}`}
+          className="jobseeker-home-filter-panel mx-auto mt-8 w-full max-w-none rounded-[1.25rem] border border-slate-100 bg-white p-3 shadow-[0_14px_45px_rgba(15,23,42,0.06)] md:p-3.5"
         >
           <SearchFilterBar
             mode={mode}
@@ -103,7 +102,6 @@ export function JobSeekerDashboardPage({
           <PeopleGrid
             activeCategory={activeCategory}
             activeSort={activeSort}
-            onMessage={setMessagePerson}
             search={search}
           />
         ) : (
@@ -115,12 +113,7 @@ export function JobSeekerDashboardPage({
         )}
       </motion.div>
 
-      <DashboardFooter />
-
-      <MessageModal
-        onClose={() => setMessagePerson(null)}
-        person={messagePerson}
-      />
+      {showFooter ? <DashboardFooter /> : null}
     </main>
   );
 }
@@ -137,7 +130,7 @@ function SortPills({
   const sortOptions = mode === "People" ? peopleSortOptions : projectSortOptions;
 
   return (
-    <div className="mt-4 flex flex-wrap justify-center gap-2 rounded-2xl bg-slate-50 p-2.5">
+    <div className="mt-2.5 flex flex-wrap justify-center gap-1.5 rounded-2xl bg-slate-50 p-2">
       {sortOptions.map((option) => {
         const isActive = activeSort === option;
 
@@ -146,7 +139,7 @@ function SortPills({
             key={option}
             type="button"
             onClick={() => onSortChange(option)}
-            className={`h-8 rounded-full px-3.5 text-[11px] font-black transition hover:-translate-y-0.5 ${
+            className={`jobseeker-filter-text h-7 rounded-full px-2.5 text-[9px] font-semibold leading-none transition hover:-translate-y-0.5 ${
               isActive
                 ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                 : "bg-white text-slate-600 hover:text-blue-600"

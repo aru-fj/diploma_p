@@ -1,10 +1,10 @@
 import {
   CircleHelp,
   FileText,
+  House,
   LayoutGrid,
   LogOut,
   Settings,
-  SlidersHorizontal,
   type LucideIcon,
 } from "lucide-react";
 
@@ -52,14 +52,10 @@ export type Application = {
 };
 
 export const primarySidebarItems: SidebarItem[] = [
-  { href: "/dashboard/jobseeker", icon: LayoutGrid, label: "Dashboard" },
+  { href: "/home/jobseeker", icon: House, label: "Home" },
+  { href: "/dashboard/jobseeker", icon: LayoutGrid, label: "Activity" },
   { href: "/signup/jobseeker/resume", icon: FileText, label: "My Resume" },
   { href: "#settings", icon: Settings, label: "Settings" },
-  {
-    href: "#account-setting",
-    icon: SlidersHorizontal,
-    label: "Account Setting",
-  },
 ];
 
 export const secondarySidebarItems: SidebarItem[] = [

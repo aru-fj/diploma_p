@@ -1,12 +1,13 @@
 "use client";
 
 import { Suspense } from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   Bookmark,
+  ChevronUp,
   Clock3,
   GraduationCap,
   Languages,
@@ -25,20 +26,59 @@ import {
 import { publicAuthLinks } from "@/components/mediahire/public/public-works-data";
 
 type FilterState = {
-  jobType: string;
-  workMode: string;
-  experience: string;
-  language: string;
-  education: string;
+  city: string;
+  currency: SalaryCurrency;
+  jobTypes: string[];
+  languages: string[];
+  maxSalary: number;
+  minSalary: number;
+  publicationDates: string[];
+  workModes: string[];
+};
+
+type SalaryCurrency = "KZT" | "USD" | "RUB";
+
+const salaryCurrencyRates: Record<SalaryCurrency, number> = {
+  KZT: 500,
+  USD: 1,
+  RUB: 90,
+};
+
+const salaryRanges: Record<
+  SalaryCurrency,
+  {
+    max: number;
+    min: number;
+    step: number;
+  }
+> = {
+  KZT: { min: 50000, max: 400000, step: 5000 },
+  USD: { min: 100, max: 800, step: 25 },
+  RUB: { min: 10000, max: 70000, step: 1000 },
 };
 
 const emptyFilters: FilterState = {
-  jobType: "All",
-  workMode: "All",
-  experience: "All",
-  language: "All",
-  education: "All",
+  city: "All Kazakhstan",
+  currency: "KZT",
+  jobTypes: [],
+  languages: [],
+  maxSalary: salaryRanges.KZT.max,
+  minSalary: salaryRanges.KZT.min,
+  publicationDates: [],
+  workModes: [],
 };
+
+const languageOptions = ["Kazakh", "Russian", "English"];
+const publicationDateOptions = [
+  "Last 24 hours",
+  "Last 3 days",
+  "Last 7 days",
+  "Last 14 days",
+];
+const cityOptions = ["Astana", "Almaty", "Shymkent", "Aktobe"];
+const jobTypeOptions = ["Full-Time", "Part-Time", "Contract"];
+const salaryCurrencyOptions: SalaryCurrency[] = ["KZT", "USD", "RUB"];
+const workModeOptions = ["Remote", "Hybrid", "Onsite"];
 
 function SearchJobPageContent() {
   const searchParams = useSearchParams();
@@ -74,35 +114,53 @@ function SearchJobPageContent() {
       const matchesLocation =
         location === "All Kazakhstan" ? true : job.location === location;
 
+      const matchesCity =
+        filters.city === "All Kazakhstan"
+          ? true
+          : getJobCity(job.location) === filters.city;
+
       const matchesJobType =
-        filters.jobType === "All" ? true : job.jobType === filters.jobType;
+        filters.jobTypes.length === 0
+          ? true
+          : filters.jobTypes.some(
+              (type) => getFilterJobType(job.jobType) === type,
+            );
 
       const matchesWorkMode =
-        filters.workMode === "All" ? true : job.workMode === filters.workMode;
-
-      const matchesExperience =
-        filters.experience === "All"
+        filters.workModes.length === 0
           ? true
-          : job.experience === filters.experience;
+          : filters.workModes.includes(job.workMode);
 
       const matchesLanguage =
-        filters.language === "All"
+        filters.languages.length === 0
           ? true
-          : job.language.toLowerCase().includes(filters.language.toLowerCase());
+          : filters.languages.some((language) =>
+              job.language.toLowerCase().includes(language.toLowerCase()),
+            );
 
-      const matchesEducation =
-        filters.education === "All"
+      const matchesPublicationDate =
+        filters.publicationDates.length === 0
           ? true
-          : job.education === filters.education;
+          : filters.publicationDates.some(
+              (date) => getPostedAgeHours(job.createdAt) <= getPublicationHours(date),
+            );
+
+      const salary = convertUsdSalary(
+        getSalaryUsd(job.salary),
+        filters.currency,
+      );
+      const matchesSalary =
+        salary >= filters.minSalary && salary <= filters.maxSalary;
 
       return (
         matchesQuery &&
         matchesLocation &&
+        matchesCity &&
         matchesJobType &&
         matchesWorkMode &&
-        matchesExperience &&
         matchesLanguage &&
-        matchesEducation
+        matchesPublicationDate &&
+        matchesSalary
       );
     });
   }, [query, location, filters]);
@@ -110,7 +168,16 @@ function SearchJobPageContent() {
   const hasActiveFilters =
     query ||
     location !== "All Kazakhstan" ||
-    Object.values(filters).some((value) => value !== "All");
+    filters.city !== "All Kazakhstan" ||
+    filters.currency !== emptyFilters.currency ||
+    filters.jobTypes.length > 0 ||
+    filters.languages.length > 0 ||
+    filters.publicationDates.length > 0 ||
+    filters.workModes.length > 0 ||
+    filters.minSalary !== salaryRanges[filters.currency].min ||
+    filters.maxSalary !== salaryRanges[filters.currency].max;
+
+  const activeFilterLabels = getActiveFilterLabels(filters);
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
@@ -213,7 +280,7 @@ function SearchJobPageContent() {
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[240px_1fr]">
-          <aside className="h-fit max-h-[calc(100vh-120px)] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <aside className="h-fit max-h-[calc(100vh-120px)] overflow-y-auto rounded-lg border border-slate-200 bg-white px-4 py-5 shadow-sm">
             <div className="flex items-center gap-2 border-b border-slate-200 pb-4">
               <SlidersHorizontal className="h-4 w-4 text-slate-900" />
 
@@ -222,78 +289,127 @@ function SearchJobPageContent() {
               </h3>
             </div>
 
-            <div className="space-y-1">
-              <FilterSelect
-                label="Job type"
-                value={filters.jobType}
-                options={[
-                  "All",
-                  "Full-Time",
-                  "Part-Time",
-                  "Freelance",
-                  "Internship",
-                ]}
+            {activeFilterLabels.length > 0 ? (
+              <section className="border-b border-slate-200 py-4">
+                <h4 className="text-sm font-black text-slate-950">
+                  Active Filters
+                </h4>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {activeFilterLabels.map((label) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => setFilters((prev) => removeFilter(prev, label))}
+                      className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-200"
+                    >
+                      {label}
+                      <X className="h-3 w-3" />
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            <FilterSection title="Work Language">
+              <CheckboxGroup
+                options={languageOptions}
+                selected={filters.languages}
+                onToggle={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    languages: toggleArrayValue(prev.languages, value),
+                  }))
+                }
+              />
+            </FilterSection>
+
+            <FilterSection title="Publication date">
+              <CheckboxGroup
+                options={publicationDateOptions}
+                selected={filters.publicationDates}
+                onToggle={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    publicationDates: toggleArrayValue(
+                      prev.publicationDates,
+                      value,
+                    ),
+                  }))
+                }
+              />
+            </FilterSection>
+
+            <FilterSection title="City">
+              <RadioGroup
+                name="city"
+                options={cityOptions}
+                selected={filters.city}
                 onChange={(value) =>
-                  setFilters((prev) => ({ ...prev, jobType: value }))
+                  setFilters((prev) => ({ ...prev, city: value }))
+                }
+              />
+            </FilterSection>
+
+            <FilterSection title="Job type">
+              <CheckboxGroup
+                options={jobTypeOptions}
+                selected={filters.jobTypes}
+                onToggle={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    jobTypes: toggleArrayValue(prev.jobTypes, value),
+                  }))
+                }
+              />
+            </FilterSection>
+
+            <FilterSection title="Salary">
+              <RadioGroup
+                name="salary-currency"
+                options={salaryCurrencyOptions}
+                selected={filters.currency}
+                onChange={(value) =>
+                  setFilters((prev) => {
+                    const currency = value as SalaryCurrency;
+                    const range = salaryRanges[currency];
+
+                    return {
+                      ...prev,
+                      currency,
+                      minSalary: range.min,
+                      maxSalary: range.max,
+                    };
+                  })
                 }
               />
 
-              <FilterSelect
-                label="Work modes"
-                value={filters.workMode}
-                options={["All", "Onsite", "Remote", "Hybrid"]}
-                onChange={(value) =>
-                  setFilters((prev) => ({ ...prev, workMode: value }))
+              <SalaryRangeControl
+                currency={filters.currency}
+                maxSalary={filters.maxSalary}
+                minSalary={filters.minSalary}
+                onChange={(minSalary, maxSalary) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    minSalary,
+                    maxSalary,
+                  }))
                 }
               />
+            </FilterSection>
 
-              <FilterSelect
-                label="Experience"
-                value={filters.experience}
-                options={["All", "Junior", "Middle", "Senior", "2-3 Years"]}
-                onChange={(value) =>
-                  setFilters((prev) => ({ ...prev, experience: value }))
+            <FilterSection title="Work modes">
+              <CheckboxGroup
+                options={workModeOptions}
+                selected={filters.workModes}
+                onToggle={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    workModes: toggleArrayValue(prev.workModes, value),
+                  }))
                 }
               />
-
-              <FilterSelect
-                label="Work Language"
-                value={filters.language}
-                options={["All", "Kazakh", "Russian", "English"]}
-                onChange={(value) =>
-                  setFilters((prev) => ({ ...prev, language: value }))
-                }
-              />
-
-              <FilterSelect
-                label="Education level"
-                value={filters.education}
-                options={["All", "Bachelor degree", "Not required"]}
-                onChange={(value) =>
-                  setFilters((prev) => ({ ...prev, education: value }))
-                }
-              />
-
-              <div className="border-b border-slate-200 py-4">
-                <p className="text-xs font-black text-slate-600">
-                  Salary (Monthly)
-                </p>
-
-                <p className="mt-2 text-xs font-semibold text-slate-400">
-                  Salary range can be connected later.
-                </p>
-              </div>
-
-              <div className="border-b border-slate-200 py-4">
-                <p className="text-xs font-black text-slate-600">
-                  Publication date
-                </p>
-
-                <p className="mt-2 text-xs font-semibold text-slate-400">
-                  Latest jobs are shown first.
-                </p>
-              </div>
-            </div>
+            </FilterSection>
 
             {hasActiveFilters && (
               <button
@@ -447,34 +563,293 @@ function JobCard({ job }: { job: PublicJob }) {
   );
 }
 
-function FilterSelect({
-  label,
-  value,
-  options,
-  onChange,
+function FilterSection({
+  children,
+  title,
 }: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
+  children: ReactNode;
+  title: string;
 }) {
   return (
-    <label className="block border-b border-slate-200 py-4">
-      <span className="text-xs font-black text-slate-600">{label}</span>
-
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="mt-2 h-9 w-full rounded-lg bg-slate-50 px-3 text-xs font-bold text-slate-700 outline-none"
-      >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </label>
+    <section className="border-b border-slate-200 py-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h4 className="text-sm font-black text-slate-950">{title}</h4>
+        <ChevronUp className="h-4 w-4 text-slate-600" />
+      </div>
+      {children}
+    </section>
   );
+}
+
+function CheckboxGroup({
+  onToggle,
+  options,
+  selected,
+}: {
+  onToggle: (value: string) => void;
+  options: string[];
+  selected: string[];
+}) {
+  return (
+    <div className="grid gap-2.5">
+      {options.map((option) => (
+        <label
+          key={option}
+          className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-700"
+        >
+          <input
+            checked={selected.includes(option)}
+            onChange={() => onToggle(option)}
+            type="checkbox"
+            className="h-4 w-4 rounded border-slate-300 text-blue-600"
+          />
+          {option}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function RadioGroup({
+  name,
+  onChange,
+  options,
+  selected,
+}: {
+  name: string;
+  onChange: (value: string) => void;
+  options: string[];
+  selected: string;
+}) {
+  return (
+    <div className="grid gap-2.5">
+      {options.map((option) => (
+        <label
+          key={option}
+          className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-700"
+        >
+          <input
+            checked={selected === option}
+            name={name}
+            onChange={() => onChange(option)}
+            type="radio"
+            className="h-4 w-4 border-slate-300 text-blue-600"
+          />
+          {option}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function SalaryRangeControl({
+  currency,
+  maxSalary,
+  minSalary,
+  onChange,
+}: {
+  currency: SalaryCurrency;
+  maxSalary: number;
+  minSalary: number;
+  onChange: (minSalary: number, maxSalary: number) => void;
+}) {
+  const range = salaryRanges[currency];
+
+  function updateMin(value: number) {
+    onChange(Math.min(value, maxSalary), maxSalary);
+  }
+
+  function updateMax(value: number) {
+    onChange(minSalary, Math.max(value, minSalary));
+  }
+
+  return (
+    <div className="mt-5">
+      <h5 className="text-sm font-black text-slate-950">Price Range</h5>
+      <p className="mt-2 text-[11px] font-medium text-slate-600">
+        Use slider or enter min and max price
+      </p>
+
+      <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-[11px] font-semibold text-slate-700">
+        <label className="grid grid-cols-[auto_1fr] items-center gap-2">
+          Min
+          <input
+            min={range.min}
+            max={range.max}
+            step={range.step}
+            type="number"
+            value={minSalary}
+            onChange={(event) => updateMin(Number(event.target.value))}
+            className="h-8 min-w-0 rounded border border-slate-200 px-2 text-xs font-semibold outline-none focus:border-blue-300"
+          />
+        </label>
+
+        <span className="text-slate-400">-</span>
+
+        <label className="grid grid-cols-[auto_1fr] items-center gap-2">
+          Max
+          <input
+            min={range.min}
+            max={range.max}
+            step={range.step}
+            type="number"
+            value={maxSalary}
+            onChange={(event) => updateMax(Number(event.target.value))}
+            className="h-8 min-w-0 rounded border border-slate-200 px-2 text-xs font-semibold outline-none focus:border-blue-300"
+          />
+        </label>
+      </div>
+
+      <div className="mt-4 grid gap-2">
+        <input
+          min={range.min}
+          max={range.max}
+          step={range.step}
+          type="range"
+          value={minSalary}
+          onChange={(event) => updateMin(Number(event.target.value))}
+          className="h-1 w-full accent-blue-600"
+          aria-label="Minimum salary"
+        />
+        <input
+          min={range.min}
+          max={range.max}
+          step={range.step}
+          type="range"
+          value={maxSalary}
+          onChange={(event) => updateMax(Number(event.target.value))}
+          className="h-1 w-full accent-blue-600"
+          aria-label="Maximum salary"
+        />
+      </div>
+    </div>
+  );
+}
+
+function toggleArrayValue(values: string[], value: string) {
+  return values.includes(value)
+    ? values.filter((item) => item !== value)
+    : [...values, value];
+}
+
+function getJobCity(location: string) {
+  return location.split(",")[0]?.trim() || location;
+}
+
+function getFilterJobType(jobType: string) {
+  return jobType === "Freelance" ? "Contract" : jobType;
+}
+
+function getSalaryUsd(salary: string) {
+  const amount = Number(salary.match(/\d+/)?.[0] || 0);
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function convertUsdSalary(salaryUsd: number, currency: SalaryCurrency) {
+  return Math.round(salaryUsd * salaryCurrencyRates[currency]);
+}
+
+function getPostedAgeHours(postedAt: string) {
+  const normalized = postedAt.toLowerCase();
+
+  if (normalized.includes("today")) {
+    return 12;
+  }
+
+  const amount = Number(normalized.match(/\d+/)?.[0] || 0);
+
+  if (normalized.includes("hour")) {
+    return amount;
+  }
+
+  if (normalized.includes("day")) {
+    return amount * 24;
+  }
+
+  return 24 * 14;
+}
+
+function getPublicationHours(label: string) {
+  if (label === "Last 24 hours") {
+    return 24;
+  }
+
+  const days = Number(label.match(/\d+/)?.[0] || 14);
+  return days * 24;
+}
+
+function getActiveFilterLabels(filters: FilterState) {
+  const range = salaryRanges[filters.currency];
+  const salaryChanged =
+    filters.minSalary !== range.min || filters.maxSalary !== range.max;
+
+  return [
+    ...filters.languages,
+    ...filters.publicationDates,
+    filters.city !== "All Kazakhstan" ? filters.city : null,
+    ...filters.jobTypes,
+    filters.currency !== emptyFilters.currency ? filters.currency : null,
+    salaryChanged ? `${filters.minSalary}-${filters.maxSalary}` : null,
+    ...filters.workModes,
+  ].filter((label): label is string => Boolean(label));
+}
+
+function removeFilter(filters: FilterState, label: string): FilterState {
+  const range = salaryRanges[filters.currency];
+
+  if (filters.languages.includes(label)) {
+    return {
+      ...filters,
+      languages: filters.languages.filter((item) => item !== label),
+    };
+  }
+
+  if (filters.publicationDates.includes(label)) {
+    return {
+      ...filters,
+      publicationDates: filters.publicationDates.filter((item) => item !== label),
+    };
+  }
+
+  if (filters.jobTypes.includes(label)) {
+    return {
+      ...filters,
+      jobTypes: filters.jobTypes.filter((item) => item !== label),
+    };
+  }
+
+  if (filters.workModes.includes(label)) {
+    return {
+      ...filters,
+      workModes: filters.workModes.filter((item) => item !== label),
+    };
+  }
+
+  if (filters.city === label) {
+    return {
+      ...filters,
+      city: "All Kazakhstan",
+    };
+  }
+
+  if (label === filters.currency) {
+    return {
+      ...filters,
+      currency: emptyFilters.currency,
+      maxSalary: salaryRanges[emptyFilters.currency].max,
+      minSalary: salaryRanges[emptyFilters.currency].min,
+    };
+  }
+
+  if (label === `${filters.minSalary}-${filters.maxSalary}`) {
+    return {
+      ...filters,
+      maxSalary: range.max,
+      minSalary: range.min,
+    };
+  }
+
+  return filters;
 }
 
 export default function SearchJobPage() {

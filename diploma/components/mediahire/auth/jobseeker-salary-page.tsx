@@ -10,6 +10,7 @@ import { AuthLogo } from "./logo";
 import { PrimaryButton } from "./primary-button";
 import { ProgressSteps } from "./progress-steps";
 import { TestimonialCard } from "./testimonial-card";
+import { updateJobSeekerSignupProfile } from "./jobseeker-signup-profile";
 
 type SalaryForm = {
   amount: string;
@@ -79,6 +80,11 @@ export function JobSeekerSalaryPage() {
       return;
     }
 
+    updateJobSeekerSignupProfile({
+      minimumSalary: form.amount,
+      minimumSalaryCurrency: form.currency,
+      paymentPeriod: form.paymentPeriod,
+    });
     goToNextStep();
   }
 

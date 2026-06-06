@@ -16,14 +16,12 @@ import {
   SAVED_PROFILES_CHANGED_EVENT,
   toggleSavedProfile,
 } from "@/components/mediahire/saved-profiles-storage";
-import type { DashboardPerson } from "./dashboard-data";
 import type { SortOption } from "./filter-modal";
 
 type PeopleGridProps = {
   activeCategory: string;
   activeSort: SortOption;
   search: string;
-  onMessage: (person: DashboardPerson) => void;
 };
 
 const bestPeopleSlugs = ["madina-omar", "dimash-karim", "amina-saparova"];
@@ -46,7 +44,6 @@ export function PeopleGrid({
   activeCategory,
   activeSort,
   search,
-  onMessage,
 }: PeopleGridProps) {
   const [savedPeopleSlugs, setSavedPeopleSlugs] = useState<string[]>([]);
 
@@ -139,31 +136,31 @@ export function PeopleGrid({
   }, [activeCategory, activeSort, search, savedPeopleSlugs]);
 
   return (
-    <section className="mx-auto mt-7 w-full max-w-5xl">
+    <section className="mx-auto mt-6 w-full max-w-none">
       {filteredPeople.length > 0 ? (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {filteredPeople.map((person) => {
             const isSaved = savedPeopleSlugs.includes(person.slug);
 
             return (
               <article
                 key={person.slug}
-                className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgba(37,99,235,0.16)]"
+                className="group overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]"
               >
-                <div className="relative h-28 overflow-hidden bg-slate-100">
+                <div className="relative h-24 overflow-hidden bg-slate-100">
                   <img
                     src={person.coverImage}
                     alt={person.name}
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                   />
 
-                  <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1.5 text-[11px] font-black text-slate-900 shadow-lg backdrop-blur">
+                  <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-black text-slate-900 shadow-lg backdrop-blur">
                     {person.category}
                   </div>
                 </div>
 
-                <div className="relative p-4 pt-10">
-                  <div className="absolute -top-5 left-4 h-12 w-12 overflow-hidden rounded-2xl border-4 border-white bg-slate-200 shadow-lg">
+                <div className="relative p-3.5 pt-8">
+                  <div className="absolute -top-6 left-4 h-12 w-12 overflow-hidden rounded-xl border-[3px] border-white bg-slate-200 shadow-lg">
                     <img
                       src={person.avatar}
                       alt={person.name}
@@ -171,24 +168,24 @@ export function PeopleGrid({
                     />
                   </div>
 
-                  <div className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-black text-amber-600">
+                  <div className="absolute right-3.5 top-3.5 flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[10px] font-black text-amber-600">
                     <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
                     {person.rating}
                   </div>
 
-                  <h3 className="text-lg font-black text-slate-950">
+                  <h3 className="text-sm font-black text-slate-950">
                     {person.name}
                   </h3>
 
-                  <p className="mt-1 text-xs font-bold text-blue-600">
+                  <p className="mt-1 text-[11px] font-bold text-blue-600">
                     {person.role}
                   </p>
 
-                  <p className="mt-2 line-clamp-2 text-xs font-medium leading-5 text-slate-500">
+                  <p className="mt-2 line-clamp-2 text-[11px] font-medium leading-5 text-slate-500">
                     {person.shortBio}
                   </p>
 
-                  <div className="mt-3 space-y-1.5 text-xs font-semibold text-slate-500">
+                  <div className="mt-2.5 space-y-1.5 text-[11px] font-semibold text-slate-500">
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-blue-500" />
                       {person.location}
@@ -209,21 +206,21 @@ export function PeopleGrid({
                     {person.skills.map((skill) => (
                       <span
                         key={skill}
-                        className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-black text-blue-600"
+                        className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-600"
                       >
                         {skill}
                       </span>
                     ))}
                   </div>
 
-                  <div className="mt-4 rounded-xl bg-slate-50 px-3 py-2.5 text-xs font-black text-slate-700">
+                  <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[11px] font-black text-slate-700">
                     {person.availability}
                   </div>
 
-                  <div className="mt-4 flex gap-2.5">
+                  <div className="mt-3.5 flex gap-2">
                     <Link
                       href={`/home/jobseeker/people/${person.slug}`}
-                      className="flex h-10 flex-1 items-center justify-center rounded-xl bg-blue-600 px-4 text-xs font-black text-white transition hover:bg-blue-700"
+                      className="flex h-9 flex-1 items-center justify-center rounded-lg bg-blue-600 px-3 text-[11px] font-black text-white transition hover:bg-blue-700"
                     >
                       View profile
                     </Link>
@@ -232,34 +229,22 @@ export function PeopleGrid({
                       type="button"
                       onClick={() => toggleSavedPerson(person.slug)}
                       title={isSaved ? "Remove from saved" : "Save person"}
-                      className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
                     >
                       <Bookmark
-                        className={`h-5 w-5 ${
+                        className={`h-4 w-4 ${
                           isSaved ? "fill-blue-600 text-blue-600" : ""
                         }`}
                       />
                     </button>
                   </div>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onMessage({
-                          avatar: person.avatar,
-                          id: person.slug,
-                          name: person.name,
-                          profileHref: `/home/jobseeker/people/${person.slug}`,
-                          rating: person.rating,
-                          score: `${person.projectsCount}`,
-                          skill: person.role,
-                          views: person.location,
-                        })
-                      }
-                      className="mt-2.5 flex h-10 w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-4 text-xs font-black text-blue-600 transition hover:bg-blue-100"
+                    <Link
+                      href={`/dashboard/jobseeker/community?chat=${person.slug}`}
+                      className="mt-2.5 flex h-9 w-full items-center justify-center rounded-lg border border-blue-100 bg-blue-50 px-3 text-[11px] font-black text-blue-600 transition hover:bg-blue-100"
                     >
-                    Message
-                  </button>
+                      Message
+                    </Link>
                 </div>
               </article>
             );
@@ -283,7 +268,7 @@ export function PeopleGrid({
 function EmptyState({ title, text }: { title: string; text: string }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
-      <h3 className="text-2xl font-black text-slate-950">{title}</h3>
+      <h3 className="text-xl font-black text-slate-950">{title}</h3>
       <p className="mt-3 text-sm font-medium text-slate-500">{text}</p>
     </div>
   );
