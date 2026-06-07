@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Heart, MessageCircle } from "lucide-react";
+import { FileText, Heart, MessageCircle, Play } from "lucide-react";
 
 import {
   demoProjects,
   getStoredProjects,
   homeProjectDetails,
+  isPermanentlyDeletedProjectId,
   type MediaHireProject,
 } from "../projects-data";
 import { supabase } from "@/lib/supabase-client";
@@ -67,22 +68,114 @@ function renderBlock(project: MediaHireProject) {
         );
       }
 
+      if (block.type === "youtube" && block.url) {
+        const embedUrl = getYouTubeEmbedUrl(block.url);
+
+        return (
+          <div
+            className="mx-auto w-full max-w-5xl overflow-hidden rounded-2xl bg-slate-950 shadow-sm"
+            key={block.id}
+          >
+            <div className="flex items-center gap-2 px-4 py-3 text-xs font-black text-white">
+              <Play className="h-4 w-4" />
+              {block.fileName || "YouTube video"}
+            </div>
+
+            {embedUrl ? (
+              <iframe
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="aspect-video w-full"
+                src={embedUrl}
+                title={block.fileName || project.title}
+              />
+            ) : (
+              <div className="grid aspect-video place-items-center px-6 text-center text-sm font-bold text-white">
+                Invalid YouTube link
+              </div>
+            )}
+          </div>
+        );
+      }
+
       if (block.type === "pdf") {
         return (
-          <a
-            className="mx-auto block max-w-3xl rounded-2xl border border-slate-200 bg-white p-5 text-center text-sm font-black text-[#0B63E5]"
-            href={block.url || "#"}
+          <div
+            className="mx-auto w-full max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
             key={block.id}
-            rel="noreferrer"
-            target="_blank"
           >
-            {block.fileName || "Open PDF"}
-          </a>
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2 text-xs font-black text-slate-900">
+                <FileText className="h-4 w-4 shrink-0 text-[#0B63E5]" />
+                <span className="truncate">
+                  {block.fileName || "Project PDF"}
+                </span>
+              </div>
+
+              {block.url ? (
+                <a
+                  className="shrink-0 rounded-full bg-[#0B63E5] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#0958cc]"
+                  href={block.url}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Open PDF
+                </a>
+              ) : null}
+            </div>
+
+            {block.url ? (
+              <iframe
+                className="h-[520px] w-full bg-white"
+                src={`${block.url}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`}
+                title={block.fileName || `${project.title} PDF`}
+              />
+            ) : (
+              <div className="grid min-h-40 place-items-center px-5 text-center text-sm font-bold text-slate-400">
+                PDF file is not available
+              </div>
+            )}
+          </div>
         );
       }
 
       return null;
     });
+}
+
+function getYouTubeEmbedUrl(url: string) {
+  try {
+    const parsedUrl = new URL(url);
+
+    if (parsedUrl.hostname === "youtu.be") {
+      const id = parsedUrl.pathname.replace("/", "");
+      return id ? `https://www.youtube.com/embed/${id}` : "";
+    }
+
+    if (
+      parsedUrl.hostname === "www.youtube.com" ||
+      parsedUrl.hostname === "youtube.com"
+    ) {
+      const watchId = parsedUrl.searchParams.get("v");
+
+      if (watchId) {
+        return `https://www.youtube.com/embed/${watchId}`;
+      }
+
+      if (parsedUrl.pathname.startsWith("/embed/")) {
+        return url;
+      }
+
+      if (parsedUrl.pathname.startsWith("/shorts/")) {
+        const id = parsedUrl.pathname.replace("/shorts/", "");
+        return id ? `https://www.youtube.com/embed/${id}` : "";
+      }
+    }
+
+    return "";
+  } catch {
+    return "";
+  }
 }
 
 export function ProjectDetailPage({ projectId }: { projectId: string }) {
@@ -97,6 +190,13 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
     let isMounted = true;
 
     async function hydrateProject() {
+      if (isPermanentlyDeletedProjectId(projectId)) {
+        if (isMounted) {
+          setProjects([]);
+        }
+        return;
+      }
+
       const localProjects = [
         ...getStoredProjects(),
         ...homeProjectDetails,

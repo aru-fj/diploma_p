@@ -44,10 +44,10 @@ export function JobCard({ index, job }: JobCardProps) {
               {job.title}
             </h3>
             <div className="mt-2 flex flex-wrap gap-2">
-              {job.tags.map((tag) => (
+              {job.tags.map((tag, index) => (
                 <span
                   className="rounded-md bg-[#eef4ff] px-2 py-1 text-xs font-black text-[#0B63E5]"
-                  key={tag}
+                  key={`${tag}-${index}`}
                 >
                   {tag}
                 </span>

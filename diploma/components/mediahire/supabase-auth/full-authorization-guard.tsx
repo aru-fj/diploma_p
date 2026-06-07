@@ -6,6 +6,18 @@ import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/lib/supabase-client";
 import type { MediaHireRole } from "./auth-service";
 import { getNextAuthSession } from "./nextauth-session";
+import {
+  jobSeekerProfileStorageKey,
+  setActiveJobSeekerEmail,
+} from "../account-settings/profile-store";
+
+type AuthorizationProfile = {
+  email?: string | null;
+  is_verified?: boolean | null;
+  onboarding_completed?: boolean | null;
+  onboarding_skipped?: boolean | null;
+  role?: unknown;
+};
 
 function onboardingPath(role: MediaHireRole) {
   return role === "jobseeker"
@@ -50,6 +62,49 @@ async function getAuthoritativeRole(accessToken?: string) {
   }
 }
 
+function withTimeout<T>(
+  promise: PromiseLike<T>,
+  milliseconds: number,
+  fallback: T,
+) {
+  return new Promise<T>((resolve) => {
+    const timeoutId = window.setTimeout(() => resolve(fallback), milliseconds);
+
+    Promise.resolve(promise)
+      .then((value) => resolve(value))
+      .catch(() => resolve(fallback))
+      .finally(() => window.clearTimeout(timeoutId));
+  });
+}
+
+function hasLocalJobSeekerAccess(role: MediaHireRole) {
+  if (role !== "jobseeker" || typeof window === "undefined") {
+    return false;
+  }
+
+  if (window.sessionStorage.getItem("mediahire.jobseeker.accountAccess") === "true") {
+    return true;
+  }
+
+  try {
+    const rawProfile = window.localStorage.getItem(jobSeekerProfileStorageKey);
+    const profile = rawProfile ? JSON.parse(rawProfile) : null;
+
+    return Boolean(
+      profile?.email ||
+        profile?.fullName ||
+        profile?.firstName ||
+        profile?.lastName,
+    );
+  } catch {
+    return false;
+  }
+}
+
+function canOpenWithoutBlocking(role: MediaHireRole, pathname: string) {
+  return role === "jobseeker" && pathname === "/home/jobseeker";
+}
+
 export function FullAuthorizationGuard({
   children,
   role,
@@ -64,15 +119,39 @@ export function FullAuthorizationGuard({
     let isMounted = true;
 
     async function checkAuthorization() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const user = sessionData.session?.user;
-      const nextAuthSession = user ? null : await getNextAuthSession();
-      const nextAuthUser = nextAuthSession?.user;
-      const authoritativeRole = await getAuthoritativeRole(
-        sessionData.session?.access_token,
+      if (canOpenWithoutBlocking(role, pathname)) {
+        if (isMounted) {
+          setIsReady(true);
+        }
+        return;
+      }
+
+      const hasLocalAccess = hasLocalJobSeekerAccess(role);
+      const sessionResult = await withTimeout(
+        supabase.auth.getSession(),
+        1800,
+        null,
       );
+      const sessionData = sessionResult?.data;
+      const user = sessionData?.session?.user;
+      const nextAuthSession = user
+        ? null
+        : await withTimeout(getNextAuthSession(), 1800, null);
+      const nextAuthUser = nextAuthSession?.user;
+      const currentEmail = user?.email || nextAuthUser?.email || "";
+
+      if (currentEmail) {
+        setActiveJobSeekerEmail(currentEmail);
+      }
 
       if (!user && !nextAuthUser) {
+        if (hasLocalAccess) {
+          if (isMounted) {
+            setIsReady(true);
+          }
+          return;
+        }
+
         window.location.replace(
           `${loginPath(role)}?next=${encodeURIComponent(pathname)}`,
         );
@@ -81,18 +160,33 @@ export function FullAuthorizationGuard({
 
       const profileSelector =
         "email,is_verified,onboarding_completed,onboarding_skipped,role";
-      const { data: profileRows } =
+      const profileQuery =
         user?.id || nextAuthUser?.supabaseUserId
-          ? await supabase
+          ? supabase
               .from("profiles")
               .select(profileSelector)
               .eq("user_id", user?.id || nextAuthUser?.supabaseUserId || "")
               .limit(1)
-          : await supabase
+          : supabase
               .from("profiles")
               .select(profileSelector)
               .eq("email", nextAuthUser?.email || "")
               .limit(1);
+      const [authoritativeRole, profileResult] = await Promise.all([
+        withTimeout(
+          getAuthoritativeRole(sessionData?.session?.access_token),
+          1800,
+          null,
+        ),
+        withTimeout(
+          Promise.resolve(profileQuery).then(({ data }) => ({
+            data: data as AuthorizationProfile[] | null,
+          })),
+          2200,
+          { data: null },
+        ),
+      ]);
+      const profileRows = profileResult.data;
       const profile = profileRows?.[0];
       const actualRole =
         authoritativeRole || (isMediaHireRole(profile?.role) ? profile.role : null);
@@ -102,7 +196,7 @@ export function FullAuthorizationGuard({
         return;
       }
 
-      if (!profile?.is_verified) {
+      if (profile && !profile.is_verified) {
         window.location.replace(
           `/verify-email?role=${role}&email=${encodeURIComponent(
             user?.email || nextAuthUser?.email || profile?.email || "",
@@ -111,7 +205,11 @@ export function FullAuthorizationGuard({
         return;
       }
 
-      if (!profile.onboarding_completed && !profile.onboarding_skipped) {
+      if (
+        profile &&
+        !profile.onboarding_completed &&
+        !profile.onboarding_skipped
+      ) {
         window.sessionStorage.setItem(
           "mediahire.registrationBlockMessage",
           "Please complete your registration before applying for jobs.",

@@ -28,6 +28,7 @@ export type SavedJob = {
 
 export type MessagePreview = {
   avatarColor: string;
+  href: string;
   id: string;
   initials: string;
   name: string;
@@ -44,6 +45,7 @@ export type Application = {
   company: string;
   history: ApplicationHistoryItem[];
   id: string;
+  jobId: string;
   role: string;
   status: "Applied" | "Under Review" | "Interviewed" | "Accepted" | "Rejected";
 };
@@ -116,6 +118,7 @@ export const savedJobs: SavedJob[] = [
 export const messages: MessagePreview[] = [
   {
     avatarColor: "bg-black text-orange-500",
+    href: "/dashboard/jobseeker/community?chat=salem-entertainment",
     id: "salem-entertainment",
     initials: "S",
     name: "Salem Entertainment",
@@ -124,6 +127,7 @@ export const messages: MessagePreview[] = [
   },
   {
     avatarColor: "bg-slate-200 text-slate-900",
+    href: "/dashboard/jobseeker/community?chat=alem-koskanay",
     id: "alem-koskanay",
     initials: "A",
     name: "Alem Koskanay",
@@ -140,6 +144,7 @@ export const applications: Application[] = [
       { label: "Applied", time: "1 days ago" },
     ],
     id: "salem-uiux",
+    jobId: "salem-uiux",
     role: "UI/UX Designer",
     status: "Interviewed",
   },

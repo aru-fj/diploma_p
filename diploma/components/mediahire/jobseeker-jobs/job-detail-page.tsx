@@ -235,8 +235,8 @@ export function JobDetailPage({ job }: { job: MediaHireJob }) {
             <div className="flex flex-wrap gap-2">
               <Tag>{job.type}</Tag>
               <Tag>{job.level}</Tag>
-              {job.tags.map((tag) => (
-                <Tag key={tag}>{tag}</Tag>
+              {job.tags.map((tag, index) => (
+                <Tag key={`${tag}-${index}`}>{tag}</Tag>
               ))}
             </div>
           </section>

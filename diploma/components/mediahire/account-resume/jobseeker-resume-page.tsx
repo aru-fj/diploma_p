@@ -45,15 +45,21 @@ import {
   slideInLeft,
 } from "../ui/design-system";
 import {
+  defaultJobSeekerProfile,
   getStoredJobSeekerProfile,
+  getStoredJobSeekerProfileForEmail,
   saveJobSeekerProfile,
+  setActiveJobSeekerEmail,
   type JobSeekerProfile,
 } from "../account-settings/profile-store";
 import { JobSeekerAvatar } from "../jobseeker-avatar-placeholder";
 import { supabase } from "@/lib/supabase-client";
 import { upsertProfile } from "../supabase-auth/auth-service";
 import {
+  defaultResumeData,
   getResumeData,
+  getResumeDataForEmail,
+  updateResumeDataForEmail,
   updateResumeData,
   type ResumeData,
 } from "../shared/user-state";
@@ -90,6 +96,36 @@ type ResumeFormState = {
   languages: string;
   links: string;
   skills: string;
+};
+
+type ResumeProfileRow = {
+  avatar_url?: string | null;
+  bio?: string | null;
+  city?: string | null;
+  country?: string | null;
+  email?: string | null;
+  expected_salary?: number | string | null;
+  first_name?: string | null;
+  full_name?: string | null;
+  job_title?: string | null;
+  last_name?: string | null;
+  location?: string | null;
+  minimum_salary?: number | string | null;
+  payment_period?: string | null;
+  postal_code?: string | null;
+  resume_url?: string | null;
+  skills?: string | string[] | null;
+};
+
+type ResumeRow = {
+  about?: string | null;
+  education?: string | null;
+  job_preferences?: string | null;
+  languages?: string | null;
+  links?: string | null;
+  preferred_job_benefits?: string | null;
+  professional_skill?: string | null;
+  work_experience?: string | null;
 };
 
 function resumeDataToFormState(resume: ResumeData): ResumeFormState {
@@ -137,6 +173,83 @@ function buildEditableProfile(profile: JobSeekerProfile): JobSeekerProfile {
     location: [city, country].filter(Boolean).join(", "),
     role: jobTitle,
   };
+}
+
+function stringifyProfileList(value?: string | string[] | null) {
+  return Array.isArray(value) ? value.filter(Boolean).join(", ") : value || "";
+}
+
+function mergeProfileFromSupabase({
+  authEmail,
+  current,
+  row,
+}: {
+  authEmail: string;
+  current: JobSeekerProfile;
+  row: ResumeProfileRow | null;
+}) {
+  if (!row) {
+    return buildEditableProfile({
+      ...current,
+      email: current.email || authEmail,
+    });
+  }
+
+  const firstName = current.firstName || row.first_name || "";
+  const lastName = current.lastName || row.last_name || "";
+  const city = current.city || row.city || row.location || "";
+  const country = current.country || row.country || (city ? "Kazakhstan" : "");
+  const minimumSalary =
+    current.minimumSalary ||
+    row.minimum_salary?.toString() ||
+    row.expected_salary?.toString() ||
+    "";
+  const jobTitle = current.jobTitle || row.job_title || "";
+
+  return buildEditableProfile({
+    ...current,
+    avatarPreview: current.avatarPreview || row.avatar_url || "",
+    bio: current.bio || row.bio || "",
+    city,
+    country,
+    email: current.email || row.email || authEmail,
+    expectedSalary: current.expectedSalary || minimumSalary,
+    firstName,
+    fullName:
+      current.fullName ||
+      row.full_name ||
+      [firstName, lastName].filter(Boolean).join(" "),
+    jobTitle,
+    lastName,
+    location:
+      current.location ||
+      row.location ||
+      [city, country].filter(Boolean).join(", "),
+    minimumSalary,
+    paymentPeriod: current.paymentPeriod || row.payment_period || "",
+    postalCode: current.postalCode || row.postal_code || "",
+    resumeUrl: current.resumeUrl || row.resume_url || "",
+    role: current.role || jobTitle,
+    skills: current.skills || stringifyProfileList(row.skills),
+  });
+}
+
+function mergeResumeFromSupabase(current: ResumeData, row: ResumeRow | null) {
+  if (!row) {
+    return current;
+  }
+
+  return {
+    ...current,
+    about: current.about || row.about || "",
+    benefits: current.benefits || row.preferred_job_benefits || "",
+    education: current.education || row.education || "",
+    experience: current.experience || row.work_experience || "",
+    jobPreferences: current.jobPreferences || row.job_preferences || "",
+    languages: current.languages || row.languages || "",
+    links: current.links || row.links || "",
+    skills: current.skills || row.professional_skill || "",
+  } satisfies ResumeData;
 }
 
 const sidebarItems: SidebarItem[] = [
@@ -187,7 +300,7 @@ function readProfileImageFile({
 
 function DashboardLogo() {
   return (
-    <Link className="flex items-center gap-2.5" href="/account/jobseeker">
+    <Link className="flex items-center gap-2.5" href="/home/jobseeker">
       <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#0B63E5] text-white shadow-[0_12px_28px_rgba(11,99,229,0.18)]">
         <span className="text-xl font-black leading-none">M</span>
       </span>
@@ -347,29 +460,33 @@ function DashboardTopbar({
         </label>
 
         <div className="flex min-w-0 items-center gap-2 rounded-xl bg-white p-1.5 shadow-[0_10px_26px_rgba(15,23,42,0.035)] sm:max-w-[220px]">
-          <button
+          <Link
             aria-label="Notifications"
             className="relative grid h-8 w-8 place-items-center rounded-full bg-[#eef4ff] text-[#0B63E5]"
-            type="button"
+            href="/dashboard/jobseeker/community?chat=mediahire-welcome"
           >
             <Bell size={15} />
-            <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-          </button>
-          <JobSeekerAvatar
-            alt="Job seeker avatar"
-            className="h-8 w-8 rounded-full"
-            iconSize={15}
-            size={32}
-            src={avatarSrc}
-          />
-          <div className="hidden min-w-0 pr-1.5 sm:block">
-            <p className="truncate text-[11px] font-black text-slate-950">
-              {profile.fullName}
-            </p>
-            <p className="truncate text-[10px] font-semibold text-slate-400">
-              {profile.email}
-            </p>
-          </div>
+          </Link>
+          <Link
+            className="flex min-w-0 items-center gap-2 rounded-lg pr-1.5 transition hover:bg-[#f8fbff]"
+            href="/home/jobseeker"
+          >
+            <JobSeekerAvatar
+              alt="Job seeker avatar"
+              className="h-8 w-8 rounded-full"
+              iconSize={15}
+              size={32}
+              src={avatarSrc}
+            />
+            <span className="hidden min-w-0 sm:block">
+              <span className="block truncate text-[11px] font-black text-slate-950">
+                {profile.fullName}
+              </span>
+              <span className="block truncate text-[10px] font-semibold text-slate-400">
+                {profile.email}
+              </span>
+            </span>
+          </Link>
         </div>
       </div>
     </header>
@@ -550,6 +667,11 @@ const personalInfoFields: PersonalInfo[] = [
     name: "paymentPeriod",
     options: ["Monthly", "Weekly", "Daily", "Hourly", "Project-based"],
   },
+  {
+    label: "Preferred work type",
+    name: "preferredWorkType",
+    options: ["Fulltime", "Freelance", "Project-based"],
+  },
   { label: "Postal code", name: "postalCode", placeholder: "Postal code" },
   {
     label: "Skills",
@@ -596,6 +718,47 @@ function unwrapElement(element: Element) {
   parent.removeChild(element);
 }
 
+function replaceStyledSpan(element: Element) {
+  const style = element.getAttribute("style") || "";
+  const fontWeight = style.match(/font-weight\s*:\s*([^;]+)/i)?.[1] || "";
+  const isBold =
+    element.tagName === "SPAN" &&
+    (fontWeight.trim().toLowerCase() === "bold" ||
+      Number.parseInt(fontWeight, 10) >= 600);
+  const isItalic =
+    element.tagName === "SPAN" && /font-style\s*:\s*italic/i.test(style);
+
+  if (!isBold && !isItalic) {
+    return element;
+  }
+
+  const parent = element.parentNode;
+
+  if (!parent) {
+    return element;
+  }
+
+  const replacement = element.ownerDocument.createElement(
+    isBold ? "strong" : "em",
+  );
+  const contentTarget =
+    isBold && isItalic
+      ? element.ownerDocument.createElement("em")
+      : replacement;
+
+  if (contentTarget !== replacement) {
+    replacement.appendChild(contentTarget);
+  }
+
+  while (element.firstChild) {
+    contentTarget.appendChild(element.firstChild);
+  }
+
+  parent.replaceChild(replacement, element);
+
+  return replacement;
+}
+
 function sanitizeRichText(html: string) {
   if (typeof window === "undefined" || !html) {
     return html;
@@ -610,7 +773,9 @@ function sanitizeRichText(html: string) {
     return "";
   }
 
-  Array.from(root.querySelectorAll("*")).forEach((element) => {
+  Array.from(root.querySelectorAll("*")).forEach((rawElement) => {
+    const element = replaceStyledSpan(rawElement);
+
     Array.from(element.attributes).forEach((attribute) =>
       element.removeAttribute(attribute.name),
     );
@@ -693,10 +858,10 @@ function TagInput({
       />
       {tags.length ? (
         <div className="mt-2 flex flex-wrap gap-2">
-          {tags.map((tag) => (
+          {tags.map((tag, index) => (
             <span
               className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-slate-100 px-3 text-xs font-black text-slate-600"
-              key={tag}
+              key={`${tag}-${index}`}
             >
               {tag}
               <button
@@ -744,15 +909,15 @@ function PersonalInfoGrid({
           <UserRound className="text-[#0B63E5]" size={18} />
           <h2 className="text-sm font-black text-slate-950">Personal Information</h2>
         </div>
-        <motion.button
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-[#0B63E5] px-4 text-xs font-black text-white shadow-[0_12px_26px_rgba(11,99,229,0.18)] transition hover:bg-[#0957ca]"
-          type="button"
-          whileHover={{ y: -1 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <Eye size={16} />
-          View resume
-        </motion.button>
+        <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
+          <Link
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-[#0B63E5] px-4 text-xs font-black text-white shadow-[0_12px_26px_rgba(11,99,229,0.18)] transition hover:bg-[#0957ca]"
+            href="/profile/jobseeker"
+          >
+            <Eye size={16} />
+            View resume
+          </Link>
+        </motion.div>
       </div>
 
       <div className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
@@ -934,7 +1099,7 @@ function RichTextEditor({
           </span>
         ) : null}
         <motion.div
-          className="rich-text-editor min-h-20 w-full px-3 py-3 text-xs font-semibold leading-5 text-slate-900 outline-none"
+          className="rich-text-editor min-h-20 w-full px-3 py-3 text-xs font-semibold leading-5 text-slate-900 outline-none [&_b]:font-[1000] [&_b]:text-slate-950 [&_em]:italic [&_i]:italic [&_strong]:font-[1000] [&_strong]:text-slate-950"
           contentEditable
           onBlur={updateValue}
           onInput={updateValue}
@@ -1017,16 +1182,18 @@ function ActionButtons({
 export function JobSeekerResumePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [profile, setProfile] = useState<JobSeekerProfile>(() =>
-    getStoredJobSeekerProfile(),
+  const [profile, setProfile] = useState<JobSeekerProfile>(
+    defaultJobSeekerProfile,
   );
   const [savedProfile, setSavedProfile] = useState<JobSeekerProfile>(profile);
   const [formState, setFormState] = useState<ResumeFormState>(() =>
-    resumeDataToFormState(getResumeData()),
+    resumeDataToFormState(defaultResumeData),
   );
-  const [resumeData, setResumeData] = useState(() => getResumeData());
+  const [resumeData, setResumeData] = useState<ResumeData>(
+    defaultResumeData,
+  );
   const [savedState, setSavedState] = useState<ResumeFormState>(() =>
-    resumeDataToFormState(getResumeData()),
+    resumeDataToFormState(defaultResumeData),
   );
   const [avatarError, setAvatarError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -1043,6 +1210,87 @@ export function JobSeekerResumePage() {
   );
 
   useEffect(() => {
+    let isMounted = true;
+
+    async function hydrateAccountResume() {
+      const { data } = await supabase.auth.getUser();
+      const authEmail = data.user?.email?.trim().toLowerCase() || "";
+
+      if (authEmail) {
+        setActiveJobSeekerEmail(authEmail);
+      }
+
+      const storedProfile = authEmail
+        ? getStoredJobSeekerProfileForEmail(authEmail)
+        : getStoredJobSeekerProfile();
+      const storedResume = authEmail
+        ? getResumeDataForEmail(authEmail)
+        : getResumeData();
+
+      let nextProfile = storedProfile;
+      let nextResumeData = storedResume;
+
+      if (data.user) {
+        let profileRow: ResumeProfileRow | null = null;
+        const byUserId = await supabase
+          .from("profiles")
+          .select(
+            "avatar_url,bio,city,country,email,expected_salary,first_name,full_name,job_title,last_name,location,payment_period,postal_code,minimum_salary,resume_url,skills",
+          )
+          .eq("user_id", data.user.id)
+          .maybeSingle();
+
+        if (byUserId.error) {
+          const byId = await supabase
+            .from("profiles")
+            .select(
+              "avatar_url,bio,city,country,email,expected_salary,first_name,full_name,job_title,last_name,location,payment_period,postal_code,minimum_salary,resume_url,skills",
+            )
+            .eq("id", data.user.id)
+            .maybeSingle();
+
+          profileRow = (byId.data || null) as ResumeProfileRow | null;
+        } else {
+          profileRow = (byUserId.data || null) as ResumeProfileRow | null;
+        }
+
+        const { data: resumeRow } = await supabase
+          .from("jobseeker_resumes")
+          .select(
+            "about,education,job_preferences,languages,links,preferred_job_benefits,professional_skill,work_experience",
+          )
+          .eq("user_id", data.user.id)
+          .maybeSingle();
+
+        nextProfile = mergeProfileFromSupabase({
+          authEmail,
+          current: storedProfile,
+          row: profileRow,
+        });
+        nextResumeData = mergeResumeFromSupabase(
+          storedResume,
+          (resumeRow || null) as ResumeRow | null,
+        );
+
+        if (authEmail) {
+          saveJobSeekerProfile(nextProfile);
+          updateResumeDataForEmail(authEmail, nextResumeData);
+        }
+      }
+
+      if (!isMounted) {
+        return;
+      }
+
+      const nextFormState = resumeDataToFormState(nextResumeData);
+
+      setProfile(nextProfile);
+      setSavedProfile(nextProfile);
+      setResumeData(nextResumeData);
+      setFormState(nextFormState);
+      setSavedState(nextFormState);
+    }
+
     function handleProfileUpdate() {
       const storedProfile = getStoredJobSeekerProfile();
 
@@ -1058,12 +1306,12 @@ export function JobSeekerResumePage() {
       setSavedState(resumeDataToFormState(storedResume));
     }
 
-    handleProfileUpdate();
-    handleResumeUpdate();
+    void hydrateAccountResume();
     window.addEventListener("mediahire:jobseeker-profile-updated", handleProfileUpdate);
     window.addEventListener("mediahire:resume-updated", handleResumeUpdate);
 
     return () => {
+      isMounted = false;
       window.removeEventListener(
         "mediahire:jobseeker-profile-updated",
         handleProfileUpdate,
@@ -1214,7 +1462,11 @@ export function JobSeekerResumePage() {
     saveJobSeekerProfile(updatedProfile);
     setProfile(updatedProfile);
     setSavedProfile(updatedProfile);
-    updateResumeData(nextResumeData);
+    if (updatedProfile.email) {
+      updateResumeDataForEmail(updatedProfile.email, nextResumeData);
+    } else {
+      updateResumeData(nextResumeData);
+    }
     setResumeData(nextResumeData);
     saveJobSeekerProfile(updatedProfile);
     setProfile(updatedProfile);

@@ -16,7 +16,7 @@ type DashboardSidebarProps = {
 
 function Logo() {
   return (
-    <Link className="flex items-center gap-2.5" href="/dashboard/jobseeker">
+    <Link className="flex items-center gap-2.5" href="/home/jobseeker">
       <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#0B63E5] text-xl font-black text-white">
         M
       </span>

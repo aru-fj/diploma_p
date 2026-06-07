@@ -4,19 +4,22 @@ import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import {
   BriefcaseBusiness,
+  CalendarDays,
+  Edit3,
   FileText,
   GraduationCap,
-  Grid2X2,
   ImageIcon,
   Languages,
   Link as LinkIcon,
   Mail,
   MapPin,
+  Play,
   Plus,
   Type,
   Upload,
   UserRound,
   Video,
+  Trash2,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase-client";
@@ -25,6 +28,8 @@ import {
   demoProfile,
   demoProjects,
   getStoredProjects,
+  isHiddenScratchProject,
+  isPermanentlyDeletedProjectId,
   setStoredProjects,
   type MediaHireProject,
   type ProjectBlockType,
@@ -35,7 +40,6 @@ import { JobSeekerNavbar } from "../jobseeker-navbar";
 import {
   getCurrentUserProfile,
   getResumeData,
-  getSettings,
   type ResumeData,
 } from "../shared/user-state";
 import { JobSeekerAvatar } from "../jobseeker-avatar-placeholder";
@@ -50,16 +54,49 @@ function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = () => {
-      resolve(String(reader.result || ""));
-};
-
-    reader.onerror = () => {
-      reject(reader.error);
-    };
-
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
   });
+}
+
+function imageFileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const image = new Image();
+    const previewUrl = URL.createObjectURL(file);
+
+    image.onload = () => {
+      const maxSize = 560;
+      const ratio = Math.min(1, maxSize / Math.max(image.width, image.height));
+      const width = Math.max(1, Math.round(image.width * ratio));
+      const height = Math.max(1, Math.round(image.height * ratio));
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+
+      URL.revokeObjectURL(previewUrl);
+
+      if (!context) {
+        reject(new Error("Could not prepare image."));
+        return;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      context.drawImage(image, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", 0.55));
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(previewUrl);
+      reject(new Error("Could not read image."));
+    };
+
+    image.src = previewUrl;
+  });
+}
+
+function fileToPersistentUrl(file: File) {
+  return file.type.startsWith("image/") ? imageFileToDataUrl(file) : fileToDataUrl(file);
 }
 
 function splitList(value?: string | string[] | null) {
@@ -73,6 +110,48 @@ function splitList(value?: string | string[] | null) {
     .filter(Boolean);
 }
 
+function formatExperienceYears(value?: string | null) {
+  const trimmedValue = (value || "").trim();
+
+  if (!trimmedValue) {
+    return "";
+  }
+
+  if (/experience/i.test(trimmedValue)) {
+    return trimmedValue;
+  }
+
+  if (/^\d+$/.test(trimmedValue)) {
+    return `${trimmedValue} ${
+      trimmedValue === "1" ? "year" : "years"
+    } experience`;
+  }
+
+  return `${trimmedValue} years experience`;
+}
+
+function formatMinimumSalaryAmount(amount?: string | null, currency?: string | null) {
+  const trimmedAmount = (amount || "").trim();
+  const trimmedCurrency = (currency || "").trim();
+
+  if (!trimmedAmount) {
+    return "";
+  }
+
+  return [trimmedCurrency, trimmedAmount].filter(Boolean).join(" ");
+}
+
+function formatPersonalInfoLocation(profile: { city?: string; country?: string }) {
+  const city = (profile.city || "").trim();
+  const country = (profile.country || "").trim();
+
+  if (!city) {
+    return "";
+  }
+
+  return [city, country].filter(Boolean).join(", ");
+}
+
 function localProfileSummary(): ProfileSummary {
   const profile = getCurrentUserProfile();
   const fullName =
@@ -80,10 +159,7 @@ function localProfileSummary(): ProfileSummary {
     [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
     profile.email?.split("@")[0] ||
     "Job Seeker";
-  const location =
-    profile.location ||
-    [profile.city, profile.country].filter(Boolean).join(", ") ||
-    "Location not added";
+  const location = formatPersonalInfoLocation(profile);
   const skills = splitList(profile.skills);
   const software = splitList(profile.software);
 
@@ -92,12 +168,21 @@ function localProfileSummary(): ProfileSummary {
     availableStatus: "Available for Freelance",
     bio: profile.bio || "",
     email: profile.email || "Email not added",
+    experience: formatExperienceYears(profile.experienceYears),
     fullName,
+    gender: profile.gender,
     id: profile.email || "local-jobseeker-profile",
-    location,
+    location: location || "Location not added",
+    minimumSalaryAmount: formatMinimumSalaryAmount(
+      profile.minimumSalary || profile.expectedSalary,
+      profile.minimumSalaryCurrency,
+    ),
+    mobile: profile.mobile,
     profession: profile.jobTitle || profile.role || "Role not added",
+    preferredWorkType: profile.preferredWorkType,
     skills,
     software,
+    yearOfBirth: profile.yearOfBirth,
   };
 }
 
@@ -127,6 +212,41 @@ function projectCover(project: MediaHireProject) {
   return mediaCover || projectFallbackCover;
 }
 
+function getYouTubeEmbedUrl(url: string) {
+  try {
+    const parsedUrl = new URL(url);
+
+    if (parsedUrl.hostname === "youtu.be") {
+      const id = parsedUrl.pathname.replace("/", "");
+      return id ? `https://www.youtube.com/embed/${id}` : "";
+    }
+
+    if (
+      parsedUrl.hostname === "www.youtube.com" ||
+      parsedUrl.hostname === "youtube.com"
+    ) {
+      const watchId = parsedUrl.searchParams.get("v");
+
+      if (watchId) {
+        return `https://www.youtube.com/embed/${watchId}`;
+      }
+
+      if (parsedUrl.pathname.startsWith("/embed/")) {
+        return url;
+      }
+
+      if (parsedUrl.pathname.startsWith("/shorts/")) {
+        const id = parsedUrl.pathname.replace("/shorts/", "");
+        return id ? `https://www.youtube.com/embed/${id}` : "";
+      }
+    }
+
+    return "";
+  } catch {
+    return "";
+  }
+}
+
 async function loadProfile() {
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
@@ -134,9 +254,7 @@ async function loadProfile() {
   const localFullName =
     localProfile.fullName ||
     [localProfile.firstName, localProfile.lastName].filter(Boolean).join(" ");
-  const localLocation =
-    localProfile.location ||
-    [localProfile.city, localProfile.country].filter(Boolean).join(", ");
+  const localLocation = formatPersonalInfoLocation(localProfile);
   const localSkills = splitList(localProfile.skills);
   const localSoftware = splitList(localProfile.software);
 
@@ -204,29 +322,29 @@ async function loadProfile() {
     availableStatus: profile?.available_status || "Available for Freelance",
     bio: localProfile.bio || profile?.bio || localProfileSummary().bio,
     email: localProfile.email || profile?.email || user.email || localProfileSummary().email,
+    experience:
+      formatExperienceYears(localProfile.experienceYears) ||
+      localProfileSummary().experience,
     fullName,
+    gender: localProfile.gender || localProfileSummary().gender,
     id: user.id,
     location:
       localLocation ||
-      profile?.location ||
-      [profile?.city, profile?.country].filter(Boolean).join(", ") ||
-      localProfileSummary().location,
+      "Location not added",
+    minimumSalaryAmount:
+      formatMinimumSalaryAmount(
+        localProfile.minimumSalary || localProfile.expectedSalary,
+        localProfile.minimumSalaryCurrency,
+      ) || localProfileSummary().minimumSalaryAmount,
+    mobile: localProfile.mobile || localProfileSummary().mobile,
     profession:
       localProfile.jobTitle ||
       localProfile.role ||
-      profile?.profession ||
-      profile?.job_title ||
-      localProfileSummary().profession,
-    skills: localSkills.length
-      ? localSkills
-      : splitList(profile?.skills).length
-      ? splitList(profile?.skills)
-      : [],
-    software: localSoftware.length
-      ? localSoftware
-      : splitList(profile?.software).length
-      ? splitList(profile?.software)
-      : [],
+      "Role not added",
+    preferredWorkType: localProfile.preferredWorkType,
+    skills: localSkills,
+    software: localSoftware,
+    yearOfBirth: localProfile.yearOfBirth || localProfileSummary().yearOfBirth,
   } satisfies ProfileSummary;
 }
 
@@ -243,7 +361,15 @@ async function loadProjectsFromSupabase(profile: ProfileSummary) {
     return [] as MediaHireProject[];
   }
 
-  const projectIds = rows.map((row) => row.id).filter(Boolean);
+  const visibleRows = rows.filter(
+    (row) => row.id && !isPermanentlyDeletedProjectId(row.id),
+  );
+
+  if (!visibleRows.length) {
+    return [] as MediaHireProject[];
+  }
+
+  const projectIds = visibleRows.map((row) => row.id).filter(Boolean);
   const { data: mediaRows } = projectIds.length
     ? await supabase
         .from("project_media")
@@ -254,7 +380,7 @@ async function loadProjectsFromSupabase(profile: ProfileSummary) {
         .order("order_index", { ascending: true })
     : { data: [] };
 
-  return rows.map((row) => {
+  return visibleRows.map((row) => {
     const media = (mediaRows || [])
       .filter((mediaRow) => mediaRow.project_id === row.id)
       .map((mediaRow) => ({
@@ -284,9 +410,18 @@ async function loadProjectsFromSupabase(profile: ProfileSummary) {
 }
 
 function ProfileSidebar({ profile }: { profile: ProfileSummary }) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const avatarSrc = isMounted ? profile.avatarUrl || "" : "";
+
   const rows = [
     { icon: MapPin, label: profile.location },
     { icon: BriefcaseBusiness, label: profile.profession },
+    { icon: CalendarDays, label: profile.experience || "Experience not added" },
     { icon: Mail, label: profile.email },
   ];
 
@@ -297,7 +432,7 @@ function ProfileSidebar({ profile }: { profile: ProfileSummary }) {
           className="h-20 w-20 overflow-hidden rounded-xl shadow-lg"
           iconSize={30}
           size={80}
-          src={profile.avatarUrl}
+          src={avatarSrc}
         />
 
         <h1 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
@@ -317,18 +452,32 @@ function ProfileSidebar({ profile }: { profile: ProfileSummary }) {
           ))}
         </div>
 
+        <Link
+          className="mt-5 flex h-9 w-full items-center justify-center gap-2 rounded-full bg-blue-600 text-xs font-black text-white transition hover:bg-blue-700"
+          href="/account/jobseeker/resume"
+        >
+          <Edit3 className="h-3.5 w-3.5" />
+          Edit resume
+        </Link>
+
         <div className="mt-6">
           <h2 className="text-lg font-black text-slate-950">Skills</h2>
 
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {profile.skills.map((skill) => (
-              <span
-                className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
-                key={skill}
-              >
-                {skill}
+            {profile.skills.length ? (
+              profile.skills.map((skill) => (
+                <span
+                  className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                  key={skill}
+                >
+                  {skill}
+                </span>
+              ))
+            ) : (
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">
+                Not added
               </span>
-            ))}
+            )}
           </div>
         </div>
 
@@ -336,14 +485,20 @@ function ProfileSidebar({ profile }: { profile: ProfileSummary }) {
           <h2 className="text-lg font-black text-slate-950">Software</h2>
 
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {profile.software.map((software) => (
-              <span
-                className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
-                key={software}
-              >
-                {software}
+            {profile.software.length ? (
+              profile.software.map((software) => (
+                <span
+                  className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                  key={software}
+                >
+                  {software}
+                </span>
+              ))
+            ) : (
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">
+                Not added
               </span>
-            ))}
+            )}
           </div>
         </div>
       </div>
@@ -353,9 +508,13 @@ function ProfileSidebar({ profile }: { profile: ProfileSummary }) {
 
 function PortfolioGrid({
   onAddProject,
+  onDeleteProject,
+  onEditProject,
   projects,
 }: {
   onAddProject: () => void;
+  onDeleteProject: (projectId: string) => void;
+  onEditProject: (project: MediaHireProject) => void;
   projects: MediaHireProject[];
 }) {
   return (
@@ -363,32 +522,139 @@ function PortfolioGrid({
       <AddProjectCard onAddProject={onAddProject} />
 
       {projects.map((project) => (
-        <Link
-          className="group block min-h-[285px] w-full rounded-2xl bg-white p-2.5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(37,99,235,0.13)]"
-          href={`/home/jobseeker/work/${project.id}`}
+        <article
+          className="group min-h-[285px] w-full rounded-2xl bg-white p-2.5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(37,99,235,0.13)]"
           key={project.id}
         >
-          <div className="h-52 overflow-hidden rounded-xl bg-slate-100 shadow-sm">
-            <img
-              alt={project.title}
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-              onError={(event) => {
-                event.currentTarget.src = projectFallbackCover;
-              }}
-              src={projectCover(project)}
-            />
+          <Link className="block" href={`/home/jobseeker/work/${project.id}`}>
+            <div className="relative h-52 overflow-hidden rounded-xl bg-slate-100 shadow-sm">
+              <ProjectCardCover project={project} />
+
+              <span
+                className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-black shadow-sm ${
+                  project.status === "published"
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-amber-50 text-amber-700"
+                }`}
+              >
+                {project.status === "published"
+                  ? project.workType || "Project-based"
+                  : "Draft"}
+              </span>
+            </div>
+
+            <h3 className="mt-3 text-base font-black text-slate-950 group-hover:text-blue-600">
+              {project.title}
+            </h3>
+
+            <p className="mt-1 line-clamp-2 text-xs font-semibold text-slate-500">
+              {project.description || project.authorName}
+            </p>
+          </Link>
+
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-blue-50 text-[11px] font-black text-blue-600 transition hover:bg-blue-100"
+              onClick={() => onEditProject(project)}
+              type="button"
+            >
+              <Edit3 className="h-3.5 w-3.5" />
+              Edit
+            </button>
+            <button
+              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-red-50 text-[11px] font-black text-red-500 transition hover:bg-red-100"
+              onClick={() => onDeleteProject(project.id)}
+              type="button"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete
+            </button>
           </div>
-
-          <h3 className="mt-3 text-base font-black text-slate-950 group-hover:text-blue-600">
-            {project.title}
-          </h3>
-
-          <p className="mt-1 text-xs font-semibold text-slate-500">
-            {project.authorName}
-          </p>
-        </Link>
+        </article>
       ))}
     </div>
+  );
+}
+
+function ProjectCardCover({ project }: { project: MediaHireProject }) {
+  const firstBlock = project.media
+    .slice()
+    .sort((first, second) => first.orderIndex - second.orderIndex)[0];
+
+  if (
+    firstBlock &&
+    (firstBlock.type === "image" || firstBlock.type === "photo_grid") &&
+    firstBlock.url
+  ) {
+    return (
+      <img
+        alt={firstBlock.fileName || project.title}
+        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+        onError={(event) => {
+          event.currentTarget.src = projectFallbackCover;
+        }}
+        src={firstBlock.url}
+      />
+    );
+  }
+
+  if (firstBlock?.type === "video" && firstBlock.url) {
+    return (
+      <video
+        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+        muted
+        playsInline
+        preload="metadata"
+        src={firstBlock.url}
+      />
+    );
+  }
+
+  if (firstBlock?.type === "youtube") {
+    return (
+      <div className="grid h-full w-full place-items-center bg-slate-950 text-white">
+        <span className="grid h-14 w-14 place-items-center rounded-full bg-white/15">
+          <Play className="h-7 w-7 fill-white" />
+        </span>
+      </div>
+    );
+  }
+
+  if (firstBlock?.type === "pdf") {
+    return (
+      <div className="grid h-full w-full place-items-center bg-[#eef4ff] px-5 text-center text-blue-600">
+        <div>
+          <FileText className="mx-auto h-11 w-11" />
+          <p className="mt-2 line-clamp-2 text-xs font-black text-slate-700">
+            {firstBlock.fileName || project.title}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (firstBlock?.type === "text") {
+    return (
+      <div className="grid h-full w-full place-items-center bg-slate-50 px-5 text-center">
+        <div>
+          <Type className="mx-auto h-9 w-9 text-blue-600" />
+          <p className="mt-2 line-clamp-5 text-xs font-black leading-5 text-slate-700">
+            {firstBlock.textContent || project.description}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      alt={project.title}
+      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+      onError={(event) => {
+        event.currentTarget.src = projectFallbackCover;
+      }}
+      src={projectCover(project)}
+    />
   );
 }
 
@@ -417,18 +683,49 @@ function AddProjectCard({ onAddProject }: { onAddProject: () => void }) {
 }
 
 function AddProjectForm({
+  editingProject,
+  onCancelEdit,
   onProjectSaved,
   profile,
 }: {
+  editingProject?: MediaHireProject | null;
+  onCancelEdit: () => void;
   onProjectSaved: (project: MediaHireProject) => void;
   profile: ProfileSummary;
 }) {
-  const [blocks, setBlocks] = useState<DraftBlock[]>([]);
-  const [description, setDescription] = useState("");
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [title, setTitle] = useState("");
+  const [blocks, setBlocks] = useState<DraftBlock[]>(() =>
+    editingProject?.media ? editingProject.media : [],
+  );
+  const [description, setDescription] = useState(editingProject?.description || "");
+  const [feedback, setFeedback] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [savingAction, setSavingAction] = useState<"draft" | "published" | null>(
+    null,
+  );
+  const [linkType, setLinkType] = useState<"image" | "pdf" | "youtube">("image");
+  const [linkValue, setLinkValue] = useState("");
+  const [title, setTitle] = useState(editingProject?.title || "");
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setTitle(editingProject?.title || "");
+      setDescription(editingProject?.description || "");
+      setFeedback("");
+      setIsSaving(false);
+      setSavingAction(null);
+      setBlocks(editingProject?.media || []);
+      setLinkValue("");
+      setLinkType("image");
+    });
+  }, [editingProject]);
+
+  const hasProjectBasics = Boolean(title.trim() && description.trim());
 
   function addTextBlock() {
+    if (!hasProjectBasics) {
+      return;
+    }
+
     setBlocks((current) => [
       ...current,
       {
@@ -438,13 +735,17 @@ function AddProjectForm({
         type: "text",
       },
     ]);
-    setIsExpanded(true);
   }
 
   function addFileBlock(
     type: ProjectBlockType,
     event: ChangeEvent<HTMLInputElement>,
   ) {
+    if (!hasProjectBasics) {
+      event.target.value = "";
+      return;
+    }
+
     const files = Array.from(event.target.files || []);
 
     if (!files.length) {
@@ -462,12 +763,11 @@ function AddProjectForm({
         url: URL.createObjectURL(file),
       })),
     ]);
-    setIsExpanded(true);
     event.target.value = "";
   }
 
   function addDroppedFiles(files: File[]) {
-    if (!files.length) {
+    if (!hasProjectBasics || !files.length) {
       return;
     }
 
@@ -490,7 +790,31 @@ function AddProjectForm({
         };
       }),
     ]);
-    setIsExpanded(true);
+  }
+
+  function addLinkBlock() {
+    const url = linkValue.trim();
+
+    if (!hasProjectBasics || !url) {
+      return;
+    }
+
+    setBlocks((current) => [
+      ...current,
+      {
+        fileName:
+          linkType === "youtube"
+            ? "YouTube video"
+            : linkType === "pdf"
+              ? "PDF link"
+              : "Image link",
+        id: crypto.randomUUID(),
+        orderIndex: current.length,
+        type: linkType,
+        url,
+      },
+    ]);
+    setLinkValue("");
   }
 
   function updateTextBlock(id: string, value: string) {
@@ -506,8 +830,6 @@ function AddProjectForm({
       return block.url;
     }
 
-    const fallbackDataUrl = await fileToDataUrl(block.file);
-
     try {
       const extension = block.file.name.split(".").pop() || "file";
       const path = `${profile.id}/${projectId}/${block.id}.${extension}`;
@@ -517,132 +839,160 @@ function AddProjectForm({
         .upload(path, block.file, { upsert: true });
 
       if (error) {
-        return fallbackDataUrl;
+        return fileToPersistentUrl(block.file);
       }
 
       const { data } = supabase.storage.from("project-media").getPublicUrl(path);
-      return data.publicUrl || fallbackDataUrl;
+      return data.publicUrl || fileToPersistentUrl(block.file);
     } catch {
-      return fallbackDataUrl;
+      return fileToPersistentUrl(block.file);
     }
   }
 
   async function persistProject(status: "draft" | "published") {
     const projectTitle = title.trim();
 
-    if (!projectTitle) {
+    if (!projectTitle || !description.trim()) {
+      setFeedback("Add project title and project description first.");
       return;
     }
 
-    const now = new Date().toISOString();
-    const id = createProjectId(projectTitle);
-    const media = await Promise.all(
-      blocks.map(async (block, index) => ({
-        fileName: block.fileName,
-        id: block.id,
-        orderIndex: index,
-        textContent: block.textContent,
-        type: block.type,
-        url: await uploadBlockFile(id, block),
-      })),
-    );
-
-    const coverUrl =
-      media.find((block) => block.type === "image" && block.url)?.url ||
-      media.find((block) => block.type === "photo_grid" && block.url)?.url;
-
-    const project: MediaHireProject = {
-      authorAvatar: profile.avatarUrl,
-      authorId: profile.id,
-      authorName: profile.fullName,
-      coverUrl,
-      createdAt: now,
-      description,
-      id,
-      media,
-      publishedAt: status === "published" ? now : undefined,
-      status,
-      title: projectTitle,
-      updatedAt: now,
-    };
-
-    const stored = getStoredProjects();
-    setStoredProjects([project, ...stored]);
+    setFeedback(status === "published" ? "Publishing project..." : "Saving project...");
+    setIsSaving(true);
+    setSavingAction(status);
 
     try {
-      await supabase.from("projects").insert({
-        author_id: profile.id,
-        cover_url: coverUrl,
-        description,
+      const now = new Date().toISOString();
+      const id = editingProject?.id || createProjectId(projectTitle);
+      const media = await Promise.all(
+        blocks.map(async (block, index) => ({
+          fileName: block.fileName,
+          id: block.id,
+          orderIndex: index,
+          textContent: block.textContent,
+          type: block.type,
+          url: await uploadBlockFile(id, block),
+        })),
+      );
+
+      const firstCoverBlock = media.find(
+        (block) =>
+          block.url || block.textContent || block.fileName || block.type === "text",
+      );
+      const coverUrl =
+        firstCoverBlock?.url ||
+        media.find((block) => block.type === "image" && block.url)?.url ||
+        media.find((block) => block.type === "photo_grid" && block.url)?.url;
+
+      const project: MediaHireProject = {
+        authorAvatar: profile.avatarUrl,
+        authorId: profile.id,
+        authorName: profile.fullName,
+        authorRole: profile.profession,
+        coverUrl,
+        createdAt: editingProject?.createdAt || now,
+        description: description.trim(),
         id,
-        published_at: project.publishedAt,
+        media,
+        publishedAt:
+          status === "published" ? editingProject?.publishedAt || now : undefined,
         status,
-        title: project.title,
-      });
+        title: projectTitle,
+        updatedAt: now,
+        workType:
+          profile.preferredWorkType ||
+          editingProject?.workType ||
+          (status === "published" ? "Project-based" : "Draft"),
+      };
 
-      if (media.length) {
-        await supabase.from("project_media").insert(
-          media.map((block) => ({
-            file_name: block.fileName,
-            id: block.id,
-            order_index: block.orderIndex,
-            project_id: id,
-            text_content: block.textContent,
-            type: block.type,
-            url: block.url,
-          })),
-        );
+      const stored = getStoredProjects();
+      setStoredProjects([
+        project,
+        ...stored.filter((storedProject) => storedProject.id !== project.id),
+      ]);
+
+      try {
+        await supabase.from("projects").upsert({
+          author_id: profile.id,
+          cover_url: coverUrl,
+          description: project.description,
+          id,
+          published_at: project.publishedAt,
+          status,
+          title: project.title,
+          updated_at: project.updatedAt,
+        });
+
+        await supabase.from("project_media").delete().eq("project_id", id);
+
+        if (media.length) {
+          await supabase.from("project_media").upsert(
+            media.map((block) => ({
+              file_name: block.fileName,
+              id: block.id,
+              order_index: block.orderIndex,
+              project_id: id,
+              text_content: block.textContent,
+              type: block.type,
+              url: block.url,
+            })),
+          );
+        }
+      } catch {
+        // The local draft/published flow still works when the schema is not installed yet.
       }
-    } catch {
-      // The local draft/published flow still works when the schema is not installed yet.
+
+      setTitle("");
+      setDescription("");
+      setBlocks([]);
+      setLinkValue("");
+      onCancelEdit();
+      onProjectSaved(project);
+    } catch (error) {
+      const isQuotaError =
+        error instanceof DOMException &&
+        (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED");
+
+      setFeedback(
+        isQuotaError
+          ? "Could not save project because the uploaded file is too large. Try a smaller file."
+          : "Could not save project. Please try again.",
+      );
+    } finally {
+      setIsSaving(false);
+      setSavingAction(null);
     }
-
-    setTitle("");
-    setDescription("");
-    setBlocks([]);
-    setIsExpanded(false);
-    onProjectSaved(project);
-  }
-
-  if (!isExpanded) {
-    return (
-      <div className="max-w-md rounded-[1.8rem] border border-slate-200 bg-white p-5 text-center shadow-sm">
-        <h3 className="text-xl font-black text-slate-950">Create project</h3>
-        <p className="mt-2 text-sm font-semibold text-slate-400">
-          Start building your creative portfolio
-        </p>
-        <button
-          className="mt-6 grid h-32 w-full place-items-center rounded-2xl border border-dashed border-slate-300 text-[#0B63E5] transition hover:bg-[#eef4ff]"
-          onClick={() => setIsExpanded(true)}
-          type="button"
-        >
-          <Plus size={38} />
-        </button>
-        <button
-          className="mt-4 h-11 w-full rounded-xl border border-[#0B63E5] text-sm font-black text-[#0B63E5] transition hover:bg-[#eef4ff]"
-          onClick={() => setIsExpanded(true)}
-          type="button"
-        >
-          Add
-        </button>
-      </div>
-    );
   }
 
   const fileButtons = [
-    { accept: "image/*", icon: ImageIcon, label: "Image", type: "image" },
-    {
-      accept: "image/*",
-      icon: Grid2X2,
-      label: "Photo grid",
-      type: "photo_grid",
-    },
-    { accept: "video/*", icon: Video, label: "Video", type: "video" },
-    { accept: "application/pdf", icon: FileText, label: "PDF", type: "pdf" },
+    { accept: "image/*", icon: ImageIcon, label: "Image file", type: "image" },
+    { accept: "application/pdf", icon: FileText, label: "PDF file", type: "pdf" },
+    { accept: "video/*", icon: Video, label: "Video file", type: "video" },
   ] as const;
 
   return (
     <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-xl font-black text-slate-950">
+            {editingProject ? "Edit project" : "Add project"}
+          </h3>
+          <p className="mt-1 text-xs font-semibold text-slate-400">
+            Add title and description first, then choose files, links, or text.
+          </p>
+        </div>
+
+        {editingProject ? (
+          <button
+            className="h-9 rounded-xl border border-slate-200 px-4 text-xs font-black text-slate-600 transition hover:bg-slate-50"
+            onClick={onCancelEdit}
+            type="button"
+          >
+            Cancel
+          </button>
+        ) : null}
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
         <input
           className="h-12 rounded-xl border border-slate-200 px-4 text-sm font-semibold outline-none focus:border-[#0B63E5]"
@@ -658,16 +1008,27 @@ function AddProjectForm({
         />
       </div>
 
+      {!hasProjectBasics ? (
+        <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs font-black text-blue-600">
+          Fill Project title and Project description to unlock media upload.
+        </div>
+      ) : null}
+
       <div className="mt-7 flex flex-wrap justify-center gap-4">
         {fileButtons.map((button) => (
           <label
-            className="grid h-20 w-24 cursor-pointer place-items-center rounded-2xl bg-[#eef4ff] text-center text-xs font-black text-slate-700 transition hover:-translate-y-1 hover:text-[#0B63E5]"
+            className={`grid h-20 w-24 place-items-center rounded-2xl text-center text-xs font-black transition ${
+              hasProjectBasics
+                ? "cursor-pointer bg-[#eef4ff] text-slate-700 hover:-translate-y-1 hover:text-[#0B63E5]"
+                : "cursor-not-allowed bg-slate-100 text-slate-300"
+            }`}
             key={button.label}
           >
             <button.icon className="text-[#0B63E5]" size={22} />
             {button.label}
             <input
               accept={button.accept}
+              disabled={!hasProjectBasics}
               className="sr-only"
               multiple
               onChange={(event) => addFileBlock(button.type, event)}
@@ -677,7 +1038,12 @@ function AddProjectForm({
         ))}
 
         <button
-          className="grid h-20 w-24 place-items-center rounded-2xl bg-[#eef4ff] text-xs font-black text-slate-700 transition hover:-translate-y-1 hover:text-[#0B63E5]"
+          className={`grid h-20 w-24 place-items-center rounded-2xl text-xs font-black transition ${
+            hasProjectBasics
+              ? "bg-[#eef4ff] text-slate-700 hover:-translate-y-1 hover:text-[#0B63E5]"
+              : "cursor-not-allowed bg-slate-100 text-slate-300"
+          }`}
+          disabled={!hasProjectBasics}
           onClick={addTextBlock}
           type="button"
         >
@@ -686,8 +1052,42 @@ function AddProjectForm({
         </button>
       </div>
 
+      <div className="mt-5 grid gap-3 rounded-2xl bg-slate-50 p-3 md:grid-cols-[150px_1fr_auto]">
+        <select
+          className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 outline-none"
+          disabled={!hasProjectBasics}
+          onChange={(event) =>
+            setLinkType(event.target.value as "image" | "pdf" | "youtube")
+          }
+          value={linkType}
+        >
+          <option value="image">Image link</option>
+          <option value="pdf">PDF link</option>
+          <option value="youtube">YouTube link</option>
+        </select>
+        <input
+          className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold outline-none placeholder:text-slate-300 focus:border-[#0B63E5]"
+          disabled={!hasProjectBasics}
+          onChange={(event) => setLinkValue(event.target.value)}
+          placeholder="Paste a link"
+          value={linkValue}
+        />
+        <button
+          className="h-10 rounded-xl bg-[#0B63E5] px-4 text-xs font-black text-white transition hover:bg-[#0957ca] disabled:cursor-not-allowed disabled:bg-slate-200"
+          disabled={!hasProjectBasics || !linkValue.trim()}
+          onClick={addLinkBlock}
+          type="button"
+        >
+          Add link
+        </button>
+      </div>
+
       <div
-        className="mx-auto mt-8 grid min-h-[180px] max-w-xl place-items-center rounded-2xl border border-dashed border-slate-300 p-6 text-center transition hover:border-[#0B63E5] hover:bg-[#f8fbff]"
+        className={`mx-auto mt-8 grid min-h-[180px] max-w-xl place-items-center rounded-2xl border border-dashed p-6 text-center transition ${
+          hasProjectBasics
+            ? "border-slate-300 hover:border-[#0B63E5] hover:bg-[#f8fbff]"
+            : "border-slate-200 bg-slate-50 text-slate-300"
+        }`}
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault();
@@ -725,7 +1125,7 @@ function AddProjectForm({
               block.url ? (
                 <img
                   alt={block.fileName || "Project image"}
-                  className="max-h-[420px] w-full rounded-xl object-cover"
+                  className="mx-auto block max-h-[260px] w-auto max-w-md rounded-xl object-contain"
                   src={block.url}
                 />
               ) : null}
@@ -734,10 +1134,62 @@ function AddProjectForm({
                 <video className="w-full rounded-xl" controls src={block.url} />
               ) : null}
 
+              {block.type === "youtube" && block.url ? (
+                <div className="overflow-hidden rounded-xl bg-slate-950">
+                  <div className="flex items-center gap-2 px-4 py-3 text-xs font-black text-white">
+                    <Play className="h-4 w-4" />
+                    {block.fileName || "YouTube video"}
+                  </div>
+
+                  {getYouTubeEmbedUrl(block.url) ? (
+                    <iframe
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      className="aspect-video w-full"
+                      src={getYouTubeEmbedUrl(block.url)}
+                      title={block.fileName || "YouTube video"}
+                    />
+                  ) : (
+                    <div className="grid aspect-video place-items-center px-5 text-center text-xs font-bold text-white">
+                      Invalid YouTube link
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
               {block.type === "pdf" ? (
-                <div className="flex items-center gap-3 text-sm font-black text-slate-600">
-                  <FileText className="text-[#0B63E5]" />
-                  {block.fileName || "PDF file"}
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
+                    <div className="flex min-w-0 items-center gap-2 text-xs font-black text-slate-900">
+                      <FileText className="h-4 w-4 shrink-0 text-[#0B63E5]" />
+                      <span className="truncate">
+                        {block.fileName || "Project PDF"}
+                      </span>
+                    </div>
+
+                    {block.url ? (
+                      <a
+                        className="shrink-0 rounded-full bg-[#0B63E5] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#0958cc]"
+                        href={block.url}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Open PDF
+                      </a>
+                    ) : null}
+                  </div>
+
+                  {block.url ? (
+                    <iframe
+                      className="h-[420px] w-full bg-white"
+                      src={`${block.url}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`}
+                      title={block.fileName || "Project PDF"}
+                    />
+                  ) : (
+                    <div className="grid min-h-32 place-items-center px-5 text-center text-sm font-bold text-slate-400">
+                      PDF file is not available
+                    </div>
+                  )}
                 </div>
               ) : null}
             </div>
@@ -745,20 +1197,34 @@ function AddProjectForm({
         </div>
       ) : null}
 
+      {feedback ? (
+        <div
+          className={`mt-6 rounded-2xl px-4 py-3 text-sm font-black ${
+            feedback.startsWith("Could not")
+              ? "bg-red-50 text-red-600"
+              : "bg-blue-50 text-blue-600"
+          }`}
+        >
+          {feedback}
+        </div>
+      ) : null}
+
       <div className="mt-8 flex justify-end gap-3">
         <button
-          className="h-11 rounded-xl bg-[#0B63E5] px-8 text-sm font-black text-white transition hover:bg-[#0958cc]"
+          className="h-11 rounded-xl bg-[#0B63E5] px-8 text-sm font-black text-white transition hover:bg-[#0958cc] disabled:cursor-not-allowed disabled:bg-slate-200"
+          disabled={!hasProjectBasics || isSaving}
           onClick={() => void persistProject("draft")}
           type="button"
         >
-          Save
+          {savingAction === "draft" ? "Saving..." : "Save"}
         </button>
         <button
-          className="h-11 rounded-xl bg-emerald-600 px-8 text-sm font-black text-white transition hover:bg-emerald-700"
+          className="h-11 rounded-xl bg-emerald-600 px-8 text-sm font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-200"
+          disabled={!hasProjectBasics || isSaving}
           onClick={() => void persistProject("published")}
           type="button"
         >
-          Publish
+          {savingAction === "published" ? "Publishing..." : "Publish"}
         </button>
       </div>
     </div>
@@ -779,6 +1245,47 @@ function unwrapElement(element: Element) {
   parent.removeChild(element);
 }
 
+function replaceStyledSpan(element: Element) {
+  const style = element.getAttribute("style") || "";
+  const fontWeight = style.match(/font-weight\s*:\s*([^;]+)/i)?.[1] || "";
+  const isBold =
+    element.tagName === "SPAN" &&
+    (fontWeight.trim().toLowerCase() === "bold" ||
+      Number.parseInt(fontWeight, 10) >= 600);
+  const isItalic =
+    element.tagName === "SPAN" && /font-style\s*:\s*italic/i.test(style);
+
+  if (!isBold && !isItalic) {
+    return element;
+  }
+
+  const parent = element.parentNode;
+
+  if (!parent) {
+    return element;
+  }
+
+  const replacement = element.ownerDocument.createElement(
+    isBold ? "strong" : "em",
+  );
+  const contentTarget =
+    isBold && isItalic
+      ? element.ownerDocument.createElement("em")
+      : replacement;
+
+  if (contentTarget !== replacement) {
+    replacement.appendChild(contentTarget);
+  }
+
+  while (element.firstChild) {
+    contentTarget.appendChild(element.firstChild);
+  }
+
+  parent.replaceChild(replacement, element);
+
+  return replacement;
+}
+
 function sanitizeRichText(html: string) {
   if (typeof window === "undefined" || !html) {
     return html;
@@ -793,7 +1300,9 @@ function sanitizeRichText(html: string) {
     return "";
   }
 
-  Array.from(root.querySelectorAll("*")).forEach((element) => {
+  Array.from(root.querySelectorAll("*")).forEach((rawElement) => {
+    const element = replaceStyledSpan(rawElement);
+
     Array.from(element.attributes).forEach((attribute) =>
       element.removeAttribute(attribute.name),
     );
@@ -809,7 +1318,7 @@ function sanitizeRichText(html: string) {
 function RichTextContent({ html }: { html: string }) {
   return (
     <div
-      className="rich-text-content whitespace-pre-wrap text-xs font-medium leading-5 text-slate-700"
+      className="rich-text-content whitespace-pre-wrap text-xs font-medium leading-5 text-slate-700 [&_b]:font-[1000] [&_b]:text-slate-950 [&_em]:italic [&_i]:italic [&_strong]:font-[1000] [&_strong]:text-slate-950"
       dangerouslySetInnerHTML={{ __html: sanitizeRichText(html) }}
     />
   );
@@ -884,33 +1393,19 @@ function ResumePanel({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <p className="text-[11px] font-bold text-slate-400">Full Name</p>
-            <p className="mt-1 text-xs font-black text-slate-700">
-              {profile.fullName || "Not specified"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-[11px] font-bold text-slate-400">City</p>
-            <p className="mt-1 text-xs font-black text-slate-700">
-              {profile.location || "Not specified"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-[11px] font-bold text-slate-400">Email</p>
-            <p className="mt-1 break-words text-xs font-black text-slate-700">
-              {profile.email || "Available after login"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-[11px] font-bold text-slate-400">Profession</p>
-            <p className="mt-1 text-xs font-black text-slate-700">
-              {profile.profession || "Not specified"}
-            </p>
-          </div>
+          {[
+            ["Year of Birth", profile.yearOfBirth],
+            ["Gender", profile.gender],
+            ["Mobile Number", profile.mobile],
+            ["Minimum Salary Amount", profile.minimumSalaryAmount],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <p className="text-[11px] font-bold text-slate-400">{label}</p>
+              <p className="mt-1 break-words text-xs font-black text-slate-700">
+                {value || "Not specified"}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -977,18 +1472,37 @@ function ResumePanel({
     </div>
   );
 }
+const initialProfileSummary = {
+  avatarUrl: "",
+  availableStatus: "Available for Freelance",
+  bio: "",
+  email: "Email not added",
+  experience: "",
+  fullName: "Job Seeker",
+  gender: "",
+  id: "local-jobseeker-profile",
+  location: "Location not added",
+  minimumSalaryAmount: "",
+  mobile: "",
+  profession: "Role not added",
+  preferredWorkType: "",
+  skills: [],
+  software: [],
+  yearOfBirth: "",
+} satisfies ProfileSummary;
 
 export function MyProfileProjectsPage() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("portfolio");
-  const [profile, setProfile] = useState<ProfileSummary>(() =>
-    localProfileSummary(),
+  const [editingProject, setEditingProject] = useState<MediaHireProject | null>(
+    null,
   );
+  const [profile, setProfile] = useState<ProfileSummary>(initialProfileSummary);
+  const [projectNotice, setProjectNotice] = useState("");
   const [projects, setProjects] = useState<MediaHireProject[]>([]);
   const [resume, setResume] = useState<ResumeData>(() => getResumeData());
-  const [settings, setSettings] = useState(() => getSettings());
 
-  const publishedProjects = useMemo(
-    () => projects.filter((project) => project.status === "published"),
+  const visibleProjects = useMemo(
+    () => projects.filter((project) => !isHiddenScratchProject(project)),
     [projects],
   );
 
@@ -1005,11 +1519,11 @@ export function MyProfileProjectsPage() {
       const supabaseProjects = await loadProjectsFromSupabase(loadedProfile);
 
       const mergedProjects = [
-        ...supabaseProjects,
-        ...storedProjects.filter(
-          (storedProject) =>
-            !supabaseProjects.some(
-              (supabaseProject) => supabaseProject.id === storedProject.id,
+        ...storedProjects,
+        ...supabaseProjects.filter(
+          (supabaseProject) =>
+            !storedProjects.some(
+              (storedProject) => storedProject.id === supabaseProject.id,
             ),
         ),
       ];
@@ -1018,10 +1532,14 @@ export function MyProfileProjectsPage() {
         mergedProjects.length || loadedProfile.id !== demoProfile.id
           ? mergedProjects
           : demoProjects;
-      const initialProjectsWithCurrentAuthor = initialProjects.map((project) => ({
+      const initialProjectsWithCurrentAuthor = (
+        initialProjects as MediaHireProject[]
+      ).map((project) => ({
         ...project,
         authorAvatar: loadedProfile.avatarUrl,
         authorName: loadedProfile.fullName,
+        authorRole: project.authorRole || loadedProfile.profession,
+        workType: project.workType || loadedProfile.preferredWorkType,
       }));
 
       if (!isMounted) {
@@ -1037,7 +1555,6 @@ export function MyProfileProjectsPage() {
 
     function handleSharedStateUpdate() {
       setResume(getResumeData());
-      setSettings(getSettings());
     }
 
     function handleProfileUpdate() {
@@ -1045,10 +1562,6 @@ export function MyProfileProjectsPage() {
     }
 
     window.addEventListener("mediahire:resume-updated", handleSharedStateUpdate);
-    window.addEventListener(
-      "mediahire:settings-updated",
-      handleSharedStateUpdate,
-    );
     window.addEventListener(
       "mediahire:jobseeker-profile-updated",
       handleProfileUpdate,
@@ -1062,10 +1575,6 @@ export function MyProfileProjectsPage() {
         handleSharedStateUpdate,
       );
       window.removeEventListener(
-        "mediahire:settings-updated",
-        handleSharedStateUpdate,
-      );
-      window.removeEventListener(
         "mediahire:jobseeker-profile-updated",
         handleProfileUpdate,
       );
@@ -1073,21 +1582,52 @@ export function MyProfileProjectsPage() {
   }, []);
 
   function handleProjectSaved(project: MediaHireProject) {
-    setProjects((current) => [project, ...current]);
-    setActiveTab(project.status === "published" ? "portfolio" : "add");
+    setProjects((current) => [
+      project,
+      ...current.filter((currentProject) => currentProject.id !== project.id),
+    ]);
+    setProjectNotice(
+      project.status === "published"
+        ? "Project published successfully."
+        : "Project saved as draft.",
+    );
+    setEditingProject(null);
+    setActiveTab("portfolio");
+  }
+
+  function handleEditProject(project: MediaHireProject) {
+    setProjectNotice("");
+    setEditingProject(project);
+    setActiveTab("add");
+  }
+
+  function handleDeleteProject(projectId: string) {
+    const nextProjects = projects.filter((project) => project.id !== projectId);
+
+    setProjects(nextProjects);
+    setStoredProjects(
+      getStoredProjects().filter((project) => project.id !== projectId),
+    );
+    void supabase.from("project_media").delete().eq("project_id", projectId);
+    void supabase.from("projects").delete().eq("id", projectId);
+
+    if (editingProject?.id === projectId) {
+      setEditingProject(null);
+      setActiveTab("portfolio");
+    }
   }
 
   return (
     <main className="min-h-screen bg-white text-slate-950">
-      <section className="relative overflow-hidden bg-[#eef4ff]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(11,99,229,0.16),transparent_32%),linear-gradient(180deg,#eef4ff_0%,#f8fbff_65%,#ffffff_100%)]" />
-  
-        <div className="relative z-10 pb-24 pt-4 sm:pt-5">
+      <section className="relative overflow-visible bg-[#eef4ff]">
+        <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_top_left,rgba(11,99,229,0.16),transparent_32%),linear-gradient(180deg,#eef4ff_0%,#f8fbff_65%,#ffffff_100%)]" />
+
+        <div className="relative z-[9999] pb-24 pt-4 sm:pt-5">
           <JobSeekerNavbar active="My Profile" />
         </div>
       </section>
-  
-      <section className="mx-auto grid w-full max-w-6xl gap-5 px-4 pb-16 sm:px-6 lg:grid-cols-[230px_1fr] lg:px-5">
+
+      <section className="relative z-20 mx-auto grid w-full max-w-6xl gap-5 px-4 pb-16 sm:px-6 lg:grid-cols-[230px_1fr] lg:px-5">
         <ProfileSidebar profile={profile} />
 
         <section className="pt-6 lg:pt-8">
@@ -1116,23 +1656,32 @@ export function MyProfileProjectsPage() {
             ))}
           </div>
 
+          {projectNotice ? (
+            <div className="mb-5 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700">
+              {projectNotice}
+            </div>
+          ) : null}
+
           {activeTab === "portfolio" ? (
-            settings.profileVisibility && settings.publicPortfolio ? (
-              <PortfolioGrid
-                onAddProject={() => setActiveTab("add")}
-                projects={publishedProjects}
-              />
-            ) : (
-              <div className="rounded-2xl bg-amber-50 p-8 text-center text-sm font-black text-amber-700">
-                {settings.profileVisibility
-                  ? "Public portfolio is turned off in Settings."
-                  : "Profile visibility is turned off in Settings."}
-              </div>
-            )
+            <PortfolioGrid
+              onAddProject={() => {
+                setProjectNotice("");
+                setEditingProject(null);
+                setActiveTab("add");
+              }}
+              onDeleteProject={handleDeleteProject}
+              onEditProject={handleEditProject}
+              projects={visibleProjects}
+            />
           ) : null}
 
           {activeTab === "add" ? (
             <AddProjectForm
+              editingProject={editingProject}
+              onCancelEdit={() => {
+                setEditingProject(null);
+                setActiveTab("portfolio");
+              }}
               onProjectSaved={handleProjectSaved}
               profile={profile}
             />

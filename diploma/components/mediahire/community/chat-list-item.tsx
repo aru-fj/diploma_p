@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Star } from "lucide-react";
 import { ChatAvatar } from "./chat-avatar";
 import type { Conversation } from "./community-data";
 import { mediaHireMotion } from "../ui/design-system";
@@ -34,8 +35,13 @@ export function ChatListItem({
 
       <span className="min-w-0 flex-1">
         <span className="flex items-start justify-between gap-3">
-          <span className="truncate text-sm font-black text-slate-950">
-            {conversation.name}
+          <span className="flex min-w-0 items-center gap-1.5">
+            {conversation.starred ? (
+              <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-500" />
+            ) : null}
+            <span className="truncate text-sm font-black text-slate-950">
+              {conversation.name}
+            </span>
           </span>
           <span className="shrink-0 text-[10px] font-semibold text-slate-400">
             {conversation.time}

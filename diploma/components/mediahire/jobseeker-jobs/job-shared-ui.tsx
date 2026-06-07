@@ -132,9 +132,9 @@ export function JobCard({ job }: { job: MediaHireJob }) {
           </h3>
 
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {cardTags.map((tag) => (
+            {cardTags.map((tag, index) => (
               <span
-                key={tag}
+                key={`${tag}-${index}`}
                 className="rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-black text-blue-600"
               >
                 {tag}

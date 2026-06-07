@@ -18,17 +18,19 @@ import { motion } from "framer-motion";
 
 import {
   getStoredJobSeekerProfile,
-  jobSeekerProfileStorageKey,
+  saveJobSeekerProfile,
 } from "../account-settings/profile-store";
 import {
   demoProfile,
   getPublishedStoredProjects,
   isHiddenScratchProject,
   isHiddenScratchProjectTitle,
+  isPermanentlyDeletedProjectId,
   type MediaHireProject,
 } from "../projects-data";
 import { supabase } from "@/lib/supabase-client";
 import { requireJobSeekerAuth } from "../shared/guest-permissions";
+import { getSettings } from "../shared/user-state";
 import {
   isProfileSaved,
   SAVED_PROFILES_CHANGED_EVENT,
@@ -688,14 +690,17 @@ export function SpecialistProfilePage({
             "No location added",
           name,
           phone: "No phone added",
-          portfolio: (projectRows || []).map((project) => ({
-            category: profileRow.profession || profileRow.job_title || "Creative work",
-            href: `/home/jobseeker/work/${project.id}`,
-            image:
-              project.cover_url ||
-              "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?auto=format&fit=crop&w=900&q=85",
-            title: project.title,
-          })),
+          portfolio: (projectRows || [])
+            .filter((project) => !isPermanentlyDeletedProjectId(project.id))
+            .map((project) => ({
+              category:
+                profileRow.profession || profileRow.job_title || "Creative work",
+              href: `/home/jobseeker/work/${project.id}`,
+              image:
+                project.cover_url ||
+                "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?auto=format&fit=crop&w=900&q=85",
+              title: project.title,
+            })),
           portfolioLink: "Portfolio available",
           reviews: [],
           role: profileRow.profession || profileRow.job_title || "Creative specialist",
@@ -750,7 +755,7 @@ export function SpecialistProfilePage({
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
-      <section className="relative min-h-[360px] overflow-hidden bg-[#0B63E5]">
+      <section className="relative z-0 min-h-[360px] overflow-visible bg-[#0B63E5]">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-95"
           style={{
@@ -1449,19 +1454,32 @@ export function JobSeekerDashboardRouteSwitcher({
       for (let depth = 0; current && depth < 8; depth += 1) {
         const text = current.textContent || "";
         const rect = current.getBoundingClientRect();
+        const tagName = current.tagName.toLowerCase();
+        const isCardContainer =
+          current.dataset.mediahirePersonCard === "true" ||
+          tagName === "article" ||
+          tagName === "a" ||
+          tagName === "li";
         const looksLikePeopleCard =
           text.includes("Message") ||
           text.includes("Freelance") ||
           (text.includes("score") && text.includes("views"));
 
-        if (looksLikePeopleCard && rect.width > 120 && rect.height > 120) {
+        if (
+          isCardContainer &&
+          looksLikePeopleCard &&
+          rect.width > 120 &&
+          rect.height > 120
+        ) {
           return current;
         }
 
         current = current.parentElement;
       }
 
-      return element.closest<HTMLElement>("article, a, button, li, div");
+      return element.closest<HTMLElement>(
+        "[data-mediahire-person-card='true'], article, a, li",
+      );
     }
 
     function applyPeopleListRules() {
@@ -1502,7 +1520,7 @@ export function JobSeekerDashboardRouteSwitcher({
 
           const card = findPeopleCard(element);
 
-          if (card) {
+          if (card && card.tagName !== "MAIN" && card.tagName !== "SECTION") {
             card.dataset.mediahireHiddenPersonCard = "true";
             card.style.display = "none";
           }
@@ -1531,7 +1549,25 @@ export function JobSeekerDashboardRouteSwitcher({
     function injectRemotePeopleCards() {
       const grid = findPeopleGrid();
 
-      if (!grid || !remotePeople?.length) {
+      if (!grid) {
+        return;
+      }
+
+      const visibleRemoteIds = new Set(
+        (remotePeople || []).map((person) => person.id),
+      );
+
+      grid
+        .querySelectorAll<HTMLElement>("[data-mediahire-remote-person-id]")
+        .forEach((card) => {
+          const personId = card.dataset.mediahireRemotePersonId;
+
+          if (personId && !visibleRemoteIds.has(personId)) {
+            card.remove();
+          }
+        });
+
+      if (!remotePeople?.length) {
         return;
       }
 
@@ -1596,6 +1632,15 @@ export function JobSeekerDashboardRouteSwitcher({
       } else {
         remotePeople = withRole.data || [];
       }
+
+      const activeEmail = getStoredJobSeekerProfile().email.trim().toLowerCase();
+
+      if (activeEmail && !getSettings().profileVisibility) {
+        remotePeople = remotePeople.filter(
+          (person) => (person.email || "").trim().toLowerCase() !== activeEmail,
+        );
+      }
+
       applyPeopleListRules();
     }
 
@@ -1694,10 +1739,12 @@ export function JobSeekerDashboardRouteSwitcher({
       subtree: true,
     });
     document.addEventListener("click", handlePeopleCardClick, true);
+    window.addEventListener("mediahire:settings-updated", loadRemotePeople);
 
     return () => {
       observer.disconnect();
       document.removeEventListener("click", handlePeopleCardClick, true);
+      window.removeEventListener("mediahire:settings-updated", loadRemotePeople);
       document
         .querySelectorAll<HTMLElement>(
           "[data-mediahire-person-card='true'], [data-mediahire-hidden-person-card='true'], [data-mediahire-remote-person-id]",
@@ -1746,6 +1793,10 @@ export function JobSeekerDashboardRouteSwitcher({
     }
 
     function injectPublishedProjects() {
+      document
+        .querySelectorAll<HTMLElement>("[data-mediahire-home-project-id]")
+        .forEach((card) => card.remove());
+
       const grid = findProjectGrid();
 
       if (!grid) {
@@ -1754,46 +1805,7 @@ export function JobSeekerDashboardRouteSwitcher({
 
       grid
         .querySelectorAll<HTMLElement>("[data-mediahire-home-project-id]")
-        .forEach((card) => {
-          if (isHiddenScratchProjectTitle(card.textContent || "")) {
-            card.remove();
-          }
-        });
-
-      const projects = [...remoteProjects, ...getPublishedStoredProjects()].filter(
-        (project) => !isHiddenScratchProject(project),
-      );
-
-      projects.forEach((project) => {
-        if (grid.querySelector(`[data-mediahire-home-project-id="${project.id}"]`)) {
-          return;
-        }
-
-        const fallbackCover =
-          "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=90";
-
-        const cover =
-          project.coverUrl && !project.coverUrl.startsWith("blob:")
-            ? project.coverUrl
-            : project.media.find(
-                (block) =>
-                  (block.type === "image" || block.type === "photo_grid") &&
-                  block.url &&
-                  !block.url.startsWith("blob:"),
-              )?.url || fallbackCover;
-
-        const card = document.createElement("a");
-        card.href = `/home/jobseeker/work/${project.id}`;
-        card.dataset.mediahireHomeProjectId = project.id;
-        card.className =
-          "group block rounded-[1.7rem] bg-white p-4 shadow-[0_18px_48px_rgba(15,23,42,0.07)] ring-1 ring-slate-100 transition hover:-translate-y-1";
-        card.innerHTML = `
-          <img alt="${project.title}" class="h-[260px] w-full rounded-[1.25rem] object-cover transition duration-500 group-hover:scale-[1.02]" src="${cover}" />
-          <h3 class="mt-5 text-xl font-black text-slate-950">${project.title}</h3>
-          <p class="mt-2 text-sm font-black text-slate-500">${project.authorName}</p>
-        `;
-        grid.prepend(card);
-      });
+        .forEach((card) => card.remove());
     }
 
     async function loadRemotePublishedProjects() {
@@ -1809,8 +1821,18 @@ export function JobSeekerDashboardRouteSwitcher({
         return;
       }
 
+      const visibleProjectRows = projectRows.filter(
+        (project) => !isPermanentlyDeletedProjectId(project.id),
+      );
+
+      if (!visibleProjectRows.length) {
+        return;
+      }
+
       const authorIds = Array.from(
-        new Set(projectRows.map((project) => project.author_id).filter(Boolean)),
+        new Set(
+          visibleProjectRows.map((project) => project.author_id).filter(Boolean),
+        ),
       );
       const { data: profileRows } = authorIds.length
         ? await supabase
@@ -1822,7 +1844,18 @@ export function JobSeekerDashboardRouteSwitcher({
         (profileRows || []).map((profile) => [profile.id, profile]),
       );
 
-      remoteProjects = projectRows.map((project) => {
+      const activeEmail = getStoredJobSeekerProfile().email.trim().toLowerCase();
+      const shouldHideActiveUserProjects =
+        activeEmail && !getSettings().publicPortfolio;
+      const publicProjectRows = shouldHideActiveUserProjects
+        ? visibleProjectRows.filter((project) => {
+            const profile = profileById.get(project.author_id);
+
+            return (profile?.email || "").trim().toLowerCase() !== activeEmail;
+          })
+        : visibleProjectRows;
+
+      remoteProjects = publicProjectRows.map((project) => {
         const profile = profileById.get(project.author_id);
         const authorName =
           profile?.full_name ||
@@ -1857,11 +1890,16 @@ export function JobSeekerDashboardRouteSwitcher({
       subtree: true,
     });
     window.addEventListener("mediahire:projects-updated", injectPublishedProjects);
+    window.addEventListener("mediahire:settings-updated", loadRemotePublishedProjects);
 
     return () => {
       isMounted = false;
       observer.disconnect();
       window.removeEventListener("mediahire:projects-updated", injectPublishedProjects);
+      window.removeEventListener(
+        "mediahire:settings-updated",
+        loadRemotePublishedProjects,
+      );
     };
   }, [pathname]);
 
@@ -1929,10 +1967,11 @@ export function JobSeekerDashboardRouteSwitcher({
     }
 
     function injectStoredProjects() {
+      document
+        .querySelectorAll<HTMLElement>("[data-mediahire-home-project-id]")
+        .forEach((card) => card.remove());
+
       const grid = findProjectGrid();
-      const projects = getPublishedStoredProjects().filter(
-        (project) => !isHiddenScratchProject(project),
-      );
 
       if (!grid) {
         return;
@@ -1940,34 +1979,7 @@ export function JobSeekerDashboardRouteSwitcher({
 
       grid
         .querySelectorAll<HTMLElement>("[data-mediahire-home-project-id]")
-        .forEach((card) => {
-          if (isHiddenScratchProjectTitle(card.textContent || "")) {
-            card.remove();
-          }
-        });
-
-      if (!projects.length) {
-        return;
-      }
-
-      projects.forEach((project) => {
-        if (grid.querySelector(`[data-mediahire-home-project-id="${project.id}"]`)) {
-          return;
-        }
-
-        const card = document.createElement("a");
-        card.href = `/home/jobseeker/work/${project.id}`;
-        card.dataset.mediahireHomeProjectId = project.id;
-        card.className =
-          "group block rounded-[1.7rem] bg-white p-4 shadow-[0_18px_48px_rgba(15,23,42,0.07)] ring-1 ring-slate-100 transition hover:-translate-y-1";
-        card.innerHTML = `
-          <img alt="${project.title}" class="h-[260px] w-full rounded-[1.25rem] object-cover transition duration-500 group-hover:scale-[1.02]" src="${getProjectCover(project)}" />
-          <h3 class="mt-5 text-xl font-black text-slate-950">${project.title}</h3>
-          <p class="mt-2 text-sm font-black text-slate-500">${project.authorName || "MediaHire creator"}</p>
-        `;
-
-        grid.prepend(card);
-      });
+        .forEach((card) => card.remove());
     }
 
     function findProjectCardFromClick(target: HTMLElement) {
@@ -2125,17 +2137,22 @@ export function JobSeekerDashboardRouteSwitcher({
     async function hydratePublicProfile() {
       const profile = await getProfileForHydration();
       try {
-        window.localStorage.setItem(
-          jobSeekerProfileStorageKey,
-          JSON.stringify(profile),
-        );
-        window.dispatchEvent(
-          new CustomEvent("mediahire:jobseeker-profile-updated", {
-            detail: { ...profile, source: "supabase-hydration" },
-          }),
-        );
+        saveJobSeekerProfile(profile, { source: "supabase-hydration" });
       } catch {
         // Local storage can be unavailable in private browser contexts.
+      }
+
+      const shouldReplaceCurrentUserContent =
+        pathname === "/profile/jobseeker" ||
+        pathname === "/home/jobseeker/my-profile" ||
+        pathname === "/dashboard/jobseeker" ||
+        pathname === "/dashboard/jobseeker/profile" ||
+        pathname === "/dashboard/jobseeker/my-profile" ||
+        pathname.startsWith("/account/jobseeker") ||
+        pathname.startsWith("/settings/jobseeker");
+
+      if (!shouldReplaceCurrentUserContent) {
+        return;
       }
 
       const replacements = new Map([

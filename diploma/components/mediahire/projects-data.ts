@@ -1,5 +1,13 @@
+import { getSettings } from "./shared/user-state";
+
 export type ProjectStatus = "draft" | "published";
-export type ProjectBlockType = "image" | "video" | "text" | "photo_grid" | "pdf";
+export type ProjectBlockType =
+  | "image"
+  | "video"
+  | "youtube"
+  | "text"
+  | "photo_grid"
+  | "pdf";
 
 export type ProjectMediaBlock = {
   fileName?: string;
@@ -14,6 +22,7 @@ export type MediaHireProject = {
   authorAvatar?: string;
   authorId: string;
   authorName: string;
+  authorRole?: string;
   coverUrl?: string;
   createdAt: string;
   description: string;
@@ -23,6 +32,7 @@ export type MediaHireProject = {
   status: ProjectStatus;
   title: string;
   updatedAt: string;
+  workType?: string;
 };
 
 export type ProfileSummary = {
@@ -30,17 +40,35 @@ export type ProfileSummary = {
   availableStatus: string;
   bio: string;
   email: string;
+  experience: string;
   fullName: string;
+  gender: string;
   id: string;
   location: string;
+  minimumSalaryAmount: string;
+  mobile: string;
   profession: string;
+  preferredWorkType: string;
   skills: string[];
   software: string[];
+  yearOfBirth: string;
 };
 
 export const projectStorageKey = "mediahire.jobseeker.projects";
 
 const hiddenScratchProjectTitles = ["qqwq", "lflfl", "lflflf"];
+const permanentlyDeletedProjectIds = [
+  "a1dc3d43-88dd-40c1-bb3a-add4f2ecd54c",
+  "fbbb7652-352c-4ec3-a2af-2ac14e7860cc",
+  "3d4c76d7-6314-4dc9-baee-e321e3c9efd6",
+  "df45cf4b-6d42-4198-9941-2745be0c94bc",
+  "9c89996b-525c-4f70-a1fe-b6b7fc1389ef",
+  "57bb8a1d-0f03-46c1-890b-b30f640345a6",
+];
+
+export function isPermanentlyDeletedProjectId(id: string) {
+  return permanentlyDeletedProjectIds.includes(id);
+}
 
 export function isHiddenScratchProjectTitle(title: string) {
   const normalizedTitle = title.trim().toLowerCase().replace(/\s+/g, " ");
@@ -51,8 +79,13 @@ export function isHiddenScratchProjectTitle(title: string) {
   );
 }
 
-export function isHiddenScratchProject(project: Pick<MediaHireProject, "title">) {
-  return isHiddenScratchProjectTitle(project.title);
+export function isHiddenScratchProject(
+  project: Pick<MediaHireProject, "id" | "title">,
+) {
+  return (
+    isPermanentlyDeletedProjectId(project.id) ||
+    isHiddenScratchProjectTitle(project.title)
+  );
 }
 
 export const demoProfile: ProfileSummary = {
@@ -61,10 +94,15 @@ export const demoProfile: ProfileSummary = {
   availableStatus: "Available for Freelance",
   bio: "Creative media specialist focused on visual storytelling and digital brand systems.",
   email: "danamuhtarova@gmail.com",
+  experience: "4+ years of experience",
   fullName: "Dana Muhtarova",
+  gender: "",
   id: "demo-dana",
   location: "Astana, Kazakhstan",
+  minimumSalaryAmount: "",
+  mobile: "",
   profession: "Graphic Designer",
+  preferredWorkType: "Project-based",
   skills: [
     "UI/UX Design",
     "branding",
@@ -75,6 +113,7 @@ export const demoProfile: ProfileSummary = {
     "motion design",
   ],
   software: ["Adobe Photoshop", "Adobe Lightroom", "Adobe InDesign"],
+  yearOfBirth: "",
 };
 
 export const demoProjects: MediaHireProject[] = [
@@ -274,6 +313,75 @@ export function createProjectId(title: string) {
   return `${slug || "project"}-${Date.now().toString(36)}`;
 }
 
+function shouldKeepProjectUrl(url?: string) {
+  return Boolean(url);
+}
+
+function compactProjectForStorage(project: MediaHireProject): MediaHireProject {
+  const media = project.media.map((block) => ({
+    ...block,
+    url: shouldKeepProjectUrl(block.url) ? block.url : undefined,
+  }));
+
+  return {
+    ...project,
+    authorAvatar: shouldKeepProjectUrl(project.authorAvatar)
+      ? project.authorAvatar
+      : undefined,
+    coverUrl: shouldKeepProjectUrl(project.coverUrl) ? project.coverUrl : undefined,
+    media,
+  };
+}
+
+function compactProjectsForStorage(projects: MediaHireProject[]) {
+  return projects
+    .filter((project) => !isHiddenScratchProject(project))
+    .map(compactProjectForStorage);
+}
+
+function isDataProjectUrl(url?: string) {
+  return Boolean(url?.startsWith("data:"));
+}
+
+function removeDataProjectUrls(project: MediaHireProject): MediaHireProject {
+  const media = project.media.map((block) => ({
+    ...block,
+    url: isDataProjectUrl(block.url) ? undefined : block.url,
+  }));
+
+  return {
+    ...project,
+    coverUrl: isDataProjectUrl(project.coverUrl) ? undefined : project.coverUrl,
+    media,
+  };
+}
+
+function writeProjectsToLocalStorage(projects: MediaHireProject[]) {
+  const serializedProjects = JSON.stringify(projects);
+
+  try {
+    window.localStorage.setItem(projectStorageKey, serializedProjects);
+  } catch (error) {
+    const previousProjects = window.localStorage.getItem(projectStorageKey);
+
+    window.localStorage.removeItem(projectStorageKey);
+
+    try {
+      window.localStorage.setItem(projectStorageKey, serializedProjects);
+    } catch (retryError) {
+      if (previousProjects) {
+        try {
+          window.localStorage.setItem(projectStorageKey, previousProjects);
+        } catch {
+          // If the previous value cannot be restored, keep the key clear.
+        }
+      }
+
+      throw retryError || error;
+    }
+  }
+}
+
 export function getStoredProjects() {
   if (typeof window === "undefined") {
     return [] as MediaHireProject[];
@@ -281,7 +389,17 @@ export function getStoredProjects() {
 
   try {
     const rawProjects = window.localStorage.getItem(projectStorageKey);
-    return rawProjects ? (JSON.parse(rawProjects) as MediaHireProject[]) : [];
+    const parsedProjects = rawProjects
+      ? (JSON.parse(rawProjects) as MediaHireProject[])
+      : [];
+    const visibleProjects = compactProjectsForStorage(parsedProjects);
+    const nextSerializedProjects = JSON.stringify(visibleProjects);
+
+    if (nextSerializedProjects !== rawProjects) {
+      window.localStorage.setItem(projectStorageKey, nextSerializedProjects);
+    }
+
+    return visibleProjects;
   } catch {
     return [];
   }
@@ -292,15 +410,36 @@ export function setStoredProjects(projects: MediaHireProject[]) {
     return;
   }
 
-  window.localStorage.setItem(projectStorageKey, JSON.stringify(projects));
+  const visibleProjects = compactProjectsForStorage(projects);
+  let storedProjects = visibleProjects;
+
+  try {
+    writeProjectsToLocalStorage(storedProjects);
+  } catch {
+    storedProjects = visibleProjects.map((project, index) =>
+      index === 0 ? project : removeDataProjectUrls(project),
+    );
+
+    try {
+      writeProjectsToLocalStorage(storedProjects);
+    } catch {
+      storedProjects = visibleProjects.map(removeDataProjectUrls);
+      writeProjectsToLocalStorage(storedProjects);
+    }
+  }
+
   window.dispatchEvent(
     new CustomEvent("mediahire:projects-updated", {
-      detail: { projects },
+      detail: { projects: storedProjects },
     }),
   );
 }
 
 export function getPublishedStoredProjects() {
+  if (!getSettings().publicPortfolio) {
+    return [] as MediaHireProject[];
+  }
+
   return getStoredProjects().filter(
     (project) =>
       project.status === "published" && !isHiddenScratchProject(project),

@@ -61,7 +61,7 @@ function AccountSidebar({
       variants={slideInLeft}
     >
       <div className="flex items-center justify-between gap-4">
-        <Link className="flex items-center gap-2.5" href="/account/jobseeker">
+        <Link className="flex items-center gap-2.5" href="/home/jobseeker">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#0B63E5] text-xl font-black text-white shadow-[0_12px_28px_rgba(11,99,229,0.18)]">
             M
           </span>
@@ -252,25 +252,33 @@ export function JobSeekerSettingsPage() {
                 <Search className="text-slate-400" size={16} />
               </label>
               <div className="flex min-w-0 items-center gap-2 rounded-xl bg-white p-1.5 shadow-[0_10px_26px_rgba(15,23,42,0.035)] sm:max-w-[220px]">
-                <span className="relative grid h-8 w-8 place-items-center rounded-full bg-[#eef4ff] text-[#0B63E5]">
+                <Link
+                  aria-label="Notifications"
+                  className="relative grid h-8 w-8 place-items-center rounded-full bg-[#eef4ff] text-[#0B63E5]"
+                  href="/dashboard/jobseeker/community?chat=mediahire-welcome"
+                >
                   <Bell size={15} />
-                  <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-                </span>
-                <JobSeekerAvatar
-                  alt="Job seeker avatar"
-                  className="h-8 w-8 rounded-full"
-                  iconSize={15}
-                  size={32}
-                  src={avatarSrc}
-                />
-                <div className="hidden min-w-0 pr-1.5 sm:block">
-                  <p className="truncate text-[11px] font-black text-slate-950">
-                    {profile.fullName}
-                  </p>
-                  <p className="truncate text-[10px] font-semibold text-slate-400">
-                    {profile.email}
-                  </p>
-                </div>
+                </Link>
+                <Link
+                  className="flex min-w-0 items-center gap-2 rounded-lg pr-1.5 transition hover:bg-[#f8fbff]"
+                  href="/home/jobseeker"
+                >
+                  <JobSeekerAvatar
+                    alt="Job seeker avatar"
+                    className="h-8 w-8 rounded-full"
+                    iconSize={15}
+                    size={32}
+                    src={avatarSrc}
+                  />
+                  <span className="hidden min-w-0 sm:block">
+                    <span className="block truncate text-[11px] font-black text-slate-950">
+                      {profile.fullName}
+                    </span>
+                    <span className="block truncate text-[10px] font-semibold text-slate-400">
+                      {profile.email}
+                    </span>
+                  </span>
+                </Link>
               </div>
             </div>
           </header>

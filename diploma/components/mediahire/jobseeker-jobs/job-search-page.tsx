@@ -2,7 +2,6 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { ChevronUp, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
-import { motion } from "framer-motion";
 
 import { mediaHireJobs } from "../jobs-data";
 import { JobCard, JobSeekerNav, MediaHireFooter } from "./job-shared-ui";
@@ -72,7 +71,9 @@ export function JobSearchPage({
   initialQuery = "",
 }: JobSearchPageProps) {
   const [query, setQuery] = useState(initialQuery);
-  const [location, setLocation] = useState(initialLocation);
+  const [location, setLocation] = useState(() =>
+    normalizeLocationValue(initialLocation),
+  );
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
 
   const locations = useMemo(() => {
@@ -107,7 +108,9 @@ export function JobSearchPage({
         : true;
 
       const matchesLocation =
-        location === "All Kazakhstan" ? true : job.location === location;
+        location === "All Kazakhstan"
+          ? true
+          : job.location === location || getJobCity(job.location) === location;
 
       const jobCity = getJobCity(job.location);
       const matchesCity =
@@ -137,12 +140,14 @@ export function JobSearchPage({
               (date) => getPostedAgeHours(job.postedAt) <= getPublicationHours(date),
             );
 
-      const salary = convertUsdSalary(
-        getSalaryUsd(job.salary),
-        filters.currency,
-      );
+      const salary = getSalaryInCurrency(job.salary, filters.currency);
+      const salaryFilterActive =
+        filters.currency !== emptyFilters.currency ||
+        filters.minSalary !== salaryRanges[filters.currency].min ||
+        filters.maxSalary !== salaryRanges[filters.currency].max;
       const matchesSalary =
-        salary >= filters.minSalary && salary <= filters.maxSalary;
+        !salaryFilterActive ||
+        (salary >= filters.minSalary && salary <= filters.maxSalary);
 
       return (
         matchesQuery &&
@@ -187,12 +192,7 @@ export function JobSearchPage({
           <JobSeekerNav active="Search Job" />
 
           <div className="px-4 pb-12 pt-6 sm:px-6 lg:px-8">
-            <motion.div
-              animate={{ opacity: 1, y: 0 }}
-              className="mx-auto max-w-3xl text-center"
-              initial={{ opacity: 0, y: 18 }}
-              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            >
+            <div className="mx-auto max-w-3xl text-center">
               <h1 className="text-3xl font-black tracking-tight text-white md:text-4xl">
                 Discover the Best Job
               </h1>
@@ -200,7 +200,7 @@ export function JobSearchPage({
               <p className="mt-3 text-sm font-semibold text-white/90 md:text-base">
                 Browse and find a new job
               </p>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -644,17 +644,51 @@ function getJobCity(location: string) {
   return location.split(",")[0]?.trim() || location;
 }
 
+function normalizeLocationValue(value: string) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue || trimmedValue === "All Kazakhstan") {
+    return "All Kazakhstan";
+  }
+
+  const matchingJobLocation = mediaHireJobs.find(
+    (job) =>
+      job.location === trimmedValue || getJobCity(job.location) === trimmedValue,
+  )?.location;
+
+  return matchingJobLocation || "All Kazakhstan";
+}
+
 function getFilterJobType(jobType: string) {
   return jobType === "Freelance" ? "Contract" : jobType;
 }
 
-function getSalaryUsd(salary: string) {
-  const amount = Number(salary.match(/\d+/)?.[0] || 0);
+function getSalaryAmount(salary: string) {
+  const amount = Number((salary.match(/[\d\s]+/)?.[0] || "0").replace(/\s/g, ""));
+
   return Number.isFinite(amount) ? amount : 0;
 }
 
-function convertUsdSalary(salaryUsd: number, currency: SalaryCurrency) {
+function convertUsdSalaryToCurrency(salaryUsd: number, currency: SalaryCurrency) {
   return Math.round(salaryUsd * salaryCurrencyRates[currency]);
+}
+
+function getSalaryUsd(salary: string) {
+  const amount = getSalaryAmount(salary);
+
+  if (salary.includes("₸") || salary.toUpperCase().includes("KZT")) {
+    return amount / salaryCurrencyRates.KZT;
+  }
+
+  if (salary.includes("₽") || salary.toUpperCase().includes("RUB")) {
+    return amount / salaryCurrencyRates.RUB;
+  }
+
+  return amount;
+}
+
+function getSalaryInCurrency(salary: string, currency: SalaryCurrency) {
+  return convertUsdSalaryToCurrency(getSalaryUsd(salary), currency);
 }
 
 function getPostedAgeHours(postedAt: string) {

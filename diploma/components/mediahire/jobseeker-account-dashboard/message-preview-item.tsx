@@ -36,9 +36,11 @@ export function MessagePreviewItem({ message }: MessagePreviewItemProps) {
         <span className="text-[10px] font-semibold text-slate-400">
           {message.time}
         </span>
-        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1.5 text-[10px] font-black text-white">
-          {message.unread}
-        </span>
+        {message.unread > 0 ? (
+          <span className="grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1.5 text-[10px] font-black text-white">
+            {message.unread}
+          </span>
+        ) : null}
       </span>
     </motion.button>
   );

@@ -272,7 +272,7 @@ export default function JobSeekerWorkDetailPage() {
                 <img
                   src={authorAvatar}
                   alt={work.author}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-cover object-[center_10%]"
                 />
               </div>
 
@@ -305,11 +305,13 @@ export default function JobSeekerWorkDetailPage() {
               </header>
 
               <div className="mx-auto mt-6 flex max-w-2xl flex-col gap-4">
-                {work.gallery.map((media, index) => (
-                  <ProjectMediaItem
-                    key={`${media.type}-${media.src}-${index}`}
-                    media={media}
-                    index={index}
+              {work.gallery.map((media, index) => (
+                <ProjectMediaItem
+                  key={`${media.type}-${
+                    media.type === "text" ? media.text : media.src
+                  }-${index}`}
+                  media={media}
+                  index={index}
                     title={work.title}
                   />
                 ))}
@@ -320,7 +322,7 @@ export default function JobSeekerWorkDetailPage() {
                   <img
                     src={authorAvatar}
                     alt={work.author}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover object-[center_10%]"
                   />
                 </div>
 
@@ -440,11 +442,11 @@ function ProjectMediaItem({
 }) {
   if (media.type === "image") {
     return (
-      <div className="h-[360px] overflow-hidden rounded-2xl bg-slate-100 shadow-sm ring-1 ring-white sm:h-[420px]">
+      <div className="overflow-hidden rounded-2xl shadow-sm ring-1 ring-white">
         <img
           src={media.src}
           alt={media.alt || `${title} ${index + 1}`}
-          className="h-full w-full object-cover"
+          className="block h-auto w-full rounded-2xl"
         />
       </div>
     );
@@ -474,6 +476,43 @@ function ProjectMediaItem({
           </div>
         )}
       </div>
+    );
+  }
+
+  if (media.type === "video") {
+    return (
+      <div className="overflow-hidden rounded-2xl bg-black shadow-sm ring-1 ring-white">
+        <div className="flex items-center gap-2 bg-slate-950 px-3.5 py-2.5 text-xs font-black text-white">
+          <Play className="h-4 w-4" />
+          {media.title}
+        </div>
+
+        <video className="aspect-video w-full bg-black" controls src={media.src} />
+      </div>
+    );
+  }
+
+  if (media.type === "vimeo") {
+    const embedUrl = getVimeoEmbedUrl(media.src);
+  
+    return (
+      <div className="aspect-video overflow-hidden rounded-2xl bg-slate-950 shadow-sm ring-1 ring-white">
+        <iframe
+          src={embedUrl}
+          title={media.title}
+          className="h-full w-full"
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+
+  if (media.type === "text") {
+    return (
+      <p className="mx-auto max-w-3xl rounded-2xl bg-white px-5 py-4 text-center text-sm font-semibold italic leading-7 text-slate-700 shadow-sm ring-1 ring-slate-100">
+        {media.text}
+      </p>
     );
   }
 
@@ -537,6 +576,15 @@ function getYouTubeEmbedUrl(url: string) {
   } catch {
     return "";
   }
+}
+function getVimeoEmbedUrl(url: string) {
+  const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+
+  if (match?.[1]) {
+    return `https://player.vimeo.com/video/${match[1]}`;
+  }
+
+  return url;
 }
 
 function CommentItem({

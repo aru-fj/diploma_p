@@ -3,6 +3,7 @@
 import {
   getStoredJobSeekerProfile,
   saveJobSeekerProfile,
+  setActiveJobSeekerEmail,
   type JobSeekerProfile,
 } from "../account-settings/profile-store";
 import { getResumeData, updateResumeData } from "../shared/user-state";
@@ -59,8 +60,12 @@ export function updateJobSeekerSignupProfile(
   }
 
   const currentDraft = getStoredJobSeekerSignupProfile();
+  const nextEmail = cleanText(update.email)?.toLowerCase();
+  const currentEmail = cleanText(currentDraft.email)?.toLowerCase();
+  const baseDraft =
+    nextEmail && currentEmail && nextEmail !== currentEmail ? {} : currentDraft;
   const nextDraft = {
-    ...currentDraft,
+    ...baseDraft,
     ...Object.fromEntries(
       Object.entries(update).map(([key, value]) => [
         key,
@@ -73,6 +78,10 @@ export function updateJobSeekerSignupProfile(
     signupProfileStorageKey,
     JSON.stringify(nextDraft),
   );
+
+  if (nextDraft.email) {
+    setActiveJobSeekerEmail(nextDraft.email);
+  }
 
   const currentProfile = getStoredJobSeekerProfile();
   const firstName = cleanText(nextDraft.firstName) ?? currentProfile.firstName;

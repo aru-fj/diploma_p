@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight, Search } from "lucide-react";
 import { EmployerCta } from "@/components/mediahire/employer-cta";
 import { Footer } from "@/components/mediahire/footer";
@@ -54,7 +55,9 @@ export function PublicHomePage() {
       return;
     }
 
-    setRole(params.get("role") === "employer" ? "employer" : "jobseeker");
+    queueMicrotask(() => {
+      setRole(params.get("role") === "employer" ? "employer" : "jobseeker");
+    });
   }, []);
 
   function handleRoleChange(nextRole: PublicRole) {
@@ -104,13 +107,13 @@ function EmployerPublicCta() {
                 Find jobs, explore creative projects, and connect with employers
                 by switching back to the Job Seeker version.
               </p>
-              <a
+              <Link
                 href="/"
                 className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2563ff] px-6 text-xs font-black text-white shadow-[0_12px_26px_rgba(37,99,255,0.22)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#0f52f5]"
               >
                 Find a job
                 <ArrowRight className="h-[18px] w-[18px]" />
-              </a>
+              </Link>
             </div>
 
             <div className="relative mx-auto h-[250px] w-full max-w-xs self-center">

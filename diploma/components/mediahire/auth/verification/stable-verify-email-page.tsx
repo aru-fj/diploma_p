@@ -123,7 +123,7 @@ export function StableVerifyEmailPage() {
           </button>
 
           <p className="mt-3 text-xs font-semibold text-slate-500">
-            Didn't receive the code?{" "}
+            Didn&apos;t receive the code?{" "}
             <button
               className="inline-flex items-center gap-1 font-black text-[#0B63E5] transition hover:text-[#094fb9]"
               type="button"

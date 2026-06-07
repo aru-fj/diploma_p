@@ -11,6 +11,7 @@ import {
   type ChatMessage,
   type Conversation,
 } from "./community-data";
+import { getActiveJobSeekerEmail } from "../account-settings/profile-store";
 import { mediaHireCompanies } from "@/components/mediahire/jobs-data";
 import { publicPeople } from "@/components/mediahire/public/public-people-data";
 import {
@@ -28,6 +29,18 @@ function formatMessageTime() {
 }
 
 const jobSeekerChatsStorageKey = "mediahire_jobseeker_chats";
+const legacySeedConversationIds = new Set([
+  "salem-entertainment",
+  "alem-koskanay",
+]);
+
+function getJobSeekerChatsStorageKey() {
+  const activeEmail = getActiveJobSeekerEmail();
+
+  return activeEmail
+    ? `${jobSeekerChatsStorageKey}:${activeEmail}`
+    : jobSeekerChatsStorageKey;
+}
 
 function readStoredConversations() {
   if (typeof window === "undefined") {
@@ -35,7 +48,7 @@ function readStoredConversations() {
   }
 
   try {
-    const raw = window.localStorage.getItem(jobSeekerChatsStorageKey);
+    const raw = window.localStorage.getItem(getJobSeekerChatsStorageKey());
     const parsed = raw ? JSON.parse(raw) : null;
 
     return Array.isArray(parsed)
@@ -53,9 +66,35 @@ function getPersistableConversations(conversations: Conversation[]) {
 
   return conversations.filter(
     (conversation) =>
-      seededConversationIds.has(conversation.id) ||
-      conversation.messages.length > 0,
+      !legacySeedConversationIds.has(conversation.id) &&
+      (seededConversationIds.has(conversation.id) ||
+        conversation.messages.length > 0),
   );
+}
+
+function ensureSeedConversations(conversations: Conversation[]) {
+  const existingIds = new Set(conversations.map((conversation) => conversation.id));
+
+  return [
+    ...initialConversations.filter(
+      (conversation) => !existingIds.has(conversation.id),
+    ),
+    ...conversations,
+  ];
+}
+
+function sortConversations(conversations: Conversation[]) {
+  return [...conversations].sort((firstConversation, secondConversation) => {
+    const starredDifference =
+      Number(Boolean(secondConversation.starred)) -
+      Number(Boolean(firstConversation.starred));
+
+    if (starredDifference !== 0) {
+      return starredDifference;
+    }
+
+    return 0;
+  });
 }
 
 function persistConversations(conversations: Conversation[]) {
@@ -64,7 +103,7 @@ function persistConversations(conversations: Conversation[]) {
   }
 
   window.localStorage.setItem(
-    jobSeekerChatsStorageKey,
+    getJobSeekerChatsStorageKey(),
     JSON.stringify(getPersistableConversations(conversations)),
   );
 }
@@ -90,7 +129,9 @@ function createConversationFromSlug(slug: string): Conversation | null {
       lastSeen: "Online",
       messages: [],
       name: person.name,
+      participantType: "person",
       preview: "Start the conversation.",
+      profileHref: `/home/jobseeker/people/${person.slug}`,
       time: "Now",
       unread: 0,
     };
@@ -107,7 +148,9 @@ function createConversationFromSlug(slug: string): Conversation | null {
       lastSeen: "Online",
       messages: [],
       name: company.name,
+      participantType: "company",
       preview: "Start the conversation.",
+      profileHref: `/home/jobseeker/company/${company.id}`,
       time: "Now",
       unread: 0,
     };
@@ -117,7 +160,7 @@ function createConversationFromSlug(slug: string): Conversation | null {
 }
 
 function getInitialConversations(initialChatId: string | null) {
-  const storedConversations = readStoredConversations();
+  const storedConversations = ensureSeedConversations(readStoredConversations());
 
   if (
     !initialChatId ||
@@ -147,19 +190,23 @@ export function CommunityPage({ initialChatId = null }: CommunityPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(initialChatId);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    () => initialChatId || conversations[0]?.id || null,
+  );
 
   const filteredConversations = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
     if (!normalizedQuery) {
-      return conversations;
+      return sortConversations(conversations);
     }
 
-    return conversations.filter((conversation) =>
-      `${conversation.name} ${conversation.preview}`
-        .toLowerCase()
-        .includes(normalizedQuery),
+    return sortConversations(
+      conversations.filter((conversation) =>
+        `${conversation.name} ${conversation.preview}`
+          .toLowerCase()
+          .includes(normalizedQuery),
+      ),
     );
   }, [conversations, query]);
 
@@ -227,6 +274,19 @@ export function CommunityPage({ initialChatId = null }: CommunityPageProps) {
     });
   }
 
+  function handleToggleStar(conversationId: string) {
+    setConversations((currentConversations) => {
+      const nextConversations = currentConversations.map((conversation) =>
+        conversation.id === conversationId
+          ? { ...conversation, starred: !conversation.starred }
+          : conversation,
+      );
+
+      persistConversations(nextConversations);
+      return nextConversations;
+    });
+  }
+
   return (
     <motion.main
       animate="show"
@@ -270,6 +330,7 @@ export function CommunityPage({ initialChatId = null }: CommunityPageProps) {
                 conversation={selectedConversation}
                 onBack={() => setSelectedId(null)}
                 onSend={handleSend}
+                onToggleStar={handleToggleStar}
               />
             ) : (
               <EmptyChatState />

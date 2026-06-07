@@ -2,9 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Bookmark, CalendarDays } from "lucide-react";
+import { Bookmark, CalendarDays, FileText, Play, Type } from "lucide-react";
 
-import { publicWorks } from "@/components/mediahire/public/public-works-data";
+import {
+  getAllPublicWorks,
+  publicWorks,
+  type PublicWork,
+} from "@/components/mediahire/public/public-works-data";
 import {
   getSavedProjectIds,
   SAVED_PROJECTS_CHANGED_EVENT,
@@ -31,22 +35,34 @@ export function ProjectGrid({
   search,
 }: ProjectGridProps) {
   const [savedWorkSlugs, setSavedWorkSlugs] = useState<string[]>([]);
+  const [availableWorks, setAvailableWorks] = useState(publicWorks);
 
   useEffect(() => {
     const syncSavedProjects = () => {
       setSavedWorkSlugs(getSavedProjectIds());
     };
+    const syncAvailableWorks = () => {
+      setAvailableWorks(getAllPublicWorks());
+    };
 
     syncSavedProjects();
+    syncAvailableWorks();
     window.addEventListener(SAVED_PROJECTS_CHANGED_EVENT, syncSavedProjects);
+    window.addEventListener("mediahire:projects-updated", syncAvailableWorks);
     window.addEventListener("storage", syncSavedProjects);
+    window.addEventListener("storage", syncAvailableWorks);
 
     return () => {
       window.removeEventListener(
         SAVED_PROJECTS_CHANGED_EVENT,
         syncSavedProjects,
       );
+      window.removeEventListener(
+        "mediahire:projects-updated",
+        syncAvailableWorks,
+      );
       window.removeEventListener("storage", syncSavedProjects);
+      window.removeEventListener("storage", syncAvailableWorks);
     };
   }, []);
 
@@ -61,7 +77,7 @@ export function ProjectGrid({
   }
 
   const filteredWorks = useMemo(() => {
-    let works = [...publicWorks];
+    let works = [...availableWorks];
 
     if (activeCategory === "Saved" || activeCategory === "Following") {
       works = works.filter((work) => savedWorkSlugs.includes(work.slug));
@@ -123,7 +139,7 @@ export function ProjectGrid({
     }
 
     return works;
-  }, [activeCategory, activeSort, search, savedWorkSlugs]);
+  }, [activeCategory, activeSort, search, savedWorkSlugs, availableWorks]);
 
   return (
     <section className="mx-auto mt-6 w-full max-w-none">
@@ -139,11 +155,7 @@ export function ProjectGrid({
               >
                 <Link href={`/home/jobseeker/work/${work.slug}`} className="block">
                   <div className="relative h-36 overflow-hidden bg-slate-100">
-                    <img
-                      src={work.coverImage}
-                      alt={work.title}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
+                    <ProjectCover work={work} />
 
                     <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-black text-slate-900 shadow-lg backdrop-blur">
                       {work.category}
@@ -219,6 +231,76 @@ export function ProjectGrid({
         />
       )}
     </section>
+  );
+}
+
+function ProjectCover({ work }: { work: PublicWork }) {
+  const firstMedia = work.gallery[0];
+
+  if (firstMedia?.type === "image") {
+    return (
+      <img
+        src={firstMedia.src}
+        alt={firstMedia.alt || work.title}
+        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+      />
+    );
+  }
+
+  if (firstMedia?.type === "video") {
+    return (
+      <video
+        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+        muted
+        playsInline
+        preload="metadata"
+        src={firstMedia.src}
+      />
+    );
+  }
+
+  if (firstMedia?.type === "youtube") {
+    return (
+      <div className="grid h-full w-full place-items-center bg-slate-950 text-white">
+        <span className="grid h-12 w-12 place-items-center rounded-full bg-white/15">
+          <Play className="h-6 w-6 fill-white" />
+        </span>
+      </div>
+    );
+  }
+
+  if (firstMedia?.type === "pdf") {
+    return (
+      <div className="grid h-full w-full place-items-center bg-[#eef4ff] px-5 text-center text-blue-600">
+        <div>
+          <FileText className="mx-auto h-10 w-10" />
+          <p className="mt-2 line-clamp-2 text-xs font-black text-slate-700">
+            {firstMedia.title}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (firstMedia?.type === "text") {
+    return (
+      <div className="grid h-full w-full place-items-center bg-slate-50 px-5 text-center">
+        <div>
+          <Type className="mx-auto h-8 w-8 text-blue-600" />
+          <p className="mt-2 line-clamp-4 text-xs font-black leading-5 text-slate-700">
+            {firstMedia.text}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={work.coverImage}
+      alt={work.title}
+      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+    />
   );
 }
 

@@ -1,3 +1,10 @@
+import {
+  getStoredProjects,
+  type MediaHireProject,
+  type ProjectMediaBlock,
+} from "../projects-data";
+import { getCurrentUserProfile, getSettings } from "../shared/user-state";
+
 export type PublicWorkMedia =
   | {
       type: "image";
@@ -5,7 +12,21 @@ export type PublicWorkMedia =
       alt?: string;
     }
   | {
+      type: "text";
+      text: string;
+    }
+  | {
       type: "youtube";
+      src: string;
+      title: string;
+    }
+  | {
+      type: "video";
+      src: string;
+      title: string;
+    }
+  | {
+      type: "vimeo";
       src: string;
       title: string;
     }
@@ -36,379 +57,687 @@ export type PublicWork = {
 
 export const publicWorks: PublicWork[] = [
   {
-    slug: "tales-from-the-river",
-    title: "Tales from the River",
-    author: "Alex Fernández",
-    authorSlug: "alex-fernandez",
-    role: "Film Director",
-    company: "Independent Creator",
-    category: "Production",
-    type: "Project-based",
-    location: "Shanghai, China",
-    createdAt: "October 23, 2025",
+    slug: "fashion-brand-campaign",
+    title: "Fashion Brand Campaign",
+    author: "Amina Saparova",
+    authorSlug: "amina-saparova",
+    role: "Marketing Specialist",
+    company: "Freelance / Small Business Projects",
+    category: "Marketing",
+    type: "Fulltime",
+    location: "Astana, Kazakhstan",
+    createdAt: "April 2026",
     coverImage:
-      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=90",
+      "/photo/amina-saparova/amina-saparova-1.png",
     authorAvatar:
-      
-      
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=90",
+      "/photo/amina-saparova/aminasaparova.jpg",
     gallery: [
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=90",
-        alt: "Tales from the River main scene",
-      },
-      {
-        type: "youtube",
-        src: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        title: "Tales from the River trailer",
+        src: "/photo/amina-saparova/amina-saparova-1.png",
+        alt: "Fashion Brand Campaign social media strategy",
       },
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1400&q=90",
-        alt: "Tales from the River city scene",
+        src: "/photo/amina-saparova/amina-saparova-2.png",
+        alt: "Fashion campaign content planning",
       },
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1470770903676-69b98201ea1c?auto=format&fit=crop&w=1400&q=90",
-        alt: "Tales from the River portrait scene",
+        src: "/photo/amina-saparova/amina-saparova-3.png",
+        alt: "Fashion brand digital visuals",
       },
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1400&q=90",
-        alt: "Tales from the River poster",
+        src: "/photo/amina-saparova/amina-saparova-4.png",
+        alt: "Fashion brand digital visuals",
+      },
+      {
+        type: "image",
+        src: "/photo/amina-saparova/amina-saparova-5.png",
+        alt: "Fashion brand digital visuals",
+      },
+      {
+        type: "image",
+        src: "/photo/amina-saparova/amina-saparova-6.png",
+        alt: "Fashion brand digital visuals",
       },
     ],
     description:
-      "A young woman who dreams, a man who hesitates, and an old man who remembers -- three echoes of a life shaped by time and the quiet pursuit of meaning.",
+      "A digital marketing campaign created to promote a new fashion collection on social media.",
     responsibilities: [
-      "Film concept development",
-      "Visual storytelling",
-      "Scene direction and editing",
+      "Digital marketing strategy",
+      "SMM content planning",
+      "Campaign idea development",
+      "Audience and competitor research",
     ],
-    tools: ["Premiere Pro", "DaVinci Resolve", "Camera", "Color Grading"],
+    tools: ["Meta Business Suite", "Google Analytics", "Canva", "Notion", "Figma"],
   },
   {
-    slug: "chubby-characters",
-    title: "Chubby Characters",
-    author: "Dimash Karim",
-    authorSlug: "dimash-karim",
-    role: "3D Artist",
-    company: "MediaHire Studio",
-    category: "3D / Animation",
+    slug: "tales-from-the-river",
+    title: "Tales from the River",
+    author: "Amir Tulegenov",
+    authorSlug: "amir-tulegenov",
+    role: "Photographer / Cinematographer",
+    company: "Freelance Projects",
+    category: "Photography / Cinematography",
+    type: "Project-based",
+    location: "Astana, Kazakhstan",
+    createdAt: "September 2023",
+    coverImage:
+      "/photo/amir-tulegenov/amir-tulegenov-1.png",
+    authorAvatar:
+      "/photo/amir-tulegenov/amirtulegenov.jpg",
+    gallery: [
+      {
+        type: "image",
+        src: "/photo/amir-tulegenov/amir-tulegenov-1.png",
+        alt: "Tales from the River main scene",
+      },
+      {
+        type: "image",
+        src: "/photo/amir-tulegenov/amir-tulegenov-2.png",
+        alt: "River visual campaign scene",
+      },
+      {
+        type: "image",
+        src: "/photo/amir-tulegenov/amir-tulegenov-3.png",
+        alt: "Cinematic portrait scene",
+      },
+      {
+        type: "image",
+        src: "/photo/amir-tulegenov/amir-tulegenov-4.png",
+        alt: "Cinematic portrait scene",
+      },
+      {
+        type: "image",
+        src: "/photo/amir-tulegenov/amir-tulegenov-5.png",
+        alt: "Cinematic portrait scene",
+      },
+      {
+        type: "image",
+        src: "/photo/amir-tulegenov/amir-tulegenov-6.png",
+        alt: "Cinematic portrait scene",
+      },
+    ],
+    description:
+      "A young woman who dreams, a man who hesitates, an old man who remembers -- three echoes of a life shaped by time and the quiet pursuit of meaning.",
+    responsibilities: [
+      "Photography and cinematography",
+      "Lighting and composition",
+      "Visual campaign shooting",
+      "Color correction and final editing",
+    ],
+    tools: [
+      "Adobe Lightroom",
+      "Adobe Photoshop",
+      "Capture One",
+      "DaVinci Resolve",
+      "Adobe Premiere Pro",
+    ],
+  },
+  {
+    slug: "festival-of-light",
+    title: "Festival of Light",
+    author: "Ruslan Aitov",
+    authorSlug: "ruslan-aitov",
+    role: "Producer",
+    company: "Creative Production Projects",
+    category: "Production",
+    type: "Fulltime",
+    location: "Almaty, Kazakhstan",
+    createdAt: "May 2026",
+    coverImage:
+      "/photo/ruslan-aitov/ruslan-aitov-1.png",
+    authorAvatar:
+      "/photo/ruslan-aitov/ruslanaitov.jpg",
+    gallery: [
+      {
+        type: "image",
+        src: "/photo/ruslan-aitov/ruslan-aitov-1.png",
+        alt: "Festival of Light event production",
+      },
+      {
+        type: "image",
+        src: "/photo/ruslan-aitov/ruslan-aitov-2.png",
+        alt: "Festival production and event coordination",
+      },
+      {
+        type: "image",
+        src: "/photo/ruslan-aitov/ruslan-aitov-3.png",
+        alt: "Creative event lighting and production",
+      },
+      {
+        type: "image",
+        src: "/photo/ruslan-aitov/ruslan-aitov-4.png",
+        alt: "Creative event lighting and production",
+      },
+      {
+        type: "image",
+        src: "/photo/ruslan-aitov/ruslan-aitov-5.png",
+        alt: "Creative event lighting and production",
+      },
+    ],
+    description:
+      "I organized a creative media production for a public cultural event, including planning, team coordination, shooting schedule, and communication with the client.",
+    responsibilities: [
+      "Event production planning",
+      "Team coordination",
+      "Shooting schedule preparation",
+      "Client communication",
+      "Creative production management",
+    ],
+    tools: ["Notion", "Google Workspace", "Trello", "Microsoft Excel", "StudioBinder"],
+  },
+  {
+    slug: "soz-mocktails",
+    title: "SOZ - Mocktails",
+    author: "Dana Muhtarova",
+    authorSlug: "dana-murat",
+    role: "Graphic Designer",
+    company: "Freelance / Creative Projects",
+    category: "Graphic Design",
+    type: "Project-based",
+    location: "Astana, Kazakhstan",
+    createdAt: "March 2026",
+    coverImage: "/photo/dana-muhtarova/dana-muhtarova-1.png",
+    authorAvatar: "/photo/dana-muhtarova/danamuhtarova.jpg",
+    gallery: [
+      {
+        type: "image",
+        src: "/photo/dana-muhtarova/dana-muhtarova-1.png",
+        alt: "SOZ Mocktails brand identity",
+      },
+      {
+        type: "image",
+        src: "/photo/dana-muhtarova/dana-muhtarova-2.png",
+        alt: "SOZ Mocktails packaging design",
+      },
+      {
+        type: "image",
+        src: "/photo/dana-muhtarova/dana-muhtarova-3.png",
+        alt: "SOZ Mocktails social media visual",
+      },
+      {
+        type: "image",
+        src: "/photo/dana-muhtarova/dana-muhtarova-4.png",
+        alt: "SOZ Mocktails visual concept",
+      },
+      {
+        type: "image",
+        src: "/photo/dana-muhtarova/dana-muhtarova-5.png",
+        alt: "SOZ Mocktails presentation",
+      },
+    ],
+    description:
+      "SOZ is a modern mocktail brand created for people who want a stylish drink experience without alcohol.",
+    responsibilities: [
+      "Brand identity design",
+      "Packaging design",
+      "Social media visual design",
+      "Presentation and layout preparation",
+    ],
+    tools: ["Adobe Photoshop", "Adobe Lightroom", "Adobe InDesign"],
+  },
+  {
+    slug: "ford-commercial-video-script",
+    title: "FORD: TV Commercial Video Script",
+    author: "Madina Omar",
+    authorSlug: "madina-omar",
+    role: "Screenwriter",
+    company: "Freelance / Film Projects",
+    category: "Screenwriting",
+    type: "Project-based",
+    location: "Almaty, Kazakhstan",
+    createdAt: "February 2026",
+    coverImage:
+      "/photo/madina-omar/madina-omar-1.png",
+    authorAvatar:
+      "/photo/madina-omar/madinaomar.jpg",
+    gallery: [
+      
+      {
+        type: "pdf",
+        src: "/photo/madina-omar/madina-omar-2.pdf",
+        title: "FORD TV commercial script concept",
+      },
+      {
+        type: "youtube",
+        src: "https://youtu.be/sBybwVuIVbg?si=OtmtpN_EKi-4aqRb",
+        title: "FORD TV commercial script concept",
+      },
+    ],
+    description:
+      "Hired to write inspiring, high-concept copy/script for a TV commercial for Ford, based on the provided director's cut that was already edited.",
+    responsibilities: [
+      "Commercial script writing",
+      "High-concept copy development",
+      "Story structure improvement",
+      "Narrative and voice-over preparation",
+    ],
+    tools: ["Final Draft", "Celtx", "Google Docs", "Notion", "Microsoft Word"],
+  },
+  {
+    slug: "event-highlight-edit",
+    title: "Event Highlight Edit",
+    author: "Arman Nurlan",
+    authorSlug: "arman-nurlan",
+    role: "Video Editor",
+    company: "Freelance / Media Projects",
+    category: "Video Editing",
     type: "Freelance",
     location: "Astana, Kazakhstan",
     createdAt: "April 2026",
     coverImage:
-      "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=1400&q=90",
+      "/photo/arman-nurlan/arman-nurlan-1.png",
     authorAvatar:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=90",
+      "/photo/arman-nurlan/armannurlan.jpg",
     gallery: [
       {
-        type: "image",
-        src: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=1400&q=90",
-        alt: "3D character render",
-      },
-      {
-        type: "youtube",
-        src: "https://youtu.be/dQw4w9WgXcQ",
-        title: "Chubby Characters animation preview",
+        type: "vimeo",
+        src: "https://vimeo.com/1133033086?fl=pl&fe=sh",
+        title: "Video editing workspace",
       },
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?auto=format&fit=crop&w=1400&q=90",
-        alt: "3D abstract character style",
+        src: "/photo/arman-nurlan/arman-nurlan-1.png",
+        alt: "Event highlight video editing",
       },
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=1400&q=90",
-        alt: "3D creative visual",
+        src: "/photo/arman-nurlan/arman-nurlan-2.png",
+        alt: "Event recap editing process",
+      },
+      {
+        type: "image",
+        src: "/photo/arman-nurlan/arman-nurlan-3.png",
+        alt: "Video editing workspace",
+      },
+      {
+        type: "image",
+        src: "/photo/arman-nurlan/arman-nurlan-4.png",
+        alt: "Video editing workspace",
+      },
+      {
+        type: "image",
+        src: "/photo/arman-nurlan/arman-nurlan-5.png",
+        alt: "Video editing workspace",
+      },
+      {
+        type: "image",
+        src: "/photo/arman-nurlan/arman-nurlan-6.png",
+        alt: "Video editing workspace",
       },
     ],
     description:
-      "A playful 3D character design project with rounded shapes, bright lighting, and friendly visual language.",
+      "I edited a dynamic event highlight video using the best moments, music rhythm, transitions, and clean pacing for social media publication.",
     responsibilities: [
-      "Character modeling",
-      "Lighting and material setup",
-      "Final render preparation",
+      "Video editing",
+      "Music rhythm synchronization",
+      "Transitions and pacing",
+      "Color correction",
+      "Final export for social media",
     ],
-    tools: ["Blender", "Cinema 4D", "Figma", "Rendering"],
+    tools: [
+      "Adobe Premiere Pro",
+      "DaVinci Resolve",
+      "Adobe After Effects",
+      "Final Cut Pro",
+      "CapCut",
+    ],
   },
   {
-    slug: "fashion-lookbook",
-    title: "Fashion Lookbook",
-    author: "Dana Murat",
-    authorSlug: "dana-murat",
-    role: "Art Director",
-    company: "Frame Production",
-    category: "Production",
-    type: "Part-time",
-    location: "Almaty, Kazakhstan",
-    createdAt: "March 2026",
-    coverImage:
-      "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=1400&q=90",
-    authorAvatar:
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=90",
-    gallery: [
-      {
-        type: "image",
-        src: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=1400&q=90",
-        alt: "Fashion lookbook cover",
-      },
-      {
-        type: "image",
-        src: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1400&q=90",
-        alt: "Fashion editorial photo",
-      },
-      {
-        type: "image",
-        src: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1400&q=90",
-        alt: "Fashion styling",
-      },
-      {
-        type: "pdf",
-        src: "/projects/project-pdf.pdf",
-        title: "Fashion Lookbook PDF",
-      },
-    ],
-    description:
-      "A clean fashion lookbook created for a local clothing brand with studio photography, styling, and editorial composition.",
-    responsibilities: [
-      "Moodboard and visual planning",
-      "Studio production coordination",
-      "Editorial layout and final presentation",
-    ],
-    tools: ["Figma", "Photoshop", "Studio Lighting", "Art Direction"],
-  },
-  {
-    slug: "minimal-brand-identity",
-    title: "Minimal Brand Identity",
-    author: "Madina Omar",
-    authorSlug: "madina-omar",
-    role: "Graphic Designer",
-    company: "Softline Creative",
-    category: "Graphic Design",
-    type: "Freelance",
-    location: "Online",
-    createdAt: "January 2026",
-    coverImage:
-      "https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=1400&q=90",
-    authorAvatar:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=90",
-    gallery: [
-      {
-        type: "image",
-        src: "https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=1400&q=90",
-        alt: "Brand identity design",
-      },
-      {
-        type: "image",
-        src: "https://images.unsplash.com/photo-1613909207039-6b173b755cc1?auto=format&fit=crop&w=1400&q=90",
-        alt: "Graphic design layout",
-      },
-      {
-        type: "pdf",
-        src: "/projects/project-pdf.pdf",
-        title: "Brand Guideline PDF",
-      },
-      {
-        type: "image",
-        src: "https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?auto=format&fit=crop&w=1400&q=90",
-        alt: "Typography system",
-      },
-    ],
-    description:
-      "A minimal brand identity project with logo, typography, color system, and social media templates for a modern creative business.",
-    responsibilities: [
-      "Logo design",
-      "Typography and color system",
-      "Brand guideline preparation",
-    ],
-    tools: ["Figma", "Illustrator", "Brand Strategy", "Typography"],
-  },
-  {
-    slug: "urban-media-campaign",
-    title: "Urban Media Campaign",
-    author: "Arman Nurlan",
-    authorSlug: "arman-nurlan",
-    role: "Marketing Designer",
-    company: "Bright Agency",
-    category: "Marketing",
-    type: "Full-time",
-    location: "Astana, Kazakhstan",
-    createdAt: "February 2026",
-    coverImage:
-      "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1400&q=90",
-    authorAvatar:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=90",
-    gallery: [
-      {
-        type: "image",
-        src: "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1400&q=90",
-        alt: "Campaign visual",
-      },
-      {
-        type: "youtube",
-        src: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        title: "Urban Media Campaign video",
-      },
-      {
-        type: "image",
-        src: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1400&q=90",
-        alt: "Office campaign process",
-      },
-      {
-        type: "image",
-        src: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1400&q=90",
-        alt: "Marketing campaign team",
-      },
-    ],
-    description:
-      "A digital marketing campaign for an urban lifestyle brand. The project includes social media visuals, banners, and campaign identity materials.",
-    responsibilities: [
-      "Campaign visual concept",
-      "Social media design",
-      "Banner and promotional layout design",
-    ],
-    tools: ["Illustrator", "Photoshop", "Figma", "Branding"],
-  },
-  {
-    slug: "product-photo-set",
-    title: "Product Photo Set",
-    author: "Nika Lee",
-    authorSlug: "nika-lee",
-    role: "Product Photographer",
-    company: "Object Studio",
-    category: "Photography",
+    slug: "motion-poster",
+    title: "Motion Poster",
+    author: "Alina Karimova",
+    authorSlug: "alina-karimova",
+    role: "Motion Designer",
+    company: "Freelance / Brand Projects",
+    category: "Motion Design",
     type: "Project-based",
     location: "Almaty, Kazakhstan",
-    createdAt: "December 2025",
+    createdAt: "April 2026",
     coverImage:
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1400&q=90",
+      "/photo/alina-karimova/alina-karimova-1.png",
     authorAvatar:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=90",
+      "/photo/alina-karimova/alinakarimova.jpg",
     gallery: [
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1400&q=90",
-        alt: "Product photo set",
+        src: "/photo/alina-karimova/alina-karimova-1.png",
+        alt: "Motion Poster animated campaign visual",
       },
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1503602642458-232111445657?auto=format&fit=crop&w=1400&q=90",
-        alt: "Product photo detail",
+        src: "/photo/alina-karimova/alina-karimova-2.png",
+        alt: "Motion design visual rhythm",
       },
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1400&q=90",
-        alt: "Commercial product photo",
+        src: "/photo/alina-karimova/alina-karimova-3.png",
+        alt: "Animated typography and digital design",
       },
     ],
     description:
-      "A commercial product photography set for online stores and advertising. The work focuses on clean lighting, sharp details, and modern product presentation.",
+      "I created an animated poster for a digital campaign using typography movement, smooth transitions, and clean visual rhythm.",
     responsibilities: [
-      "Product shooting",
-      "Lighting setup",
-      "Retouching and export for web",
+      "Animated poster design",
+      "Typography animation",
+      "Motion rhythm and transitions",
+      "Social media motion export",
     ],
-    tools: ["Lightroom", "Photoshop", "Studio Lighting", "Retouching"],
+    tools: [
+      "Adobe After Effects",
+      "Adobe Illustrator",
+      "Adobe Photoshop",
+      "Cinema 4D",
+      "Figma",
+    ],
   },
   {
     slug: "music-video-production",
     title: "Music Video Production",
-    author: "Ruslan Aitov",
-    authorSlug: "ruslan-aitov",
-    role: "Video Producer",
-    company: "Wave Studio",
-    category: "Production",
-    type: "Project-based",
-    location: "Almaty, Kazakhstan",
-    createdAt: "November 2025",
+    author: "Dimash Hasenov",
+    authorSlug: "dimash-karim",
+    role: "Videographer",
+    company: "Freelance / Commercial Projects",
+    category: "Videography",
+    type: "Fulltime",
+    location: "Astana, Kazakhstan",
+    createdAt: "September 2023",
     coverImage:
-      "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1400&q=90",
+      "/photo/dimash-hasenov/dimash-hasenov-1.png",
     authorAvatar:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=90",
+      "/photo/dimash-hasenov/dimashhasenov.jpg",
     gallery: [
       {
-        type: "youtube",
-        src: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        title: "Music Video Production",
+        type: "image",
+        src: "/photo/dimash-hasenov/dimash-hasenov-1.png",
+        alt: "Music video production scene",
       },
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1400&q=90",
-        alt: "Music video stage",
+        src: "/photo/dimash-hasenov/dimash-hasenov-2.png",
+        alt: "Music video camera work",
       },
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=1400&q=90",
-        alt: "Music production",
+        src: "/photo/dimash-hasenov/dimash-hasenov-3.png",
+        alt: "Music video lighting and atmosphere",
       },
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1400&q=90",
-        alt: "Concert scene",
+        src: "/photo/dimash-hasenov/dimash-hasenov-4.png",
+        alt: "Music video lighting and atmosphere",
+      },
+      {
+        type: "vimeo",
+        src: "https://vimeo.com/184036140?fl=pl&fe=sh",
+        title: "Music video lighting and atmosphere",
       },
     ],
     description:
-      "A dynamic music video project built around stage lighting, rhythm, movement, and cinematic editing for a young music artist.",
+      "One distant forest, small river bank, early autumn evening. September 2023.",
     responsibilities: [
-      "Pre-production planning",
-      "Video shooting and direction",
-      "Editing and color correction",
+      "Camera operation",
+      "Lighting setup",
+      "Video shooting",
+      "Color grading",
+      "Final video editing",
     ],
-    tools: ["Premiere Pro", "After Effects", "DaVinci Resolve", "Camera"],
+    tools: [
+      "Adobe Premiere Pro",
+      "DaVinci Resolve",
+      "Adobe After Effects",
+      "Final Cut Pro",
+      "CapCut",
+    ],
   },
   {
-    slug: "social-media-visuals",
-    title: "Social Media Visuals",
-    author: "Aruzhan Saten",
-    authorSlug: "aruzhan-saten",
-    role: "Content Designer",
-    company: "Digital Room",
-    category: "Marketing",
+    slug: "chubby-characters",
+    title: "Chubby characters",
+    author: "Aruzhan Kanatkyzy",
+    authorSlug: "aruzhan-kanatkyzy",
+    role: "3D Animator",
+    company: "Freelance",
+    category: "3D Animator",
     type: "Part-time",
-    location: "Online",
+    location: "Almaty",
     createdAt: "September 2025",
     coverImage:
-      "https://images.unsplash.com/photo-1611162616475-46b635cb6868?auto=format&fit=crop&w=1400&q=90",
+      "/photo/aruzhan-kanatkyzy/aruzhan-kanatkyzy-1.png",
     authorAvatar:
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=90",
+      "/photo/aruzhan-kanatkyzy/aruzhankanatkyzy.jpg",
     gallery: [
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1611162616475-46b635cb6868?auto=format&fit=crop&w=1400&q=90",
+        src: "/photo/aruzhan-kanatkyzy/aruzhan-kanatkyzy-1.png",
         alt: "Social media visuals",
       },
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1557838923-2985c318be48?auto=format&fit=crop&w=1400&q=90",
+        src: "/photo/aruzhan-kanatkyzy/aruzhan-kanatkyzy-2.png",
         alt: "Digital content design",
       },
       {
         type: "image",
-        src: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?auto=format&fit=crop&w=1400&q=90",
+        src: "/photo/aruzhan-kanatkyzy/aruzhan-kanatkyzy-3.png",
         alt: "Content design screen",
       },
       {
-        type: "pdf",
-        src: "/projects/project-pdf.pdf",
+        type: "image",
+        src: "/photo/aruzhan-kanatkyzy/aruzhan-kanatkyzy-4.png",
+        alt: "Content design screen",
+      },
+      {
+        type: "image",
+        src: "/photo/aruzhan-kanatkyzy/aruzhan-kanatkyzy-5.png",
+        alt: "Content design screen",
+      },
+      {
+        type: "vimeo",
+        src: "https://vimeo.com/1175354597?fl=pl&fe=sh",
         title: "Social Media Visuals PDF",
       },
     ],
     description:
-      "A set of social media visuals designed for brand communication, including posts, stories, banners, and promotional content.",
+      "I created a video for the collaboration case between CASETIFY and BBNEXDO. I focused on attractively showcasing the design concept of the case and the BBNEXDO characters.",
     responsibilities: [
-      "Content layout design",
-      "Social media post templates",
-      "Visual adaptation for multiple formats",
+      "Character animation",
+      "3D modeling",
+      "Lighting and rendering",
+      "Video presentation preparation",
     ],
-    tools: ["Figma", "Canva", "Photoshop", "Content Design"],
+    tools: ["Blender", "Cinema 4D", "Autodesk Maya", "Adobe After Effects", "Unreal Engine"],
+  },
+  {
+    slug: "brand-story-video",
+    title: "Brand Story Video",
+    author: "Timur Saten",
+    authorSlug: "timur-saten",
+    role: "Director",
+    company: "Film and Commercial Projects",
+    category: "Directing",
+    type: "Freelancer",
+    location: "Almaty, Kazakhstan",
+    createdAt: "April 2026",
+    coverImage:
+      "/photo/timur-saten/timur-saten-1.png",
+    authorAvatar:
+      "/photo/timur-saten/timursaten.jpg",
+    gallery: [
+      {
+        type: "image",
+        src: "/photo/timur-saten/timur-saten-1.png",
+        alt: "Brand Story Video directing concept",
+      },
+      {
+        type: "image",
+        src: "/photo/timur-saten/timur-saten-2.png",
+        alt: "Creative direction planning",
+      },
+      {
+        type: "image",
+        src: "/photo/timur-saten/timur-saten-3.png",
+        alt: "Commercial video production scene",
+      },
+      {
+        type: "image",
+        src: "/photo/timur-saten/timur-saten-4.png",
+        alt: "Commercial video production scene",
+      },
+    ],
+    description:
+      "I directed a cinematic brand story video that shows the company’s values, atmosphere, and message through visual storytelling.",
+    responsibilities: [
+      "Creative direction",
+      "Scene planning",
+      "Actor direction",
+      "Shot composition",
+      "Visual storytelling",
+    ],
+    tools: [
+      "Final Draft",
+      "StudioBinder",
+      "DaVinci Resolve",
+      "Adobe Premiere Pro",
+      "Notion",
+    ],
   },
 ];
 
+function formatProjectDate(value?: string) {
+  if (!value) {
+    return "Recently added";
+  }
+
+  return new Date(value).toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function projectMediaToPublicMedia(
+  block: ProjectMediaBlock,
+  title: string,
+): PublicWorkMedia | null {
+  if ((block.type === "image" || block.type === "photo_grid") && block.url) {
+    return {
+      alt: block.fileName || title,
+      src: block.url,
+      type: "image",
+    };
+  }
+
+  if (block.type === "youtube" && block.url) {
+    return {
+      src: block.url,
+      title: block.fileName || `${title} video`,
+      type: "youtube",
+    };
+  }
+
+  if (block.type === "video" && block.url) {
+    return {
+      src: block.url,
+      title: block.fileName || `${title} video`,
+      type: "video",
+    };
+  }
+
+  if (block.type === "pdf" && block.url) {
+    return {
+      src: block.url,
+      title: block.fileName || `${title} PDF`,
+      type: "pdf",
+    };
+  }
+
+  if (block.type === "text" && block.textContent) {
+    return {
+      text: block.textContent,
+      type: "text",
+    };
+  }
+
+  return null;
+}
+
+export function projectToPublicWork(project: MediaHireProject): PublicWork {
+  const sortedMedia = project.media
+    .slice()
+    .sort((first, second) => first.orderIndex - second.orderIndex);
+  const gallery = sortedMedia
+    .map((block) => projectMediaToPublicMedia(block, project.title))
+    .filter(Boolean) as PublicWorkMedia[];
+  const coverImage =
+    sortedMedia.find(
+      (block) =>
+        (block.type === "image" || block.type === "photo_grid") && block.url,
+    )?.url ||
+    project.coverUrl ||
+    "/projects/image-1.1.png";
+  const currentProfile = getCurrentUserProfile();
+  const authorRole =
+    project.authorRole ||
+    currentProfile.jobTitle ||
+    currentProfile.role ||
+    "Creative Specialist";
+  const workType =
+    project.workType ||
+    currentProfile.preferredWorkType ||
+    (project.status === "published" ? "Project-based" : "Draft");
+
+  return {
+    author: project.authorName,
+    authorAvatar: project.authorAvatar,
+    authorSlug: "jobseeker",
+    category: authorRole,
+    company: "Independent Creator",
+    coverImage,
+    createdAt: formatProjectDate(project.publishedAt || project.updatedAt),
+    description: project.description,
+    gallery,
+    location: "Astana, Kazakhstan",
+    responsibilities: project.description ? [project.description] : [],
+    role: authorRole,
+    slug: project.id,
+    title: project.title,
+    tools: sortedMedia.map((block) => block.type),
+    type: workType,
+  };
+}
+
+export function getStoredPublicWorks(options?: { includeDrafts?: boolean }) {
+  if (!options?.includeDrafts && !getSettings().publicPortfolio) {
+    return [];
+  }
+
+  return getStoredProjects()
+    .filter((project) =>
+      options?.includeDrafts ? true : project.status === "published",
+    )
+    .map(projectToPublicWork);
+}
+
+export function getAllPublicWorks() {
+  const storedWorks = getStoredPublicWorks();
+
+  return [
+    ...storedWorks,
+    ...publicWorks.filter(
+      (work) => !storedWorks.some((storedWork) => storedWork.slug === work.slug),
+    ),
+  ];
+}
+
 export function getPublicWorkBySlug(slug: string) {
-  return publicWorks.find((work) => work.slug === slug);
+  return (
+    getStoredPublicWorks({ includeDrafts: true }).find(
+      (work) => work.slug === slug,
+    ) || publicWorks.find((work) => work.slug === slug)
+  );
 }
 
 export const publicAuthLinks = {

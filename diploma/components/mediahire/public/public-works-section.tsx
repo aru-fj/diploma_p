@@ -9,17 +9,29 @@ import {
   Bookmark,
   BriefcaseBusiness,
   CalendarDays,
+  FileText,
   Heart,
   MapPin,
+  Play,
   Search,
   SlidersHorizontal,
   Sparkles,
   Star,
+  Type,
   Users,
 } from "lucide-react";
 import type { PublicRole } from "@/components/mediahire/header";
-import { publicAuthLinks, publicWorks, type PublicWork } from "./public-works-data";
-import { publicPeople, type PublicPerson } from "./public-people-data";
+import {
+  getAllPublicWorks,
+  publicAuthLinks,
+  publicWorks,
+  type PublicWork,
+} from "./public-works-data";
+import {
+  getAllPublicPeople,
+  publicPeople,
+  type PublicPerson,
+} from "./public-people-data";
 
 type PublicSectionKey =
   | "for-you"
@@ -79,37 +91,73 @@ export function PublicWorksSection({
     role === "employer" ? "people" : "projects",
   );
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const [availableWorks, setAvailableWorks] = useState(publicWorks);
+  const [availablePeople, setAvailablePeople] = useState(publicPeople);
   const [activeFilter, setActiveFilter] =
     useState<PublicFilterKey>("recommended");
 
   useEffect(() => {
-    setMode(role === "employer" ? "people" : "projects");
-    setActiveSection("for-you");
-    setActiveFilter("recommended");
-    setSearch("");
+    const syncWorks = () => {
+      setAvailableWorks(getAllPublicWorks());
+    };
+    const syncPeople = () => {
+      setAvailablePeople(getAllPublicPeople());
+    };
+
+    syncWorks();
+    syncPeople();
+    window.addEventListener("mediahire:projects-updated", syncWorks);
+    window.addEventListener("mediahire:settings-updated", syncWorks);
+    window.addEventListener("mediahire:settings-updated", syncPeople);
+    window.addEventListener("mediahire:jobseeker-profile-updated", syncPeople);
+    window.addEventListener("storage", syncWorks);
+    window.addEventListener("storage", syncPeople);
+
+    return () => {
+      window.removeEventListener("mediahire:projects-updated", syncWorks);
+      window.removeEventListener("mediahire:settings-updated", syncWorks);
+      window.removeEventListener("mediahire:settings-updated", syncPeople);
+      window.removeEventListener(
+        "mediahire:jobseeker-profile-updated",
+        syncPeople,
+      );
+      window.removeEventListener("storage", syncWorks);
+      window.removeEventListener("storage", syncPeople);
+    };
+  }, []);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setMode(role === "employer" ? "people" : "projects");
+      setActiveSection("for-you");
+      setActiveFilter("recommended");
+      setSearch("");
+    });
   }, [role]);
 
   useEffect(() => {
     const section = searchParams.get("section");
     const searchValue = searchParams.get("search");
 
-    if (section === "people") {
-      setMode("people");
-      setActiveSection("for-you");
-    }
+    queueMicrotask(() => {
+      if (section === "people") {
+        setMode("people");
+        setActiveSection("for-you");
+      }
 
-    if (section === "projects") {
-      setMode("projects");
-      setActiveSection("for-you");
-    }
+      if (section === "projects") {
+        setMode("projects");
+        setActiveSection("for-you");
+      }
 
-    if (searchValue !== null) {
-      setSearch(searchValue);
-    }
+      if (searchValue !== null) {
+        setSearch(searchValue);
+      }
+    });
   }, [searchParams]);
 
   const filteredWorks = useMemo(() => {
-    let works = [...publicWorks];
+    let works = [...availableWorks];
 
     if (activeSection === "saved") {
       return [];
@@ -149,10 +197,10 @@ export function PublicWorksSection({
     }
 
     return sortWorks(works, activeFilter);
-  }, [activeFilter, activeSection, search]);
+  }, [activeFilter, activeSection, search, availableWorks]);
 
   const filteredPeople = useMemo(() => {
-    let people = [...publicPeople];
+    let people = [...availablePeople];
 
     if (activeSection === "saved") {
       return [];
@@ -191,7 +239,7 @@ export function PublicWorksSection({
     }
 
     return sortPeople(people, activeFilter);
-  }, [activeFilter, activeSection, search]);
+  }, [activeFilter, activeSection, search, availablePeople]);
 
   const filterLabels =
     mode === "projects" ? projectFilterLabels : peopleFilterLabels;
@@ -384,11 +432,7 @@ function ProjectCard({ work }: { work: PublicWork }) {
     <article className="group overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]">
       <Link href={`/work/${work.slug}`} className="block">
         <div className="relative h-36 overflow-hidden bg-slate-100">
-          <img
-            src={work.coverImage}
-            alt={work.title}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-          />
+          <ProjectCover work={work} />
 
           <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-black text-slate-900 shadow-lg backdrop-blur">
             {work.category}
@@ -434,6 +478,76 @@ function ProjectCard({ work }: { work: PublicWork }) {
         </div>
       </div>
     </article>
+  );
+}
+
+function ProjectCover({ work }: { work: PublicWork }) {
+  const firstMedia = work.gallery[0];
+
+  if (firstMedia?.type === "image") {
+    return (
+      <img
+        src={firstMedia.src}
+        alt={firstMedia.alt || work.title}
+        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+      />
+    );
+  }
+
+  if (firstMedia?.type === "video") {
+    return (
+      <video
+        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+        muted
+        playsInline
+        preload="metadata"
+        src={firstMedia.src}
+      />
+    );
+  }
+
+  if (firstMedia?.type === "youtube") {
+    return (
+      <div className="grid h-full w-full place-items-center bg-slate-950 text-white">
+        <span className="grid h-12 w-12 place-items-center rounded-full bg-white/15">
+          <Play className="h-6 w-6 fill-white" />
+        </span>
+      </div>
+    );
+  }
+
+  if (firstMedia?.type === "pdf") {
+    return (
+      <div className="grid h-full w-full place-items-center bg-[#eef4ff] px-5 text-center text-blue-600">
+        <div>
+          <FileText className="mx-auto h-10 w-10" />
+          <p className="mt-2 line-clamp-2 text-xs font-black text-slate-700">
+            {firstMedia.title}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (firstMedia?.type === "text") {
+    return (
+      <div className="grid h-full w-full place-items-center bg-slate-50 px-5 text-center">
+        <div>
+          <Type className="mx-auto h-8 w-8 text-blue-600" />
+          <p className="mt-2 line-clamp-4 text-xs font-black leading-5 text-slate-700">
+            {firstMedia.text}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={work.coverImage}
+      alt={work.title}
+      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+    />
   );
 }
 

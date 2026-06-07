@@ -17,9 +17,15 @@ type ChatWindowProps = {
   conversation: Conversation;
   onBack: () => void;
   onSend: (message: string) => void;
+  onToggleStar: (conversationId: string) => void;
 };
 
-export function ChatWindow({ conversation, onBack, onSend }: ChatWindowProps) {
+export function ChatWindow({
+  conversation,
+  onBack,
+  onSend,
+  onToggleStar,
+}: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -34,7 +40,11 @@ export function ChatWindow({ conversation, onBack, onSend }: ChatWindowProps) {
       transition={mediaHireMotion.panel}
       variants={slideInRight}
     >
-      <ChatHeader conversation={conversation} onBack={onBack} />
+      <ChatHeader
+        conversation={conversation}
+        onBack={onBack}
+        onToggleStar={onToggleStar}
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8">
         <div className="flex min-h-full flex-col justify-end gap-3">

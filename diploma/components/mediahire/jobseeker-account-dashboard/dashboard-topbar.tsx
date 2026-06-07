@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Bell, Menu, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { mediaHireClassNames } from "../ui/design-system";
@@ -78,16 +79,13 @@ export function DashboardTopbar({
           />
         </label>
 
-        <button
+        <Link
           aria-label="Notifications"
           className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-slate-700 shadow-sm transition hover:text-[#0B63E5]"
-          type="button"
+          href="/dashboard/jobseeker/community?chat=mediahire-welcome"
         >
           <Bell size={17} />
-          <span className="absolute right-2 top-2 grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
-            1
-          </span>
-        </button>
+        </Link>
 
         <div className="flex min-w-0 items-center gap-2 rounded-xl bg-white px-2 py-1.5 shadow-sm sm:max-w-[220px]">
           <JobSeekerAvatar

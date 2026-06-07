@@ -1,3 +1,9 @@
+import {
+  getStoredJobSeekerProfile,
+  type JobSeekerProfile,
+} from "../account-settings/profile-store";
+import { getResumeData, getSettings } from "../shared/user-state";
+
 export type PublicPerson = {
     slug: string;
     name: string;
@@ -21,205 +27,386 @@ export type PublicPerson = {
     {
       slug: "amina-saparova",
       name: "Amina Saparova",
-      role: "Photographer",
-      category: "Photography",
-      location: "Almaty, Kazakhstan",
-      experience: "3 years experience",
-      projectsCount: 14,
+      role: "Marketing Specialist",
+      category: "Marketing",
+      location: "Astana, Kazakhstan",
+      experience: "3+ years of experience",
+      projectsCount: 1,
       rating: 4.8,
-      availability: "Available for projects",
+      availability: "Available for Freelance",
       avatar:
-        
-      
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=90",
+        "/photo/amina-saparova/aminasaparova.jpg",
       coverImage:
-        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=90",
-      skills: ["Portrait", "Outdoor", "Retouching"],
+        "/photo/amina-saparova/amina-saparova-1.png",
+      skills: [
+        "Digital Marketing",
+        "Content Strategy",
+        "SMM",
+        "Brand Promotion",
+        "Market Research",
+        "Campaign Planning",
+        "Copywriting",
+      ],
       shortBio:
-        "Creative photographer focused on portraits, lifestyle visuals, and emotional storytelling.",
+        "Marketing specialist focused on social media promotion, campaign planning, and brand communication.",
       about:
-        "Amina creates soft, emotional photography for portraits, lifestyle campaigns, and outdoor visual stories. Her work focuses on natural light, clean composition, and a calm cinematic mood.",
+        "Marketing specialist with experience in social media promotion, campaign planning, and brand communication. Amina helps companies build clear marketing strategies, improve online visibility, and create content that connects with the target audience.",
       languages: ["Kazakh", "Russian", "English"],
-      featuredWorkSlugs: [],
+      featuredWorkSlugs: ["fashion-brand-campaign"],
     },
     {
       slug: "dimash-karim",
-      name: "Dimash Karim",
-      role: "3D Artist",
-      category: "3D / Animation",
+      name: "Dimash Hasenov",
+      role: "Videographer",
+      category: "Videography",
       location: "Astana, Kazakhstan",
-      experience: "4 years experience",
-      projectsCount: 22,
+      experience: "5+ years of experience",
+      projectsCount: 1,
       rating: 4.9,
-      availability: "Open to freelance",
+      availability: "Available for Freelance",
       avatar:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=90",
+        "/photo/dimash-hasenov/dimashhasenov.jpg",
       coverImage:
-        "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=1400&q=90",
-      skills: ["Blender", "Characters", "Animation"],
+        "/photo/dimash-hasenov/dimash-hasenov-1.png",
+      skills: [
+        "Videography",
+        "Camera Operation",
+        "Lighting Setup",
+        "Color Grading",
+        "Storytelling",
+        "Event Shooting",
+        "Commercial Video",
+      ],
       shortBio:
-        "3D specialist creating characters, product visuals, and animation-ready models.",
+        "Videographer creating cinematic music videos, event videos, interviews, brand commercials, and social media content.",
       about:
-        "Dimash works with 3D modeling, stylized characters, playful visual concepts, and animation-ready objects. He focuses on friendly shapes, expressive colors, and clean presentation.",
+        "Videographer with experience in music videos, events, interviews, brand commercials, and social media content. Dimash focuses on cinematic visuals, clean composition, natural lighting, and storytelling through camera movement.",
       languages: ["Kazakh", "Russian", "English"],
-      featuredWorkSlugs: ["chubby-characters"],
+      featuredWorkSlugs: ["music-video-production"],
     },
     {
       slug: "madina-omar",
       name: "Madina Omar",
-      role: "Graphic Designer",
-      category: "Graphic Design",
-      location: "Online",
-      experience: "5 years experience",
-      projectsCount: 31,
-      rating: 5.0,
-      availability: "Available this week",
+      role: "Screenwriter",
+      category: "Screenwriting",
+      location: "Almaty, Kazakhstan",
+      experience: "4+ years of experience",
+      projectsCount: 1,
+      rating: 4.9,
+      availability: "Available for Freelance",
       avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=90",
+        "/photo/madina-omar/madinaomar.jpg",
       coverImage:
-        "https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=1400&q=90",
-      skills: ["Branding", "Typography", "Figma"],
+        "/photo/madina-omar/madina-omar-1.png",
+      skills: [
+        "Screenwriting",
+        "Story Development",
+        "Dialogue Writing",
+        "Script Editing",
+        "Creative Writing",
+        "Narrative Structure",
+        "Character Development",
+      ],
       shortBio:
-        "Graphic designer specializing in minimal branding, identity systems, and social media visuals.",
+        "Screenwriter specializing in short films, commercial scripts, documentary narration, and digital video concepts.",
       about:
-        "Madina designs brand identities, logo systems, typography rules, and social media templates. Her style is minimal, structured, and suitable for modern digital businesses.",
+        "Screenwriter specializing in short films, commercial scripts, documentary narration, and digital video concepts. Madina focuses on clear storytelling, natural dialogue, strong structure, and emotionally engaging ideas.",
       languages: ["Kazakh", "Russian", "English"],
-      featuredWorkSlugs: ["minimal-brand-identity"],
+      featuredWorkSlugs: ["ford-commercial-video-script"],
     },
     {
       slug: "ruslan-aitov",
       name: "Ruslan Aitov",
-      role: "Video Producer",
+      role: "Producer",
       category: "Production",
       location: "Almaty, Kazakhstan",
-      experience: "6 years experience",
-      projectsCount: 27,
-      rating: 4.7,
-      availability: "Busy, but open",
-      avatar:
-        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=90",
-      coverImage:
-        "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1400&q=90",
-      skills: ["Video", "Editing", "Color"],
-      shortBio:
-        "Video producer working with music videos, commercials, interviews, and cinematic editing.",
-      about:
-        "Ruslan helps creators and brands produce video content from idea to final edit. He works with music videos, campaign clips, color grading, and short cinematic stories.",
-      languages: ["Kazakh", "Russian"],
-      featuredWorkSlugs: ["music-video-production"],
-    },
-    {
-      slug: "aruzhan-saten",
-      name: "Aruzhan Saten",
-      role: "Content Designer",
-      category: "Marketing",
-      location: "Astana, Kazakhstan",
-      experience: "2 years experience",
-      projectsCount: 18,
-      rating: 4.6,
-      availability: "Part-time available",
-      avatar:
-        "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=90",
-      coverImage:
-        "https://images.unsplash.com/photo-1611162616475-46b635cb6868?auto=format&fit=crop&w=1400&q=90",
-      skills: ["SMM", "Canva", "Content"],
-      shortBio:
-        "Content designer creating social media visuals, campaign posts, stories, and digital layouts.",
-      about:
-        "Aruzhan creates visual content for social media, including posts, stories, campaign banners, and simple brand communication layouts for online platforms.",
-      languages: ["Kazakh", "Russian", "English"],
-      featuredWorkSlugs: ["social-media-visuals"],
-    },
-    {
-      slug: "nika-lee",
-      name: "Nika Lee",
-      role: "Product Photographer",
-      category: "Photography",
-      location: "Almaty, Kazakhstan",
-      experience: "4 years experience",
-      projectsCount: 25,
-      rating: 4.8,
-      availability: "Available for shooting",
-      avatar:
-        "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=90",
-      coverImage:
-        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1400&q=90",
-      skills: ["Product", "Studio", "Retouch"],
-      shortBio:
-        "Commercial photographer focused on product photos, catalog visuals, and clean studio lighting.",
-      about:
-        "Nika works with product photography for online stores, catalogs, advertising, and brand presentations. Her focus is clean lighting, sharp detail, and polished retouching.",
-      languages: ["Russian", "English"],
-      featuredWorkSlugs: ["product-photo-set"],
-    },
-    {
-      slug: "alex-fernandez",
-      name: "Alex Fernández",
-      role: "Film Director",
-      category: "Production",
-      location: "Shanghai, China",
-      experience: "5 years experience",
+      experience: "7+ years of experience",
       projectsCount: 1,
       rating: 4.9,
-      availability: "Available for projects",
+      availability: "Available for Freelance",
       avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=90",
+        "/photo/ruslan-aitov/ruslanaitov.jpg",
       coverImage:
-        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=90",
-      skills: ["Film Direction", "Editing", "Color Grading"],
+        "/photo/ruslan-aitov/ruslan-aitov-1.png",
+      skills: [
+        "Project Management",
+        "Production Planning",
+        "Budget Control",
+        "Team Coordination",
+        "Casting",
+        "Location Management",
+        "Creative Direction",
+      ],
       shortBio:
-        "Film director focused on cinematic visual stories, emotional scenes, and creative production.",
+        "Producer focused on video productions, commercial shoots, events, and creative media projects.",
       about:
-        "Alex works with short films, visual storytelling, editing, and cinematic direction. His projects focus on emotion, atmosphere, and strong visual rhythm.",
-      languages: ["Spanish", "English"],
+        "Producer with experience in organizing video productions, commercial shoots, events, and creative media projects. Ruslan manages teams, schedules, budgets, locations, and communication between clients and creative specialists.",
+      languages: ["Kazakh", "Russian", "English"],
+      featuredWorkSlugs: ["festival-of-light"],
+    },
+    {
+      slug: "aruzhan-kanatkyzy",
+      name: "Aruzhan Kanatkyzy",
+      role: "3D Animator",
+      category: "3D / Animation",
+      location: "Astana, Kazakhstan",
+      experience: "3+ years of experience",
+      projectsCount: 1,
+      rating: 5,
+      availability: "Available for Freelance",
+      avatar:
+        "/photo/aruzhan-kanatkyzy/aruzhankanatkyzy.jpg",
+      coverImage:
+        "/photo/aruzhan-kanatkyzy/aruzhan-kanatkyzy-1.png",
+      skills: [
+        "3D Animation",
+        "Character Animation",
+        "3D Modeling",
+        "Storyboarding",
+        "Rigging",
+        "Lighting",
+        "Rendering",
+      ],
+      shortBio:
+        "3D animator focused on character movement, product animation, and stylized visual storytelling.",
+      about:
+        "3D animator focused on character movement, product animation, and stylized visual storytelling. Aruzhan creates animated scenes for advertising, games, short videos, and digital campaigns using modern 3D tools and cinematic composition.",
+      languages: ["Kazakh", "Russian", "English"],
+      featuredWorkSlugs: ["chubby-characters"],
+    },
+    {
+      slug: "alina-karimova",
+      name: "Alina Karimova",
+      role: "Motion Designer",
+      category: "Motion Design",
+      location: "Almaty, Kazakhstan",
+      experience: "4+ years of experience",
+      projectsCount: 1,
+      rating: 4.8,
+      availability: "Available for Freelance",
+      avatar:
+        "/photo/alina-karimova/alinakarimova.jpg",
+      coverImage:
+        "/photo/alina-karimova/alina-karimova-1.png",
+      skills: [
+        "Motion Design",
+        "2D Animation",
+        "Animated Typography",
+        "Logo Animation",
+        "Social Media Motion",
+        "Storyboarding",
+        "Visual Effects",
+      ],
+      shortBio:
+        "Motion designer creating animated graphics, logo animations, typography motion, and short promotional videos.",
+      about:
+        "Motion designer specializing in animated graphics, logo animation, typography, and short promotional videos. Alina creates motion content for brands, social media, events, applications, and digital campaigns.",
+      languages: ["Kazakh", "Russian", "English"],
+      featuredWorkSlugs: ["motion-poster"],
+    },
+    {
+      slug: "amir-tulegenov",
+      name: "Amir Tulegenov",
+      role: "Photographer / Cinematographer",
+      category: "Photography / Cinematography",
+      location: "Astana, Kazakhstan",
+      experience: "6+ years of experience",
+      projectsCount: 1,
+      rating: 4.9,
+      availability: "Available for Freelance",
+      avatar:
+        "/photo/amir-tulegenov/amirtulegenov.jpg",
+      coverImage:
+        "/photo/amir-tulegenov/amir-tulegenov-1.png",
+      skills: [
+        "Photography",
+        "Cinematography",
+        "Portrait Shooting",
+        "Product Photography",
+        "Lighting",
+        "Color Correction",
+        "Composition",
+      ],
+      shortBio:
+        "Photographer and cinematographer creating portraits, product photos, fashion visuals, and cinematic content.",
+      about:
+        "Photographer and cinematographer specializing in portraits, product photography, fashion lookbooks, and cinematic visual content. Amir focuses on atmosphere, natural composition, clean lighting, and strong visual identity.",
+      languages: ["Russian", "English", "Kazakh"],
       featuredWorkSlugs: ["tales-from-the-river"],
     },
     {
       slug: "dana-murat",
-      name: "Dana Murat",
-      role: "Art Director",
-      category: "Production",
-      location: "Almaty, Kazakhstan",
-      experience: "4 years experience",
-      projectsCount: 1,
+      name: "Dana Muhtarova",
+      role: "Graphic Designer",
+      category: "Graphic Design",
+      location: "Astana, Kazakhstan",
+      experience: "4+ years of experience",
+      projectsCount: 2,
       rating: 4.8,
-      availability: "Available for production",
-      avatar:
-        "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=90",
-      coverImage:
-        "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=1400&q=90",
-      skills: ["Art Direction", "Styling", "Production"],
+      availability: "Available for Freelance",
+      avatar: "/photo/dana-muhtarova/danamuhtarova.jpg",
+      coverImage: "/photo/dana-muhtarova/dana-muhtarova-1.png",
+      skills: [
+        "UI/UX Design",
+        "Illustration",
+        "Print Design",
+        "Motion Design",
+        "Branding",
+        "Photo Editing",
+        "Creative Thinking",
+      ],
       shortBio:
-        "Art director creating fashion, editorial, and visual production concepts.",
+        "Graphic designer creating brand identities, packaging, social media visuals, and clean digital layouts.",
       about:
-        "Dana works with fashion lookbooks, production planning, styling, and editorial visual concepts for creative brands.",
+        "Creative and detail-oriented graphic designer with a passion for visual storytelling and clean functional design. Dana specializes in brand identity, digital design, social media visuals, packaging, and media content that helps businesses communicate clearly and effectively.",
       languages: ["Kazakh", "Russian", "English"],
-      featuredWorkSlugs: ["fashion-lookbook"],
+      featuredWorkSlugs: ["soz-mocktails", "gourmay"],
     },
     {
       slug: "arman-nurlan",
       name: "Arman Nurlan",
-      role: "Marketing Designer",
-      category: "Marketing",
+      role: "Video Editor",
+      category: "Video Editing",
       location: "Astana, Kazakhstan",
-      experience: "3 years experience",
+      experience: "4+ years of experience",
       projectsCount: 1,
-      rating: 4.7,
-      availability: "Open to campaigns",
+      rating: 4.8,
+      availability: "Available for Freelance",
       avatar:
-        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=90",
+        "/photo/arman-nurlan/armannurlan.jpg",
       coverImage:
-        "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1400&q=90",
-      skills: ["Campaign Design", "Branding", "Social Media"],
+        "/photo/arman-nurlan/arman-nurlan-1.png",
+      skills: [
+        "Video Editing",
+        "Color Correction",
+        "Sound Sync",
+        "Reels Editing",
+        "Storytelling",
+        "Transitions",
+        "Post-production",
+      ],
       shortBio:
-        "Marketing designer focused on campaign visuals, digital banners, and brand communication.",
+        "Video editor focused on dynamic storytelling, clean pacing, social media formats, and professional post-production.",
       about:
-        "Arman creates digital campaign materials, social media visuals, and promotional design systems for modern brands.",
-      languages: ["Kazakh", "Russian"],
-      featuredWorkSlugs: ["urban-media-campaign"],
+        "Video editor focused on dynamic storytelling, clean pacing, social media formats, and professional post-production. Arman edits videos for brands, events, YouTube, Instagram, interviews, and commercial projects.",
+      languages: ["Kazakh", "Russian", "English"],
+      featuredWorkSlugs: ["event-highlight-edit"],
+    },
+    {
+      slug: "timur-saten",
+      name: "Timur Saten",
+      role: "Director",
+      category: "Directing",
+      location: "Almaty, Kazakhstan",
+      experience: "6+ years of experience",
+      projectsCount: 1,
+      rating: 4.9,
+      availability: "Available for Freelance",
+      avatar:
+        "/photo/timur-saten/timursaten.jpg",
+      coverImage:
+        "/photo/timur-saten/timur-saten-1.png",
+      skills: [
+        "Directing",
+        "Creative Direction",
+        "Storytelling",
+        "Scene Planning",
+        "Actor Direction",
+        "Shot Composition",
+        "Visual Concept Development",
+      ],
+      shortBio:
+        "Director creating short films, music videos, commercials, and cinematic brand storytelling.",
+      about:
+        "Director with experience in short films, music videos, commercials, and branded storytelling. Timur focuses on visual concept, mood, actor direction, scene structure, and cinematic communication.",
+      languages: ["Kazakh", "Russian", "English"],
+      featuredWorkSlugs: ["brand-story-video"],
     },
   ];
-  
+
+  function createPersonSlug(value: string) {
+    return (
+      value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "") || "jobseeker"
+    );
+  }
+
+  function createCurrentJobSeekerPerson(
+    profile: JobSeekerProfile,
+  ): PublicPerson | null {
+    const name = profile.fullName.trim();
+
+    if (!name) {
+      return null;
+    }
+
+    const role = profile.role || profile.jobTitle || "Creative Specialist";
+    const location =
+      profile.location || profile.city || profile.country || "Location not added";
+    const experience = profile.experienceYears
+      ? `${profile.experienceYears} years of experience`
+      : "Experience not added";
+    const skills = (profile.skills || "")
+      .split(",")
+      .map((skill) => skill.trim())
+      .filter(Boolean);
+    const resume = getResumeData();
+    const about =
+      profile.bio ||
+      resume.about ||
+      "This profile is visible because the job seeker enabled Profile Visibility.";
+
+    return {
+      slug: createPersonSlug(name),
+      name,
+      role,
+      category: role,
+      location,
+      experience,
+      projectsCount: 0,
+      rating: 0,
+      availability: profile.preferredWorkType || "Available for Freelance",
+      avatar: profile.avatarPreview,
+      coverImage: profile.avatarPreview,
+      skills,
+      shortBio: about,
+      about,
+      languages: (resume.languages || "")
+        .split(",")
+        .map((language) => language.trim())
+        .filter(Boolean),
+      featuredWorkSlugs: [],
+    };
+  }
+
+  export function getAllPublicPeople() {
+    if (typeof window === "undefined") {
+      return publicPeople;
+    }
+
+    const settings = getSettings();
+
+    if (!settings.profileVisibility) {
+      return publicPeople;
+    }
+
+    const currentPerson = createCurrentJobSeekerPerson(
+      getStoredJobSeekerProfile(),
+    );
+
+    if (!currentPerson) {
+      return publicPeople;
+    }
+
+    return [
+      currentPerson,
+      ...publicPeople.filter((person) => person.slug !== currentPerson.slug),
+    ];
+  }
+
   export function getPublicPersonBySlug(slug: string) {
     return publicPeople.find((person) => person.slug === slug);
   }

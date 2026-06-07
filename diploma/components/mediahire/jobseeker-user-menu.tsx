@@ -95,7 +95,7 @@ export function JobSeekerUserMenu({
   }
 
   return (
-    <div className="relative inline-flex items-center">
+    <div className="relative z-[9999] inline-flex items-center overflow-visible">
       <button
         aria-label="Open job seeker account"
         className={
@@ -149,7 +149,7 @@ export function JobSeekerUserMenu({
         {open ? (
           <motion.div
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="absolute right-0 top-14 z-50 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_22px_70px_rgba(15,23,42,0.16)]"
+            className="absolute right-0 top-full z-[9999] mt-4 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_22px_70px_rgba(15,23,42,0.16)]"
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={mediaHireMotion.fast}

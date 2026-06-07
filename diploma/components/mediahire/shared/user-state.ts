@@ -1,9 +1,11 @@
 import { getMediaHireJob, type MediaHireJob } from "../jobs-data";
 import {
   defaultJobSeekerProfile,
+  getActiveJobSeekerEmail,
   getStoredJobSeekerProfile,
   jobSeekerProfileStorageKey,
   saveJobSeekerProfile,
+  setActiveJobSeekerEmail,
   type JobSeekerProfile,
 } from "../account-settings/profile-store";
 
@@ -72,7 +74,7 @@ export const defaultJobSeekerSettings: JobSeekerSettings = {
   language: "English",
   messages: true,
   password: "",
-  profileVisibility: true,
+  profileVisibility: false,
   publicPortfolio: true,
   theme: "Light",
 };
@@ -90,12 +92,45 @@ function readJson<T>(key: string, fallback: T): T {
   }
 }
 
+function normalizeAccountEmail(email?: string | null) {
+  return (email || "").trim().toLowerCase();
+}
+
+function scopedStorageKey(key: string, email?: string | null) {
+  const normalizedEmail = normalizeAccountEmail(email || getActiveJobSeekerEmail());
+
+  return normalizedEmail ? `${key}:${normalizedEmail}` : key;
+}
+
 function writeJson<T>(key: string, value: T, eventName: string) {
   if (typeof window === "undefined") {
     return;
   }
 
   window.localStorage.setItem(key, JSON.stringify(value));
+  window.dispatchEvent(new CustomEvent(eventName, { detail: value }));
+}
+
+function writeScopedJson<T>(
+  key: string,
+  value: T,
+  eventName: string,
+  email?: string | null,
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const normalizedEmail = normalizeAccountEmail(email || getActiveJobSeekerEmail());
+
+  if (normalizedEmail) {
+    setActiveJobSeekerEmail(normalizedEmail);
+  }
+
+  window.localStorage.setItem(
+    scopedStorageKey(key, normalizedEmail),
+    JSON.stringify(value),
+  );
   window.dispatchEvent(new CustomEvent(eventName, { detail: value }));
 }
 
@@ -109,11 +144,44 @@ export function updateCurrentUserProfile(profile: JobSeekerProfile) {
 }
 
 export function getResumeData() {
+  const activeEmail = getActiveJobSeekerEmail();
+
+  if (activeEmail) {
+    return readJson<ResumeData>(
+      scopedStorageKey(resumeStorageKey, activeEmail),
+      defaultResumeData,
+    );
+  }
+
   return readJson<ResumeData>(resumeStorageKey, defaultResumeData);
 }
 
+export function getResumeDataForEmail(email: string) {
+  const normalizedEmail = normalizeAccountEmail(email);
+
+  if (!normalizedEmail) {
+    return getResumeData();
+  }
+
+  return readJson<ResumeData>(
+    scopedStorageKey(resumeStorageKey, normalizedEmail),
+    defaultResumeData,
+  );
+}
+
 export function updateResumeData(resume: ResumeData) {
-  writeJson(resumeStorageKey, resume, "mediahire:resume-updated");
+  writeScopedJson(resumeStorageKey, resume, "mediahire:resume-updated");
+  const profile = getStoredJobSeekerProfile();
+  updateCurrentUserProfile({
+    ...profile,
+    bio: resume.about || profile.bio,
+    resumeUrl: resume.pdfUrl || profile.resumeUrl,
+    skills: resume.skills || profile.skills,
+  });
+}
+
+export function updateResumeDataForEmail(email: string, resume: ResumeData) {
+  writeScopedJson(resumeStorageKey, resume, "mediahire:resume-updated", email);
   const profile = getStoredJobSeekerProfile();
   updateCurrentUserProfile({
     ...profile,
@@ -129,9 +197,16 @@ export function getSavedJobIds() {
   }
 
   try {
-    return JSON.parse(
+    const parsed = JSON.parse(
       window.localStorage.getItem(savedJobsStorageKey) || "[]",
     ) as string[];
+    const validIds = parsed.filter((jobId) => Boolean(getMediaHireJob(jobId)));
+
+    if (validIds.length !== parsed.length) {
+      window.localStorage.setItem(savedJobsStorageKey, JSON.stringify(validIds));
+    }
+
+    return validIds;
   } catch {
     return [];
   }
@@ -148,6 +223,10 @@ export function isJobSaved(jobId: string) {
 }
 
 export function saveJob(jobId: string) {
+  if (!getMediaHireJob(jobId)) {
+    return getSavedJobIds();
+  }
+
   const nextIds = Array.from(new Set([jobId, ...getSavedJobIds()]));
   writeJson(savedJobsStorageKey, nextIds, "mediahire:saved-jobs-updated");
   return nextIds;
@@ -169,9 +248,21 @@ export function getApplications() {
   }
 
   try {
-    return JSON.parse(
+    const parsed = JSON.parse(
       window.localStorage.getItem(applicationsStorageKey) || "[]",
     ) as JobApplicationRecord[];
+    const validApplications = parsed.filter((application) =>
+      Boolean(getMediaHireJob(application.jobId)),
+    );
+
+    if (validApplications.length !== parsed.length) {
+      window.localStorage.setItem(
+        applicationsStorageKey,
+        JSON.stringify(validApplications),
+      );
+    }
+
+    return validApplications;
   } catch {
     return [];
   }
@@ -182,6 +273,10 @@ export function getApplicationForJob(jobId: string) {
 }
 
 export function applyJob(jobId: string, status: ApplicationStatus = "Applied") {
+  if (!getMediaHireJob(jobId)) {
+    return getApplications();
+  }
+
   const currentApplications = getApplications();
   const existing = currentApplications.find(
     (application) => application.jobId === jobId,
@@ -211,6 +306,15 @@ export function applyJob(jobId: string, status: ApplicationStatus = "Applied") {
 }
 
 export function getSettings() {
+  const activeEmail = getActiveJobSeekerEmail();
+
+  if (activeEmail) {
+    return readJson<JobSeekerSettings>(
+      scopedStorageKey(settingsStorageKey, activeEmail),
+      defaultJobSeekerSettings,
+    );
+  }
+
   return readJson<JobSeekerSettings>(
     settingsStorageKey,
     defaultJobSeekerSettings,
@@ -218,7 +322,15 @@ export function getSettings() {
 }
 
 export function updateSettings(settings: JobSeekerSettings) {
-  writeJson(settingsStorageKey, settings, "mediahire:settings-updated");
+  writeScopedJson(settingsStorageKey, settings, "mediahire:settings-updated");
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("mediahire:projects-updated", {
+        detail: { reason: "settings-updated" },
+      }),
+    );
+  }
 }
 
 export function getVisibleProfile() {

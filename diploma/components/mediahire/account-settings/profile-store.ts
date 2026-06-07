@@ -19,6 +19,7 @@ export type JobSeekerProfile = {
   postalCode: string;
   preferredLocation: string;
   preferredPostalCode: string;
+  preferredWorkType: string;
   resumeUrl: string;
   role: string;
   skills: string;
@@ -27,6 +28,103 @@ export type JobSeekerProfile = {
 };
 
 export const jobSeekerProfileStorageKey = "mediahire.jobseeker.profile";
+export const activeJobSeekerEmailStorageKey =
+  "mediahire.jobseeker.activeEmail";
+
+function normalizeProfileEmail(email?: string | null) {
+  return (email || "").trim().toLowerCase();
+}
+
+export function getScopedJobSeekerProfileStorageKey(email: string) {
+  return `${jobSeekerProfileStorageKey}:${normalizeProfileEmail(email)}`;
+}
+
+export function getActiveJobSeekerEmail() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return normalizeProfileEmail(
+    window.localStorage.getItem(activeJobSeekerEmailStorageKey),
+  );
+}
+
+export function setActiveJobSeekerEmail(email?: string | null) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const normalizedEmail = normalizeProfileEmail(email);
+
+  if (normalizedEmail) {
+    window.localStorage.setItem(activeJobSeekerEmailStorageKey, normalizedEmail);
+  }
+}
+
+function normalizeProfile(profile: Partial<JobSeekerProfile>): JobSeekerProfile {
+  return {
+    ...defaultJobSeekerProfile,
+    ...profile,
+    fullName:
+      profile.fullName ||
+      `${profile.firstName || defaultJobSeekerProfile.firstName} ${
+        profile.lastName || defaultJobSeekerProfile.lastName
+      }`.trim(),
+  };
+}
+
+function readStoredProfileByKey(key: string) {
+  if (typeof window === "undefined") {
+    return defaultJobSeekerProfile;
+  }
+
+  const storedProfile = window.localStorage.getItem(key);
+
+  if (!storedProfile) {
+    return defaultJobSeekerProfile;
+  }
+
+  try {
+    return normalizeProfile(JSON.parse(storedProfile) as Partial<JobSeekerProfile>);
+  } catch {
+    return defaultJobSeekerProfile;
+  }
+}
+
+export function getStoredJobSeekerProfileForEmail(email: string) {
+  if (typeof window === "undefined") {
+    return defaultJobSeekerProfile;
+  }
+
+  const normalizedEmail = normalizeProfileEmail(email);
+
+  if (!normalizedEmail) {
+    return getStoredJobSeekerProfile();
+  }
+
+  const scopedProfile = readStoredProfileByKey(
+    getScopedJobSeekerProfileStorageKey(normalizedEmail),
+  );
+
+  if (scopedProfile.email || scopedProfile.firstName || scopedProfile.fullName) {
+    return {
+      ...scopedProfile,
+      email: scopedProfile.email || normalizedEmail,
+    };
+  }
+
+  const legacyProfile = readStoredProfileByKey(jobSeekerProfileStorageKey);
+  const legacyEmail = normalizeProfileEmail(legacyProfile.email);
+
+  if (legacyEmail === normalizedEmail) {
+    return legacyProfile;
+  }
+
+  return {
+    ...defaultJobSeekerProfile,
+    email: normalizedEmail,
+  };
+}
 
 export const defaultJobSeekerProfile: JobSeekerProfile = {
   avatarPreview: "",
@@ -49,6 +147,7 @@ export const defaultJobSeekerProfile: JobSeekerProfile = {
   postalCode: "",
   preferredLocation: "",
   preferredPostalCode: "",
+  preferredWorkType: "",
   resumeUrl: "",
   role: "",
   skills: "",
@@ -61,34 +160,37 @@ export function getStoredJobSeekerProfile(): JobSeekerProfile {
     return defaultJobSeekerProfile;
   }
 
-  const storedProfile = window.localStorage.getItem(jobSeekerProfileStorageKey);
+  const activeEmail = getActiveJobSeekerEmail();
 
-  if (!storedProfile) {
-    return defaultJobSeekerProfile;
+  if (activeEmail) {
+    return getStoredJobSeekerProfileForEmail(activeEmail);
   }
 
-  try {
-    const parsedProfile = JSON.parse(storedProfile) as Partial<JobSeekerProfile>;
-
-    return {
-      ...defaultJobSeekerProfile,
-      ...parsedProfile,
-      fullName:
-        parsedProfile.fullName ||
-        `${parsedProfile.firstName || defaultJobSeekerProfile.firstName} ${
-          parsedProfile.lastName || defaultJobSeekerProfile.lastName
-        }`,
-    };
-  } catch {
-    return defaultJobSeekerProfile;
-  }
+  return readStoredProfileByKey(jobSeekerProfileStorageKey);
 }
 
-export function saveJobSeekerProfile(profile: JobSeekerProfile) {
-  window.localStorage.setItem(jobSeekerProfileStorageKey, JSON.stringify(profile));
+export function saveJobSeekerProfile(
+  profile: JobSeekerProfile,
+  eventDetail?: Record<string, unknown>,
+) {
+  const normalizedProfile = normalizeProfile(profile);
+  const email = normalizeProfileEmail(normalizedProfile.email);
+
+  if (email) {
+    setActiveJobSeekerEmail(email);
+    window.localStorage.setItem(
+      getScopedJobSeekerProfileStorageKey(email),
+      JSON.stringify(normalizedProfile),
+    );
+  }
+
+  window.localStorage.setItem(
+    jobSeekerProfileStorageKey,
+    JSON.stringify(normalizedProfile),
+  );
   window.dispatchEvent(
     new CustomEvent("mediahire:jobseeker-profile-updated", {
-      detail: profile,
+      detail: { ...normalizedProfile, ...eventDetail },
     }),
   );
 }

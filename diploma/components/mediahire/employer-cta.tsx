@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight, BriefcaseBusiness } from "lucide-react";
 import { MotionSection } from "./motion-section";
 
@@ -26,13 +27,13 @@ export function EmployerCta() {
                 for designers, photographers, editors, and media teams with a
                 polished hiring workflow.
               </p>
-              <a
+              <Link
                 className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2563ff] px-6 text-xs font-black text-white shadow-[0_12px_26px_rgba(37,99,255,0.22)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#0f52f5]"
                 href="/?role=employer"
               >
                 Post a job
                 <ArrowRight size={18} />
-              </a>
+              </Link>
             </div>
 
             <div className="relative mx-auto h-[250px] w-full max-w-xs self-center">

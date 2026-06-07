@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Bell, Menu, Search } from "lucide-react";
 
 export type PublicRole = "jobseeker" | "employer";
@@ -40,6 +41,7 @@ export function Header({
   onRoleChange,
   activeItem,
 }: HeaderProps) {
+  const router = useRouter();
   const navLinks = publicNavByRole[role];
   const loginHref = role === "employer" ? "/login/employer" : "/login/jobseeker";
   const signupHref =
@@ -51,7 +53,7 @@ export function Header({
       return;
     }
 
-    window.location.href = nextRole === "employer" ? "/?role=employer" : "/";
+    router.push(nextRole === "employer" ? "/?role=employer" : "/");
   }
 
   return (

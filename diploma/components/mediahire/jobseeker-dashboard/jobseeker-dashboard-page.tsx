@@ -15,7 +15,6 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import {
   filterPills,
-  messages,
   sidebarBottomItems,
   sidebarMenuItems,
   type Application,
@@ -30,6 +29,7 @@ import {
   slideInLeft,
 } from "../ui/design-system";
 import { getMediaHireJob } from "../jobs-data";
+import type { MediaHireJob } from "../jobs-data";
 import {
   getApplications,
   getCurrentUserProfile,
@@ -37,8 +37,12 @@ import {
   getSettings,
   type JobApplicationRecord,
 } from "../shared/user-state";
-import type { JobSeekerProfile } from "../account-settings/profile-store";
+import {
+  getActiveJobSeekerEmail,
+  type JobSeekerProfile,
+} from "../account-settings/profile-store";
 import { JobSeekerAvatar } from "../jobseeker-avatar-placeholder";
+import { conversations as seedConversations } from "../community/community-data";
 
 type DashboardTab = "Application Status" | "Job Offers";
 
@@ -51,9 +55,82 @@ function formatLocationName(location: string) {
     .join(" ");
 }
 
+function getCompanyInitials(companyName: string) {
+  return companyName
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function getDashboardJobSkill(job: MediaHireJob) {
+  return job.tags.find((tag) => tag !== job.type && tag !== job.location) || job.level;
+}
+
+function getJobSeekerChatsStorageKey() {
+  const activeEmail = getActiveJobSeekerEmail();
+
+  return activeEmail
+    ? `mediahire_jobseeker_chats:${activeEmail}`
+    : "mediahire_jobseeker_chats";
+}
+
+function getMediaHireWelcomeMessage(): MessagePreview | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const seedConversation = seedConversations.find(
+    (conversation) => conversation.id === "mediahire-welcome",
+  );
+
+  if (!seedConversation) {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(getJobSeekerChatsStorageKey());
+    const storedConversations = raw ? JSON.parse(raw) : [];
+    const storedWelcome = Array.isArray(storedConversations)
+      ? storedConversations.find(
+          (conversation) => conversation?.id === seedConversation.id,
+        )
+      : null;
+    const unread =
+      typeof storedWelcome?.unread === "number"
+        ? storedWelcome.unread
+        : seedConversation.unread;
+
+    if (unread <= 0) {
+      return null;
+    }
+
+    return {
+      avatarColor: "bg-[#0B63E5] text-white",
+      href: "/dashboard/jobseeker/community?chat=mediahire-welcome",
+      id: seedConversation.id,
+      initials: seedConversation.initials,
+      name: seedConversation.name,
+      preview: seedConversation.preview,
+      unread,
+    };
+  } catch {
+    return {
+      avatarColor: "bg-[#0B63E5] text-white",
+      href: "/dashboard/jobseeker/community?chat=mediahire-welcome",
+      id: seedConversation.id,
+      initials: seedConversation.initials,
+      name: seedConversation.name,
+      preview: seedConversation.preview,
+      unread: seedConversation.unread,
+    };
+  }
+}
+
 function DashboardLogo() {
   return (
-    <Link className="flex items-center gap-2.5" href="/account/jobseeker">
+    <Link className="flex items-center gap-2.5" href="/home/jobseeker">
       <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#0B63E5] text-white shadow-[0_12px_28px_rgba(11,99,229,0.18)]">
         <span className="text-xl font-black leading-none">M</span>
       </span>
@@ -188,7 +265,6 @@ function DashboardTopbar({
   profile: JobSeekerProfile;
   search: string;
 }) {
-  const settings = getSettings();
   const avatarSrc = profile.avatarPreview;
 
   return (
@@ -225,31 +301,33 @@ function DashboardTopbar({
         </label>
 
         <div className="flex min-w-0 items-center gap-2 rounded-xl bg-white p-1.5 shadow-[0_10px_26px_rgba(15,23,42,0.035)] sm:max-w-[220px]">
-          <button
+          <Link
             aria-label="Notifications"
             className="relative grid h-8 w-8 place-items-center rounded-full bg-[#eef4ff] text-[#0B63E5]"
-            type="button"
+            href="/dashboard/jobseeker/community?chat=mediahire-welcome"
           >
             <Bell size={15} />
-            {settings.applicationUpdates || settings.messages ? (
-              <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-            ) : null}
-          </button>
-          <JobSeekerAvatar
-            alt="Job seeker avatar"
-            className="h-8 w-8 rounded-full"
-            iconSize={15}
-            size={32}
-            src={avatarSrc}
-          />
-          <div className="hidden min-w-0 pr-1.5 sm:block">
-            <p className="truncate text-[11px] font-black text-slate-950">
-              {profile.fullName}
-            </p>
-            <p className="truncate text-[10px] font-semibold text-slate-400">
-              {profile.email}
-            </p>
-          </div>
+          </Link>
+          <Link
+            className="flex min-w-0 items-center gap-2 rounded-lg pr-1.5 transition hover:bg-[#f8fbff]"
+            href="/home/jobseeker"
+          >
+            <JobSeekerAvatar
+              alt="Job seeker avatar"
+              className="h-8 w-8 rounded-full"
+              iconSize={15}
+              size={32}
+              src={avatarSrc}
+            />
+            <span className="hidden min-w-0 sm:block">
+              <span className="block truncate text-[11px] font-black text-slate-950">
+                {profile.fullName}
+              </span>
+              <span className="block truncate text-[10px] font-semibold text-slate-400">
+                {profile.email}
+              </span>
+            </span>
+          </Link>
         </div>
       </div>
     </header>
@@ -389,7 +467,10 @@ function SavedJobsCard({
     >
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-sm font-black text-slate-950">Saved Jobs</h2>
-        <Link className="text-xs font-black text-[#0B63E5]" href="/saved-jobs">
+        <Link
+          className="text-xs font-black text-[#0B63E5]"
+          href="/home/jobseeker/job-search"
+        >
           View all
         </Link>
       </div>
@@ -483,7 +564,7 @@ function MessagePreviewItem({ message }: { message: MessagePreview }) {
   return (
     <Link
       className="grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-xl px-2.5 py-2 transition hover:bg-[#f8fbff]"
-      href="/community"
+      href={message.href}
     >
       <span
         className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-black ${message.avatarColor}`}
@@ -491,21 +572,26 @@ function MessagePreviewItem({ message }: { message: MessagePreview }) {
         {message.initials}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs font-black text-slate-950">
-          {message.name}
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span className="block truncate text-xs font-black text-slate-950">
+            {message.name}
+          </span>
+          {message.unread > 0 ? (
+            <span className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-black text-white">
+              {message.unread}
+            </span>
+          ) : null}
         </span>
         <span className="mt-0.5 block truncate text-[11px] font-semibold text-slate-500">
           {message.preview}
         </span>
       </span>
-      <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-red-500 px-1.5 text-[10px] font-black text-white">
-        {message.unread}
-      </span>
+      <span className="h-5 min-w-5 shrink-0" />
     </Link>
   );
 }
 
-function MessagesPreviewCard() {
+function MessagesPreviewCard({ messages }: { messages: MessagePreview[] }) {
   const settings = getSettings();
 
   if (!settings.messages) {
@@ -537,15 +623,21 @@ function MessagesPreviewCard() {
         <h2 className="text-sm font-black text-slate-950">Messages</h2>
         <Link
           className="text-xs font-black text-[#0B63E5]"
-          href="/community"
+          href="/dashboard/jobseeker/community"
         >
           More
         </Link>
       </div>
       <div className="mt-3 grid gap-1">
-        {messages.map((message) => (
-          <MessagePreviewItem key={message.id} message={message} />
-        ))}
+        {messages.length ? (
+          messages.map((message) => (
+            <MessagePreviewItem key={message.id} message={message} />
+          ))
+        ) : (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-[#f8fbff] p-5 text-center text-xs font-black text-slate-500">
+            No company chats from applications yet.
+          </div>
+        )}
       </div>
     </motion.section>
   );
@@ -591,13 +683,12 @@ function ApplicationStatusCard({ items }: { items: Application[] }) {
   const [activeTab, setActiveTab] = useState<DashboardTab>("Application Status");
   const [activeFilter, setActiveFilter] = useState("All");
   const [expandedId, setExpandedId] = useState(items[0]?.id ?? "");
-  const visibleApplications =
-    activeTab === "Job Offers"
-      ? []
-      : items.filter(
-          (application) =>
-            activeFilter === "All" || application.status === activeFilter,
-        );
+  const visibleApplications = items.filter(
+    (application) =>
+      activeTab === "Job Offers" ||
+      activeFilter === "All" ||
+      application.status === activeFilter,
+  );
 
   return (
     <motion.section
@@ -662,14 +753,17 @@ function ApplicationStatusCard({ items }: { items: Application[] }) {
                 key={application.id}
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
+                  <Link
+                    className="block min-w-0 rounded-lg transition hover:text-[#0B63E5]"
+                    href={`/home/jobseeker/jobs/${application.jobId}`}
+                  >
                     <p className="text-xs font-bold text-slate-500">
                       {application.company}
                     </p>
                     <h3 className="mt-1 text-sm font-black text-slate-950">
                       {application.role}
                     </h3>
-                  </div>
+                  </Link>
                   <button
                     className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-amber-100 px-3 text-[11px] font-black text-amber-600 transition hover:bg-amber-200"
                     onClick={() =>
@@ -716,6 +810,7 @@ export function JobSeekerActivityDashboardPage() {
   );
   const [savedJobItems, setSavedJobItems] = useState<SavedJob[]>([]);
   const [applicationItems, setApplicationItems] = useState<Application[]>([]);
+  const [messageItems, setMessageItems] = useState<MessagePreview[]>([]);
 
   useEffect(() => {
     function hydrateDashboard() {
@@ -723,31 +818,67 @@ export function JobSeekerActivityDashboardPage() {
       setSavedJobItems([
         ...getSavedJobs().map((job) => ({
           companyColor: "bg-[#eef4ff] text-[#0B63E5]",
-          companyLogo: job.companyName.slice(0, 2),
+          companyLogo: getCompanyInitials(job.companyName),
           date: "Saved",
           id: job.id,
           location: formatLocationName(job.location),
-          skill: job.tags[1] || job.level,
+          skill: getDashboardJobSkill(job),
           title: job.title,
           type: job.type,
         })),
       ]);
-      setApplicationItems([
-        ...getApplications().map((application: JobApplicationRecord) => {
+      const validApplicationItems = getApplications()
+        .map((application: JobApplicationRecord) => {
           const job = getMediaHireJob(application.jobId);
 
+          if (!job) {
+            return null;
+          }
+
           return {
-            company: job?.companyName || "MediaHire company",
+            company: job.companyName,
             history: [
               { label: application.status, time: "Just Now" },
               { label: "Applied", time: "Saved in your activity" },
             ],
             id: application.id,
-            role: job?.title || "Creative role",
+            jobId: job.id,
+            role: job.title,
             status: application.status,
           } satisfies Application;
-        }),
-      ]);
+        })
+        .filter(Boolean) as Application[];
+
+      setApplicationItems(validApplicationItems);
+      const mediaHireWelcomeMessage = getMediaHireWelcomeMessage();
+      const applicationMessageItems = validApplicationItems.reduce<MessagePreview[]>(
+        (items, application) => {
+          const job = getMediaHireJob(application.jobId);
+
+          if (!job || items.some((item) => item.id === job.companyId)) {
+            return items;
+          }
+
+          items.push({
+            avatarColor: "bg-[#eef4ff] text-[#0B63E5]",
+            href: `/dashboard/jobseeker/community?chat=${job.companyId}`,
+            id: job.companyId,
+            initials: getCompanyInitials(job.companyName),
+            name: job.companyName,
+            preview: `Application sent for ${job.title}.`,
+            unread: 0,
+          });
+
+          return items;
+        },
+        [],
+      );
+
+      setMessageItems(
+        mediaHireWelcomeMessage
+          ? [mediaHireWelcomeMessage, ...applicationMessageItems]
+          : applicationMessageItems,
+      );
     }
 
     hydrateDashboard();
@@ -755,6 +886,7 @@ export function JobSeekerActivityDashboardPage() {
     window.addEventListener("mediahire:saved-jobs-updated", hydrateDashboard);
     window.addEventListener("mediahire:applications-updated", hydrateDashboard);
     window.addEventListener("mediahire:jobseeker-profile-updated", hydrateDashboard);
+    window.addEventListener("storage", hydrateDashboard);
 
     return () => {
       window.removeEventListener("mediahire:saved-jobs-updated", hydrateDashboard);
@@ -763,6 +895,7 @@ export function JobSeekerActivityDashboardPage() {
         "mediahire:jobseeker-profile-updated",
         hydrateDashboard,
       );
+      window.removeEventListener("storage", hydrateDashboard);
     };
   }, []);
 
@@ -801,7 +934,7 @@ export function JobSeekerActivityDashboardPage() {
 
             <aside className="grid min-w-0 content-start items-start gap-4">
               <StatusDonutCard items={applicationItems} />
-              <MessagesPreviewCard />
+              <MessagesPreviewCard messages={messageItems} />
             </aside>
           </div>
         </div>
