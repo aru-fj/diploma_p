@@ -53,6 +53,7 @@ import {
   type JobSeekerProfile,
 } from "../account-settings/profile-store";
 import { JobSeekerAvatar } from "../jobseeker-avatar-placeholder";
+import { syncStoredProjectAuthorsForProfile } from "../projects-data";
 import { supabase } from "@/lib/supabase-client";
 import { upsertProfile } from "../supabase-auth/auth-service";
 import {
@@ -99,6 +100,7 @@ type ResumeFormState = {
 };
 
 type ResumeProfileRow = {
+  resume_name?: string | null;
   avatar_url?: string | null;
   bio?: string | null;
   city?: string | null;
@@ -173,6 +175,14 @@ function buildEditableProfile(profile: JobSeekerProfile): JobSeekerProfile {
     location: [city, country].filter(Boolean).join(", "),
     role: jobTitle,
   };
+}
+
+function slugifyProfileName(value?: string | null) {
+  return (value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function stringifyProfileList(value?: string | string[] | null) {
@@ -275,7 +285,7 @@ function readProfileImageFile({
   onImageError,
 }: {
   file: File;
-  onImageChange: (preview: string) => void;
+  onImageChange: (file: File, preview: string) => void | Promise<void>;
   onImageError: (message: string) => void;
 }) {
   const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
@@ -293,7 +303,7 @@ function readProfileImageFile({
 
   const reader = new FileReader();
   reader.onload = () => {
-    onImageChange(typeof reader.result === "string" ? reader.result : "");
+    onImageChange(file, typeof reader.result === "string" ? reader.result : "");
   };
   reader.readAsDataURL(file);
 }
@@ -500,7 +510,7 @@ function ProfilePictureUpload({
   preview,
 }: {
   error?: string;
-  onImageChange: (preview: string) => void;
+  onImageChange: (file: File, preview: string) => void | Promise<void>;
   onImageError: (message: string) => void;
   preview: string;
 }) {
@@ -554,7 +564,7 @@ function ResumeHeaderCard({
   profile,
 }: {
   avatarError?: string;
-  onAvatarChange: (preview: string) => void;
+  onAvatarChange: (file: File, preview: string) => void | Promise<void>;
   onAvatarError: (message: string) => void;
   onAvatarRemove: () => void;
   profile: JobSeekerProfile;
@@ -883,11 +893,13 @@ function TagInput({
 function PersonalInfoGrid({
   onChange,
   onDownloadResume,
+  onResumeFileChange,
   profile,
   resumeFileName,
 }: {
   onChange: (name: keyof JobSeekerProfile, value: string) => void;
   onDownloadResume: () => void;
+  onResumeFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
   profile: JobSeekerProfile;
   resumeFileName: string;
 }) {
@@ -999,21 +1011,39 @@ function PersonalInfoGrid({
           </div>
         ))}
         <div className="flex flex-col justify-end gap-1.5">
-          <motion.button
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#0B63E5] bg-white px-4 text-xs font-black text-[#0B63E5] transition hover:bg-[#eef4ff]"
-            onClick={onDownloadResume}
-            type="button"
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Download size={16} />
-            Download PDF Resume
-          </motion.button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <motion.button
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#0B63E5] bg-white px-4 text-xs font-black text-[#0B63E5] transition hover:bg-[#eef4ff]"
+              onClick={onDownloadResume}
+              type="button"
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Download size={16} />
+              Open resume file
+            </motion.button>
+
+            <label className="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#0B63E5] px-4 text-xs font-black text-white shadow-[0_12px_26px_rgba(11,99,229,0.18)] transition hover:bg-[#0957ca]">
+              <Upload size={16} />
+              Change file
+              <input
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                className="sr-only"
+                onChange={onResumeFileChange}
+                type="file"
+              />
+            </label>
+          </div>
+
           {resumeFileName ? (
             <p className="truncate text-[11px] font-bold text-slate-400">
               Saved file: {resumeFileName}
             </p>
-          ) : null}
+          ) : (
+            <p className="text-[11px] font-bold text-slate-400">
+              No resume file uploaded yet.
+            </p>
+          )}
         </div>
       </div>
     </motion.section>
@@ -1235,7 +1265,7 @@ export function JobSeekerResumePage() {
         const byUserId = await supabase
           .from("profiles")
           .select(
-            "avatar_url,bio,city,country,email,expected_salary,first_name,full_name,job_title,last_name,location,payment_period,postal_code,minimum_salary,resume_url,skills",
+            "avatar_url,bio,city,country,email,expected_salary,first_name,full_name,job_title,last_name,location,payment_period,postal_code,minimum_salary,resume_url,resume_name,skills",
           )
           .eq("user_id", data.user.id)
           .maybeSingle();
@@ -1244,7 +1274,7 @@ export function JobSeekerResumePage() {
           const byId = await supabase
             .from("profiles")
             .select(
-              "avatar_url,bio,city,country,email,expected_salary,first_name,full_name,job_title,last_name,location,payment_period,postal_code,minimum_salary,resume_url,skills",
+              "avatar_url,bio,city,country,email,expected_salary,first_name,full_name,job_title,last_name,location,payment_period,postal_code,minimum_salary,resume_url,resume_name,skills",
             )
             .eq("id", data.user.id)
             .maybeSingle();
@@ -1271,6 +1301,13 @@ export function JobSeekerResumePage() {
           storedResume,
           (resumeRow || null) as ResumeRow | null,
         );
+        if (profileRow?.resume_url) {
+          nextResumeData = {
+            ...nextResumeData,
+            pdfUrl: profileRow.resume_url,
+            pdfName: profileRow.resume_name || nextResumeData.pdfName || "Uploaded resume",
+          };
+        }
 
         if (authEmail) {
           saveJobSeekerProfile(nextProfile);
@@ -1320,6 +1357,87 @@ export function JobSeekerResumePage() {
     };
   }, []);
 
+  async function uploadProfileAsset(
+    file: File,
+    folder: "avatar" | "resume" | "cover",
+  ) {
+    const { data, error } = await supabase.auth.getUser();
+  
+    if (error || !data.user) {
+      throw new Error("User is not logged in");
+    }
+  
+    const extension = file.name.split(".").pop() || "file";
+    const safeName = file.name
+      .replace(/\.[^/.]+$/, "")
+      .replace(/[^a-zA-Z0-9-_]/g, "-")
+      .slice(0, 40);
+  
+    const path = `${data.user.id}/${folder}/${Date.now()}-${safeName}.${extension}`;
+  
+    const { error: uploadError } = await supabase.storage
+      .from("profile-assets")
+      .upload(path, file, {
+        upsert: true,
+      });
+  
+    if (uploadError) {
+      throw uploadError;
+    }
+  
+    const { data: publicUrlData } = supabase.storage
+      .from("profile-assets")
+      .getPublicUrl(path);
+  
+    return {
+      publicUrl: publicUrlData.publicUrl,
+      userId: data.user.id,
+    };
+  }
+  
+  async function updateCurrentUserProfile(
+    userId: string,
+    values: Record<string, unknown>,
+  ) {
+    const { data: userData } = await supabase.auth.getUser();
+    const email = userData.user?.email || "";
+  
+    const payload = {
+      ...values,
+      email,
+      role: "jobseeker",
+      user_id: userId,
+      public_slug: slugifyProfileName(
+        typeof values.full_name === "string" ? values.full_name : email.split("@")[0],
+      ),
+      updated_at: new Date().toISOString(),
+    };
+  
+    const byUserId = await supabase
+      .from("profiles")
+      .select("id,user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+  
+    if (byUserId.data) {
+      await supabase.from("profiles").update(payload).eq("user_id", userId);
+      return;
+    }
+  
+    const byId = await supabase
+      .from("profiles")
+      .select("id,user_id")
+      .eq("id", userId)
+      .maybeSingle();
+  
+    if (byId.data) {
+      await supabase.from("profiles").update(payload).eq("id", userId);
+      return;
+    }
+  
+    await supabase.from("profiles").insert(payload);
+  }
+
   async function syncProfileAvatar(nextProfile: JobSeekerProfile) {
     const { data, error } = await supabase.auth.getUser();
 
@@ -1367,23 +1485,77 @@ export function JobSeekerResumePage() {
     setSaveMessage("");
   }
 
-  function updateAvatar(
+  function handleAvatarError(message: string) {
+    setAvatarError(message);
+    showPageMessage(message, "warning");
+  }
+
+  async function updateAvatar(
+    file: File,
     preview: string,
     message = "Profile picture saved successfully.",
   ) {
-    const nextProfile = { ...profile, avatarPreview: preview };
+    const previewProfile = { ...profile, avatarPreview: preview };
+  
+    setAvatarError("");
+    setProfile(previewProfile);
+    showPageMessage("Uploading profile picture...");
+  
+    try {
+      const { publicUrl, userId } = await uploadProfileAsset(file, "avatar");
+  
+      const nextProfile = {
+        ...previewProfile,
+        avatarPreview: publicUrl,
+      };
+  
+      setProfile(nextProfile);
+      setSavedProfile(nextProfile);
+      saveJobSeekerProfile(nextProfile);
+  
+      await updateCurrentUserProfile(userId, {
+        avatar_url: publicUrl,
+      });
+  
+      window.dispatchEvent(new Event("mediahire:jobseeker-profile-updated"));
+      window.dispatchEvent(new Event("mediahire:settings-updated"));
+  
+      showPageMessage(message);
+    } catch (error) {
+      console.error("Could not upload avatar:", error);
+      setProfile(profile);
+      setAvatarError("Could not upload profile picture.");
+      showPageMessage("Could not upload profile picture.", "warning");
+    }
+  }
 
+  async function handleAvatarRemove() {
+    const nextProfile = {
+      ...profile,
+      avatarPreview: "",
+    };
+  
     setAvatarError("");
     setProfile(nextProfile);
     setSavedProfile(nextProfile);
     saveJobSeekerProfile(nextProfile);
-    showPageMessage(message);
-    void syncProfileAvatar(nextProfile);
-  }
-
-  function handleAvatarError(message: string) {
-    setAvatarError(message);
-    showPageMessage(message, "warning");
+  
+    try {
+      const { data } = await supabase.auth.getUser();
+  
+      if (data.user) {
+        await updateCurrentUserProfile(data.user.id, {
+          avatar_url: null,
+        });
+      }
+  
+      window.dispatchEvent(new Event("mediahire:jobseeker-profile-updated"));
+      window.dispatchEvent(new Event("mediahire:settings-updated"));
+  
+      showPageMessage("Profile picture removed.");
+    } catch {
+      showPageMessage("Profile picture removed locally.", "warning");
+    }
   }
 
   function handleDownloadResume() {
@@ -1392,8 +1564,8 @@ export function JobSeekerResumePage() {
     if (!resumeUrl) {
       showPageMessage(
         resumeData.pdfName
-          ? `${resumeData.pdfName} is saved, but the download file is not available.`
-          : "No PDF resume has been uploaded yet.",
+          ? `${resumeData.pdfName} is saved, but the file is not available.`
+          : "No resume file has been uploaded yet.",
         "warning",
       );
       return;
@@ -1401,14 +1573,82 @@ export function JobSeekerResumePage() {
 
     const downloadLink = document.createElement("a");
     downloadLink.href = resumeUrl;
-    downloadLink.download = resumeData.pdfName || "jobseeker-resume.pdf";
     downloadLink.rel = "noopener noreferrer";
     downloadLink.target = "_blank";
     document.body.appendChild(downloadLink);
     downloadLink.click();
     downloadLink.remove();
 
-    showPageMessage("PDF resume download started.");
+    showPageMessage("Resume file opened.");
+  }
+
+  async function handleResumeFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    const allowedByName =
+      file.name.toLowerCase().endsWith(".pdf") ||
+      file.name.toLowerCase().endsWith(".doc") ||
+      file.name.toLowerCase().endsWith(".docx");
+
+    if (!allowedTypes.includes(file.type) && !allowedByName) {
+      showPageMessage("Please upload a PDF, DOC, or DOCX resume file.", "warning");
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      showPageMessage("Uploading resume file...");
+
+      const { publicUrl, userId } = await uploadProfileAsset(file, "resume");
+
+      const nextProfile = {
+        ...profile,
+        resumeUrl: publicUrl,
+      };
+
+      const nextResumeData = {
+        ...resumeData,
+        pdfUrl: publicUrl,
+        pdfName: file.name,
+      };
+
+      setProfile(nextProfile);
+      setSavedProfile(nextProfile);
+      setResumeData(nextResumeData);
+
+      saveJobSeekerProfile(nextProfile);
+
+      if (nextProfile.email) {
+        updateResumeDataForEmail(nextProfile.email, nextResumeData);
+      } else {
+        updateResumeData(nextResumeData);
+      }
+
+      await updateCurrentUserProfile(userId, {
+        resume_url: publicUrl,
+        resume_name: file.name,
+      });
+
+      window.dispatchEvent(new Event("mediahire:jobseeker-profile-updated"));
+      window.dispatchEvent(new Event("mediahire:resume-updated"));
+
+      showPageMessage("Resume file uploaded successfully.");
+    } catch (error) {
+      console.error("Could not upload resume file:", error);
+      showPageMessage("Could not upload resume file.", "warning");
+    } finally {
+      event.target.value = "";
+    }
   }
 
   function updateProfileField(name: keyof JobSeekerProfile, value: string) {
@@ -1481,6 +1721,18 @@ export function JobSeekerResumePage() {
         return;
       }
 
+      syncStoredProjectAuthorsForProfile({
+        id: data.user.id,
+        fullName:
+          updatedProfile.fullName ||
+          [updatedProfile.firstName, updatedProfile.lastName]
+            .filter(Boolean)
+            .join(" "),
+        avatarUrl: updatedProfile.avatarPreview,
+        profession: updatedProfile.jobTitle || updatedProfile.role,
+        preferredWorkType: updatedProfile.preferredWorkType,
+      });
+
       const { error: resumeError } = await supabase.from("jobseeker_resumes").upsert(
         {
           about: formState.about || null,
@@ -1501,23 +1753,63 @@ export function JobSeekerResumePage() {
       }
 
       const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          bio: plainAbout || null,
-          skills: updatedProfile.skills || null,
-          updated_at: new Date().toISOString(),
-        })
+      .from("profiles")
+      .update({
+        avatar_url: updatedProfile.avatarPreview || null,
+        bio: plainAbout || null,
+        city: updatedProfile.city || null,
+        country: updatedProfile.country || null,
+        email: updatedProfile.email || null,
+        first_name: updatedProfile.firstName || null,
+        full_name:
+          updatedProfile.fullName ||
+          [updatedProfile.firstName, updatedProfile.lastName].filter(Boolean).join(" ") ||
+          null,
+        job_title: updatedProfile.jobTitle || updatedProfile.role || null,
+        last_name: updatedProfile.lastName || null,
+        location: updatedProfile.location || updatedProfile.city || null,
+        resume_url: updatedProfile.resumeUrl || resumeData.pdfUrl || null,
+        resume_name: resumeData.pdfName || null,
+        skills: updatedProfile.skills || null,
+        public_slug: slugifyProfileName(
+          updatedProfile.fullName ||
+            [updatedProfile.firstName, updatedProfile.lastName]
+              .filter(Boolean)
+              .join(" "),
+        ) || null,
+      updated_at: new Date().toISOString(),
+      })
         .eq("user_id", data.user.id);
 
       if (profileError) {
         // Some projects keep the profile owner in `id` instead of `user_id`.
         await supabase
-          .from("profiles")
-          .update({
-            bio: plainAbout || null,
-            skills: updatedProfile.skills || null,
-            updated_at: new Date().toISOString(),
-          })
+        .from("profiles")
+        .update({
+          avatar_url: updatedProfile.avatarPreview || null,
+          bio: plainAbout || null,
+          city: updatedProfile.city || null,
+          country: updatedProfile.country || null,
+          email: updatedProfile.email || null,
+          first_name: updatedProfile.firstName || null,
+          full_name:
+            updatedProfile.fullName ||
+            [updatedProfile.firstName, updatedProfile.lastName].filter(Boolean).join(" ") ||
+            null,
+          job_title: updatedProfile.jobTitle || updatedProfile.role || null,
+          last_name: updatedProfile.lastName || null,
+          location: updatedProfile.location || updatedProfile.city || null,
+          resume_url: updatedProfile.resumeUrl || resumeData.pdfUrl || null,
+          resume_name: resumeData.pdfName || null,
+          skills: updatedProfile.skills || null,
+        public_slug: slugifyProfileName(
+          updatedProfile.fullName ||
+            [updatedProfile.firstName, updatedProfile.lastName]
+              .filter(Boolean)
+              .join(" "),
+        ) || null,
+      updated_at: new Date().toISOString(),
+        })
           .eq("id", data.user.id);
       }
 
@@ -1577,14 +1869,13 @@ export function JobSeekerResumePage() {
               avatarError={avatarError}
               onAvatarChange={updateAvatar}
               onAvatarError={handleAvatarError}
-              onAvatarRemove={() =>
-                updateAvatar("", "Profile picture removed successfully.")
-              }
+              onAvatarRemove={handleAvatarRemove}
               profile={profile}
             />
             <PersonalInfoGrid
               onChange={updateProfileField}
               onDownloadResume={handleDownloadResume}
+              onResumeFileChange={handleResumeFileChange}
               profile={profile}
               resumeFileName={resumeData.pdfName}
             />

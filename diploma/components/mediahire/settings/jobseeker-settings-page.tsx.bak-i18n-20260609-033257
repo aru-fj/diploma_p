@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useJobSeekerLanguage } from "@/components/mediahire/i18n/jobseeker-language-provider";
 import {
   Bell,
@@ -53,8 +53,6 @@ function AccountSidebar({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const { t } = useJobSeekerLanguage();
-
   const sidebar = (
     <motion.aside
       animate="show"
@@ -78,7 +76,7 @@ function AccountSidebar({
           </span>
         </Link>
         <button
-          aria-label={t("common.closeMenu")}
+          aria-label="Close menu"
           className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-700 lg:hidden"
           onClick={onClose}
           type="button"
@@ -87,7 +85,7 @@ function AccountSidebar({
         </button>
       </div>
 
-      <p className="mt-6 px-3 text-[11px] font-bold text-slate-400">{t("common.main")}</p>
+      <p className="mt-6 px-3 text-[11px] font-bold text-slate-400">Main</p>
       <nav className="mt-2 grid gap-1.5">
         {sidebarItems.map((item) => {
           const isActive = item.label === "Settings";
@@ -190,18 +188,13 @@ export function JobSeekerSettingsPage() {
   const [settings, setSettings] = useState<JobSeekerSettings>(() => getSettings());
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
-  const [profile, setProfile] = useState<ReturnType<typeof getCurrentUserProfile> | null>(null);
-
-  useEffect(() => {
-    setProfile(getCurrentUserProfile());
-  }, []);
-
-  const avatarSrc = profile?.avatarPreview || "";
+  const profile = useMemo(() => getCurrentUserProfile(), []);
+  const avatarSrc = profile.avatarPreview;
   const passwordError =
     settings.password && settings.password.length < 8
-      ? t("settings.passwordMinError")
+      ? "Password must be at least 8 characters"
       : settings.password !== confirmPassword
-        ? t("settings.passwordMatchError")
+        ? "Passwords must match"
         : "";
 
   function patchSettings(patch: Partial<JobSeekerSettings>) {
@@ -215,7 +208,7 @@ export function JobSeekerSettingsPage() {
     }
 
     updateSettings(settings);
-    setSavedMessage(t("settings.savedSuccess"));
+    setSavedMessage("Settings saved successfully.");
   }
 
   return (
@@ -235,7 +228,7 @@ export function JobSeekerSettingsPage() {
           <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-3">
               <button
-                aria-label={t("common.openMenu")}
+                aria-label="Open menu"
                 className="mt-1 grid h-10 w-10 place-items-center rounded-xl bg-white text-slate-800 shadow-sm lg:hidden"
                 onClick={() => setIsSidebarOpen(true)}
                 type="button"
@@ -263,7 +256,7 @@ export function JobSeekerSettingsPage() {
               </label>
               <div className="flex min-w-0 items-center gap-2 rounded-xl bg-white p-1.5 shadow-[0_10px_26px_rgba(15,23,42,0.035)] sm:max-w-[220px]">
                 <Link
-                  aria-label={t("common.notifications")}
+                  aria-label="Notifications"
                   className="relative grid h-8 w-8 place-items-center rounded-full bg-[#eef4ff] text-[#0B63E5]"
                   href="/dashboard/jobseeker/community?chat=mediahire-welcome"
                 >
@@ -282,10 +275,10 @@ export function JobSeekerSettingsPage() {
                   />
                   <span className="hidden min-w-0 sm:block">
                     <span className="block truncate text-[11px] font-black text-slate-950">
-                      {profile?.fullName || t("common.jobSeeker")}
+                      {profile.fullName}
                     </span>
                     <span className="block truncate text-[10px] font-semibold text-slate-400">
-                      {profile?.email || ""}
+                      {profile.email}
                     </span>
                   </span>
                 </Link>
@@ -303,32 +296,32 @@ export function JobSeekerSettingsPage() {
             <div className="grid gap-3 md:grid-cols-2">
               <ToggleRow
                 checked={settings.jobAlerts}
-                label={t("settings.jobAlerts")}
+                label="Job Alerts"
                 onChange={(value) => patchSettings({ jobAlerts: value })}
               />
               <ToggleRow
                 checked={settings.applicationUpdates}
-                label={t("settings.applicationUpdates")}
+                label="Application Updates"
                 onChange={(value) => patchSettings({ applicationUpdates: value })}
               />
               <ToggleRow
                 checked={settings.messages}
-                label={t("common.messages")}
+                label="Messages"
                 onChange={(value) => patchSettings({ messages: value })}
               />
               <ToggleRow
                 checked={settings.profileVisibility}
-                label={t("settings.profileVisibility")}
+                label="Profile Visibility"
                 onChange={(value) => patchSettings({ profileVisibility: value })}
               />
               <ToggleRow
                 checked={settings.publicPortfolio}
-                label={t("settings.publicPortfolio")}
+                label="Public Portfolio"
                 onChange={(value) => patchSettings({ publicPortfolio: value })}
               />
               <ToggleRow
                 checked={settings.googleIntegration}
-                label={t("settings.googleIntegration")}
+                label="Google integration"
                 onChange={(value) => patchSettings({ googleIntegration: value })}
               />
             </div>
@@ -370,8 +363,8 @@ export function JobSeekerSettingsPage() {
                   onChange={(event) => patchSettings({ theme: event.target.value })}
                   value={settings.theme}
                 >
-                  <option value="Light">{t("settings.light")}</option>
-                  <option value="System">{t("settings.system")}</option>
+                  <option>Light</option>
+                  <option>System</option>
                 </select>
               </label>
               <label>
@@ -383,7 +376,7 @@ export function JobSeekerSettingsPage() {
                   onChange={(event) =>
                     patchSettings({ password: event.target.value })
                   }
-                  placeholder={t("settings.enterNewPassword")}
+                  placeholder="Enter new password"
                   type="password"
                   value={settings.password}
                 />
@@ -395,7 +388,7 @@ export function JobSeekerSettingsPage() {
                 <input
                   className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold outline-none focus:border-[#0B63E5] focus:ring-4 focus:ring-blue-100"
                   onChange={(event) => setConfirmPassword(event.target.value)}
-                  placeholder={t("settings.confirmPasswordPlaceholder")}
+                  placeholder="Confirm password"
                   type="password"
                   value={confirmPassword}
                 />

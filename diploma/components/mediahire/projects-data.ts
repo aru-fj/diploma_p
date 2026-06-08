@@ -37,6 +37,7 @@ export type MediaHireProject = {
 
 export type ProfileSummary = {
   avatarUrl: string;
+  coverUrl?: string;
   availableStatus: string;
   bio: string;
   email: string;
@@ -314,7 +315,11 @@ export function createProjectId(title: string) {
 }
 
 function shouldKeepProjectUrl(url?: string) {
-  return Boolean(url);
+  return Boolean(
+    url &&
+      !url.startsWith("data:") &&
+      !url.startsWith("blob:")
+  );
 }
 
 function compactProjectForStorage(project: MediaHireProject): MediaHireProject {
@@ -445,3 +450,57 @@ export function getPublishedStoredProjects() {
       project.status === "published" && !isHiddenScratchProject(project),
   );
 }
+
+export function syncStoredProjectAuthorsForProfile(profile: {
+  id?: string;
+  fullName?: string;
+  avatarUrl?: string;
+  profession?: string;
+  preferredWorkType?: string;
+  publicSlug?: string;
+}) {
+  if (typeof window === "undefined" || !profile.id) {
+    return;
+  }
+
+  try {
+    const rawProjects = window.localStorage.getItem(projectStorageKey);
+
+    if (!rawProjects) {
+      return;
+    }
+
+    const projects = JSON.parse(rawProjects);
+
+    if (!Array.isArray(projects)) {
+      return;
+    }
+
+    const nextProjects = projects.map((project) => {
+      const belongsToCurrentUser =
+        project?.authorId === profile.id ||
+        project?.authorSlug === profile.id ||
+        (!project?.authorId && !project?.authorSlug);
+
+      if (!belongsToCurrentUser) {
+        return project;
+      }
+
+      return {
+        ...project,
+        authorName: profile.fullName || project.authorName,
+        authorAvatar: profile.avatarUrl || project.authorAvatar,
+        authorRole: profile.profession || project.authorRole,
+        authorSlug: profile.publicSlug || profile.id,
+        workType: profile.preferredWorkType || project.workType,
+      };
+    });
+
+    window.localStorage.setItem(projectStorageKey, JSON.stringify(nextProjects));
+    window.dispatchEvent(new Event("mediahire:projects-updated"));
+    window.dispatchEvent(new Event("mediahire:jobseeker-profile-updated"));
+  } catch (error) {
+    console.warn("Could not sync project author data:", error);
+  }
+}
+

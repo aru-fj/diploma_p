@@ -1,8 +1,13 @@
 "use client";
 
+import { getResumeData } from "@/components/mediahire/shared/user-state";
+import { getPublishedStoredProjects } from "@/components/mediahire/projects-data";
+import { getStoredJobSeekerProfile } from "@/components/mediahire/account-settings/profile-store";
 import type { ElementType } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { getRemotePublishedWorks } from "@/components/mediahire/public/remote-public-works";
+import { getRemotePublicPeople } from "@/components/mediahire/public/remote-public-people";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -98,10 +103,49 @@ export function PublicWorksSection({
 
   useEffect(() => {
     const syncWorks = () => {
-      setAvailableWorks(getAllPublicWorks());
+      void (async () => {
+        const localWorks = getAllPublicWorks();
+        const remoteWorks = await getRemotePublishedWorks();
+    
+        const worksBySlug = new Map<string, PublicWork>();
+    
+        const localSlugs = new Set(localWorks.map((work) => work.slug));
+
+        const uniqueRemoteWorks = remoteWorks.filter(
+          (work) => !localSlugs.has(work.slug),
+        );
+
+        setAvailableWorks([...localWorks, ...uniqueRemoteWorks]);
+      })();
     };
     const syncPeople = () => {
-      setAvailablePeople(getAllPublicPeople());
+      void (async () => {
+        const localPeople = getAllPublicPeople();
+        const remotePeople = await getRemotePublicPeople();
+        const currentUserPerson = getCurrentPublicHomeProfileCard();
+
+        const peopleBySlug = new Map<string, PublicPerson>();
+
+        [...localPeople, ...remotePeople].forEach((person) => {
+          peopleBySlug.set(person.slug, person);
+        });
+
+        if (currentUserPerson) {
+          peopleBySlug.set(currentUserPerson.slug, currentUserPerson);
+        }
+
+        const people = Array.from(peopleBySlug.values());
+
+        if (currentUserPerson) {
+          const withoutCurrent = people.filter(
+            (person) => person.slug !== currentUserPerson.slug,
+          );
+
+          setAvailablePeople([...withoutCurrent, currentUserPerson]);
+        } else {
+          setAvailablePeople(people);
+        }
+      })();
     };
 
     syncWorks();
@@ -551,12 +595,132 @@ function ProjectCover({ work }: { work: PublicWork }) {
   );
 }
 
+
+function slugifyPublicHomeProfile(value?: string | null) {
+  return (value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function splitPublicHomeList(value?: string | string[] | null) {
+  if (Array.isArray(value)) {
+    return value.filter(Boolean);
+  }
+
+  return (value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function formatPublicHomeExperience(value?: string | null) {
+  const cleanValue = (value || "").trim();
+
+  if (!cleanValue) {
+    return "Experience not added";
+  }
+
+  if (/experience|year/i.test(cleanValue)) {
+    return cleanValue;
+  }
+
+  return `${cleanValue} years experience`;
+}
+
+function getCurrentPublicHomeProfileCard(): PublicPerson | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const profile = getStoredJobSeekerProfile() as any;
+  const resume = getResumeData() as any;
+
+  const fullName =
+    profile.fullName ||
+    [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
+    profile.email?.split("@")[0] ||
+    "";
+
+  if (!fullName) {
+    return null;
+  }
+
+  const role = profile.jobTitle || profile.role || "Creative specialist";
+
+  const slug =
+    profile.publicSlug ||
+    slugifyPublicHomeProfile(fullName);
+
+  if (!slug) {
+    return null;
+  }
+
+  const projects = getPublishedStoredProjects();
+
+  const location =
+    profile.location ||
+    [profile.city, profile.country].filter(Boolean).join(", ") ||
+    "Kazakhstan";
+
+  const skills =
+    splitPublicHomeList(profile.skills).length
+      ? splitPublicHomeList(profile.skills)
+      : splitPublicHomeList(resume.skills).length
+        ? splitPublicHomeList(resume.skills)
+        : [role];
+
+  return {
+    slug,
+    name: fullName,
+    role,
+    category: role,
+    location,
+    experience: formatPublicHomeExperience(profile.experienceYears),
+    availability: "Available for Freelance",
+    shortBio:
+      profile.bio ||
+      resume.about ||
+      `${fullName} shared ${projects.length} published portfolio projects on MediaHire.`,
+    about: profile.bio || resume.about || "",
+    avatar: profile.avatarPreview || "",
+    coverImage: profile.coverUrl || "",
+    rating: 0,
+    projectsCount: projects.length,
+    skills,
+    languages: ["Kazakh", "Russian", "English"],
+    featuredWorkSlugs: projects.map((project: any) => project.id),
+  } as PublicPerson;
+}
+
+const fallbackPublicPersonCover =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420">
+      <rect width="1200" height="420" fill="#EAF3FF"/>
+    </svg>`,
+  );
+
+const fallbackPublicPersonAvatar =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+      <rect width="160" height="160" rx="32" fill="#EAF3FF"/>
+      <circle cx="80" cy="62" r="28" fill="#2563EB"/>
+      <path d="M34 140c8-30 29-45 46-45s38 15 46 45" fill="#2563EB"/>
+    </svg>`,
+  );
+
 function PersonCard({ person }: { person: PublicPerson }) {
+  const coverSrc = person.coverImage || fallbackPublicPersonCover;
+  const avatarSrc = person.avatar || fallbackPublicPersonAvatar;
+
   return (
     <article className="group overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]">
       <div className="relative h-24 overflow-hidden bg-slate-100">
         <img
-          src={person.coverImage}
+          src={coverSrc}
           alt={person.name}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
         />
@@ -569,7 +733,7 @@ function PersonCard({ person }: { person: PublicPerson }) {
       <div className="relative p-3.5 pt-8">
         <div className="absolute -top-6 left-4 h-12 w-12 overflow-hidden rounded-xl border-[3px] border-white bg-slate-200 shadow-lg">
           <img
-            src={person.avatar}
+            src={avatarSrc}
             alt={person.name}
             className="h-full w-full object-cover"
           />
@@ -580,9 +744,13 @@ function PersonCard({ person }: { person: PublicPerson }) {
           {person.rating}
         </div>
 
-        <h3 className="text-sm font-black text-slate-950">{person.name}</h3>
+        <h3 className="text-sm font-black text-slate-950">
+          {person.name}
+        </h3>
 
-        <p className="mt-1 text-[11px] font-bold text-blue-600">{person.role}</p>
+        <p className="mt-1 text-[11px] font-bold text-blue-600">
+          {person.role}
+        </p>
 
         <p className="mt-2 line-clamp-2 text-[11px] font-medium leading-5 text-slate-500">
           {person.shortBio}
@@ -636,10 +804,18 @@ function PersonCard({ person }: { person: PublicPerson }) {
             <Bookmark className="h-4 w-4" />
           </Link>
         </div>
+
+        <Link
+          href="/auth-required"
+          className="mt-2.5 flex h-9 w-full items-center justify-center rounded-lg border border-blue-100 bg-blue-50 px-3 text-[11px] font-black text-blue-600 transition hover:bg-blue-100"
+        >
+          Message
+        </Link>
       </div>
     </article>
   );
 }
+
 
 function EmptyState({
   title,

@@ -19,7 +19,7 @@ type ProjectCardProps = {
 export function ProjectCard({ index, project }: ProjectCardProps) {
   return (
     <motion.article
-      className="h-full"
+      className="relative z-0 h-full overflow-hidden"
       initial="hidden"
       transition={mediaHireMotion.item(index)}
       variants={fadeInUp}

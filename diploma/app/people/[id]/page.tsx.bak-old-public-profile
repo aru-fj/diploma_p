@@ -1,20 +1,16 @@
 "use client";
 
-import { supabase } from "@/lib/supabase-client";
-import {
-  getPublishedStoredProjects } from "@/components/mediahire/projects-data";
+import { getPublishedStoredProjects } from "@/components/mediahire/projects-data";
 import { getResumeData } from "@/components/mediahire/shared/user-state";
 import { getStoredJobSeekerProfile } from "@/components/mediahire/account-settings/profile-store";
-/* eslint-disable @next/next/no-img-element */
-
+import { supabase } from "@/lib/supabase-client";
 import type { ReactNode } from "react";
-import {
-  useEffect,
-  useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   ArrowLeft,
+  Bookmark,
   BriefcaseBusiness,
   CalendarDays,
   Globe2,
@@ -27,26 +23,59 @@ import {
   Star,
   Sparkles,
   UserRound,
-  FileText,
-  Link2,
-  Languages,
-} from "lucide-react";
-
-import { SaveProfileButton } from "@/components/mediahire/save-profile-button";
+  } from "lucide-react";
+import { Footer } from "@/components/mediahire/footer";
 import { Header } from "@/components/mediahire/header";
 import {
   getPublicPersonBySlug,
   publicPeople,
   } from "@/components/mediahire/public/public-people-data";
-import { publicWorks,
+import {
+  publicAuthLinks,
+  publicWorks,
   getAllPublicWorks,
 } from "@/components/mediahire/public/public-works-data";
 import { getRemotePublicPersonById } from "@/components/mediahire/public/remote-public-people";
 
 type ProfileTab = "portfolio" | "resume" | "reviews";
 
-export default function JobSeekerPersonProfilePage() {
+export default function PublicPersonProfilePage() {
   const params = useParams<{ id: string }>();
+
+  useEffect(() => {
+    if (params.id !== "jobseeker") {
+      return;
+    }
+
+    let isMounted = true;
+
+    async function redirectToCurrentPublicProfile() {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+
+      if (!user) {
+        return;
+      }
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("public_slug")
+        .eq("user_id", user.id)
+        .limit(1);
+
+      const publicSlug = data?.[0]?.public_slug;
+
+      if (isMounted && publicSlug) {
+        window.location.replace(`/people/${publicSlug}`);
+      }
+    }
+
+    void redirectToCurrentPublicProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [params.id]);
   const [activeTab, setActiveTab] = useState<ProfileTab>("portfolio");
 
   const staticPerson = getPublicPersonBySlug(params.id);
@@ -78,18 +107,43 @@ export default function JobSeekerPersonProfilePage() {
     };
   }, [params.id, staticPerson]);
 
+  const [remoteProfileMirror, setRemoteProfileMirror] = useState<any>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadRemoteProfileMirror() {
+      const { data } = await supabase
+        .from("profiles")
+        .select("public_slug,full_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,year_of_birth,gender,mobile,minimum_salary,resume_url,resume_name")
+        .eq("public_slug", params.id)
+        .limit(1);
+
+      if (isMounted && data?.[0]) {
+        setRemoteProfileMirror(data[0]);
+      }
+    }
+
+    void loadRemoteProfileMirror();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [params.id]);
+
   const currentProfileMirror = getCurrentProfilePublicMirror(params.id);
-  const person = currentProfileMirror || staticPerson || remotePerson;
+  const person = staticPerson || remotePerson;
 
   if (!person && isRemoteLoading) {
     return (
       <main className="min-h-screen bg-white text-slate-950">
-        <Header role="jobseeker" activeItem="Home" />
+        <Header />
         <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
           <div className="h-12 w-12 animate-pulse rounded-2xl bg-blue-50" />
           <div className="mt-5 h-7 w-48 animate-pulse rounded-full bg-slate-100" />
           <div className="mt-4 h-4 w-80 animate-pulse rounded-full bg-slate-100" />
         </section>
+        <Footer />
       </main>
     );
   }
@@ -97,64 +151,81 @@ export default function JobSeekerPersonProfilePage() {
   if (!person) {
     return (
       <main className="min-h-screen bg-white text-slate-950">
-        <Header role="jobseeker" activeItem="Home" />
-
         <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
-          <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-            <UserRound className="h-8 w-8" />
-          </div>
-
           <h1 className="text-2xl font-black tracking-tight">
             Profile not found
           </h1>
-
           <p className="mt-4 max-w-xl text-base font-medium leading-7 text-slate-500">
             This profile does not exist or may have been removed.
           </p>
-
-          <Link
-            href="/"
-            className="mt-8 inline-flex h-10 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to homepage
-          </Link>
         </section>
       </main>
     );
   }
 
+  const safePerson = person as Record<string, any>;
+
   const portfolioWorks = enrichPortfolioWorksWithCovers(
-    (person as any).remoteWorks?.length
-      ? (person as any).remoteWorks
+    safePerson.remoteWorks?.length
+      ? safePerson.remoteWorks
       : getPortfolioWorks({
-          slug: person.slug,
-          name: person.name,
-          category: person.category,
-          featuredWorkSlugs: person.featuredWorkSlugs,
+          slug: safePerson.slug,
+          name: safePerson.name,
+          category: safePerson.category,
+          featuredWorkSlugs: safePerson.featuredWorkSlugs,
         }),
   );
 
-  const publicResume = (person as any).resumeData || {};
+
+  const publicResume = (safePerson.resumeData || {}) as Record<string, any>;
+
+  const toList = (value: unknown) => {
+    if (Array.isArray(value)) {
+      return value
+        .map(String)
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+
+    if (typeof value === "string") {
+      return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+
+    return [];
+  };
+
+  const cleanPublicText = (value: unknown) => {
+    const text = typeof value === "string" ? value.trim() : "";
+
+    if (/shared\s+\d+\s+published portfolio projects on MediaHire/i.test(text)) {
+      return "";
+    }
+
+    return text;
+  };
+
   const publicAbout =
-    publicResume.about || (person as any).about || person.shortBio || "";
-  const publicSkills =
-    publicResume.skills || ((person as any).skills || []).join(", ");
+    cleanPublicText(publicResume.about) ||
+    cleanPublicText(safePerson.about) ||
+    cleanPublicText(safePerson.shortBio);
+
+  const publicSkills = publicResume.skills || "";
   const publicExperience = publicResume.experience || "";
   const publicEducation = publicResume.education || "";
-  const publicLanguages = publicResume.languages || "";
-  const publicResumeUrl = (person as any).resumeUrl || publicResume.pdfUrl || "";
-  const publicResumeName =
-    (person as any).resumeName || publicResume.pdfName || "resume.pdf";
+  const publicLanguages = publicResume.languages || safePerson.languages || "";
+  const publicResumeUrl = safePerson.resumeUrl || publicResume.pdfUrl || "";
+  const publicResumeName = safePerson.resumeName || publicResume.pdfName || "";
 
-  const displaySkills = publicSkills
-    ? publicSkills
-        .split(",")
-        .map((skill: string) => skill.trim())
-        .filter(Boolean)
-    : ((person as any).skills || []).filter(Boolean);
+  const displaySkills = toList(publicSkills).length
+    ? toList(publicSkills)
+    : toList(safePerson.skills);
 
-  const displaySoftware = ((person as any).software || []).filter(Boolean);
+  const displaySoftware = toList(publicResume.software).length
+    ? toList(publicResume.software)
+    : toList(safePerson.software);
 
   const fallbackProfileAvatar =
     "data:image/svg+xml;utf8," +
@@ -166,7 +237,7 @@ export default function JobSeekerPersonProfilePage() {
       </svg>`,
     );
 
-  const profileAvatarSrc = person.avatar || fallbackProfileAvatar;
+  const profileAvatarSrc = safePerson.avatar || fallbackProfileAvatar;
 
   const fallbackProfileCover =
     "data:image/svg+xml;utf8," +
@@ -182,63 +253,27 @@ export default function JobSeekerPersonProfilePage() {
       </svg>`,
     );
 
-  const [remoteCoverUrl, setRemoteCoverUrl] = useState("");
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadProfileCover() {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("cover_url,public_slug,full_name")
-        .eq("public_slug", params.id)
-        .limit(1);
-
-      const row = data?.[0];
-
-      console.log("MediaHire public profile cover:", {
-        slug: params.id,
-        row,
-        error,
-      });
-
-      if (isMounted && row?.cover_url) {
-        setRemoteCoverUrl(row.cover_url);
-      }
-    }
-
-    void loadProfileCover();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [params.id]);
-
-  const profileCoverSrc =
-    remoteCoverUrl || person.coverImage || fallbackProfileCover;
-
-  const profileCoverStyle = {
-    backgroundImage: `url("${profileCoverSrc}")`,
-  };
+  const profileCoverSrc = safePerson.coverImage || fallbackProfileCover;
 
   const software = displaySoftware;
-  const resumeItems: any[] = [];
+
+  const resumeItems = getResumeItems(safePerson as any);
+  const reviews = getReviews(safePerson as any);
 
   return (
     <main className="min-h-screen bg-white text-slate-950">
-
       <section className="relative overflow-hidden bg-slate-100">
         <div className="absolute inset-0">
-          <div
-            aria-label={person.name}
-            className="h-full w-full bg-cover bg-center"
-            style={profileCoverStyle}
+          <img
+            src={profileCoverSrc}
+            alt={safePerson.name}
+            className="h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px]" />
         </div>
 
-        <div className="relative z-10 pb-24 pt-4 sm:pt-5">
-          <Header role="jobseeker" activeItem="Home" />
+        <div className="relative z-10 pb-24 pt-5">
+          <Header />
         </div>
       </section>
 
@@ -248,35 +283,41 @@ export default function JobSeekerPersonProfilePage() {
             <div className="h-20 w-20 overflow-hidden rounded-xl bg-slate-200 shadow-lg">
               <img
                 src={profileAvatarSrc}
-                alt={person.name}
+                alt={safePerson.name}
                 className="h-full w-full object-cover object-[center_10%]"
               />
             </div>
 
             <h1 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
-              {person.name}
+              {safePerson.name}
             </h1>
 
             <p className="mt-1 text-xs font-semibold text-slate-500">
-              {person.availability}
+              {safePerson.availability}
             </p>
 
             <div className="mt-4 space-y-2.5 text-xs font-semibold text-slate-600">
-              <ProfileInfoRow icon={<MapPin />} text={person.location} />
-              <ProfileInfoRow icon={<BriefcaseBusiness />} text={person.role} />
-              <ProfileInfoRow icon={<CalendarDays />} text={person.experience} />
+              <ProfileInfoRow icon={<MapPin />} text={safePerson.location} />
+              <ProfileInfoRow icon={<BriefcaseBusiness />} text={safePerson.role} />
+              <ProfileInfoRow icon={<CalendarDays />} text={safePerson.experience} />
               <ProfileInfoRow
                 icon={<Mail />}
-                text={(person as any).email || "Not added"}
+                text={safePerson.email || "Not added"}
               />
             </div>
 
             <div className="mt-5 space-y-2.5">
-              <SaveProfileButton profileId={person.slug} />
+              <Link
+                href={publicAuthLinks.login}
+                className="flex h-9 items-center justify-center gap-2 rounded-full bg-blue-600 text-xs font-black text-white transition hover:bg-blue-700"
+              >
+                <Bookmark className="h-3.5 w-3.5" />
+                Save
+              </Link>
 
               <Link
-                href="/auth-required"
-                className="flex h-9 w-full items-center justify-center gap-2 rounded-full border border-blue-500 bg-blue-50 text-xs font-black text-blue-600 transition hover:bg-blue-100"
+                href={publicAuthLinks.login}
+                className="flex h-9 items-center justify-center gap-2 rounded-full border border-blue-500 bg-blue-50 text-xs font-black text-blue-600 transition hover:bg-blue-100"
               >
                 <MessageCircle className="h-3.5 w-3.5" />
                 Message
@@ -287,20 +328,14 @@ export default function JobSeekerPersonProfilePage() {
               <h2 className="text-lg font-black text-slate-950">Skills</h2>
 
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {displaySkills.length > 0 ? (
-                  displaySkills.map((skill: string) => (
-                    <span
-                      key={skill}
-                      className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500"
-                    >
-                      {skill}
-                    </span>
-                  ))
-                ) : (
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">
-                    Not added
+                {displaySkills.map((skill: string) => (
+                  <span
+                    key={skill}
+                    className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                  >
+                    {skill}
                   </span>
-                )}
+                ))}
               </div>
             </div>
 
@@ -308,20 +343,14 @@ export default function JobSeekerPersonProfilePage() {
               <h2 className="text-lg font-black text-slate-950">Software</h2>
 
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {software.length > 0 ? (
-                  software.map((item: string) => (
-                    <span
-                      key={item}
-                      className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
-                    >
-                      {item}
-                    </span>
-                  ))
-                ) : (
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
-                    Not added
+                {software.map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                  >
+                    {item}
                   </span>
-                )}
+                ))}
               </div>
             </div>
           </div>
@@ -377,7 +406,7 @@ export default function JobSeekerPersonProfilePage() {
                   </h3>
 
                   <p className="mt-1 text-xs font-semibold text-slate-500">
-                    {person.name}
+                    {safePerson.name}
                   </p>
                 </Link>
               ))}
@@ -391,42 +420,17 @@ export default function JobSeekerPersonProfilePage() {
                 title="Personal Information"
               >
                 <div className="grid gap-4 sm:grid-cols-2">
+                  <ResumeField label="Year of Birth" value={currentProfileMirror?.yearOfBirth || remoteProfileMirror?.year_of_birth || "Not specified"} />
                   <ResumeField
-                    label="Year of Birth"
-                    value={(person as any).yearOfBirth || "Not specified"}
-                  />
-                  <ResumeField
-                    label="Gender"
-                    value={(person as any).gender || "Not specified"}
+                    label="City"
+                    value={safePerson.location.split(",")[0] || safePerson.location}
                   />
                   <ResumeField
                     label="Mobile Number"
-                    value={(person as any).mobile || "No phone added"}
+                    value={currentProfileMirror?.mobile || remoteProfileMirror?.mobile || "No phone added"}
                   />
-                  <ResumeField
-                    label="Minimum Salary Amount"
-                    value={(person as any).minimumSalaryAmount || "Not specified"}
-                  />
+                  <ResumeField label="Gender" value={currentProfileMirror?.gender || remoteProfileMirror?.gender || "Not specified"} />
                 </div>
-
-                {(person as any).resumeUrl ? (
-                  <div className="mt-4 rounded-xl bg-slate-50 p-3">
-                    <p className="text-[11px] font-bold text-slate-400">
-                      Resume file
-                    </p>
-                    <a
-                      className="mt-2 inline-flex rounded-xl bg-[#0B63E5] px-4 py-2 text-xs font-black text-white transition hover:bg-[#0958cc]"
-                      href={(person as any).resumeUrl}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      Open resume file
-                    </a>
-                    <p className="mt-2 text-[11px] font-bold text-slate-400">
-                      Saved file: {(person as any).resumeName || "resume.pdf"}
-                    </p>
-                  </div>
-                ) : null}
               </ResumeCard>
 
               <ResumeCard
@@ -435,15 +439,6 @@ export default function JobSeekerPersonProfilePage() {
               >
                 <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs font-medium leading-5 text-slate-700">
                   {publicAbout || "Not specified"}
-                </div>
-              </ResumeCard>
-
-              <ResumeCard
-                icon={<FileText className="h-5 w-5" />}
-                title="Professional Skill"
-              >
-                <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs font-medium leading-5 text-slate-700">
-                  {publicSkills || "Not specified"}
                 </div>
               </ResumeCard>
 
@@ -466,20 +461,24 @@ export default function JobSeekerPersonProfilePage() {
               </ResumeCard>
 
               <ResumeCard
-                icon={<Link2 className="h-5 w-5" />}
+                icon={<LinkIcon className="h-5 w-5" />}
                 title="Links"
               >
                 <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs font-medium leading-5 text-slate-700">
-                  {publicResume.links || "Not specified"}
+                  {toList(publicResume.links).length > 0
+                    ? toList(publicResume.links).join(", ")
+                    : "Not specified"}
                 </div>
               </ResumeCard>
 
               <ResumeCard
-                icon={<Languages className="h-5 w-5" />}
+                icon={<Globe2 className="h-5 w-5" />}
                 title="Languages"
               >
                 <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs font-medium leading-5 text-slate-700">
-                  {publicLanguages || "Not specified"}
+                  {toList(publicLanguages).length > 0
+                    ? toList(publicLanguages).join(", ")
+                    : "Not specified"}
                 </div>
               </ResumeCard>
 
@@ -488,18 +487,20 @@ export default function JobSeekerPersonProfilePage() {
                 title="Job Preferences"
               >
                 <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs font-medium leading-5 text-slate-700">
-                  {publicResume.jobPreferences ||
-                    (person as any).preferredWorkType ||
-                    "Not specified"}
+                  {toList(publicResume.jobPreferences).length > 0
+                    ? toList(publicResume.jobPreferences).join(", ")
+                    : safePerson.preferredWorkType || "Not specified"}
                 </div>
               </ResumeCard>
 
               <ResumeCard
-                icon={<FileText className="h-5 w-5" />}
+                icon={<Sparkles className="h-5 w-5" />}
                 title="Preferred Job Benefits"
               >
                 <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs font-medium leading-5 text-slate-700">
-                  {publicResume.benefits || "Not specified"}
+                  {toList(publicResume.benefits).length > 0
+                    ? toList(publicResume.benefits).join(", ")
+                    : "Not specified"}
                 </div>
               </ResumeCard>
             </div>
@@ -517,11 +518,11 @@ export default function JobSeekerPersonProfilePage() {
           )}
         </section>
       </section>
+
+      <Footer />
     </main>
   );
 }
-
-
 
 function TabButton({
   label,
@@ -671,6 +672,29 @@ function enrichPortfolioWorksWithCovers(works: (typeof publicWorks)[number][]) {
   });
 }
 
+function getPortfolioWorks(person: {
+  slug?: string;
+  name?: string;
+  category?: string;
+  featuredWorkSlugs?: string[];
+}) {
+  const featuredSlugs = person.featuredWorkSlugs ?? [];
+
+  const worksBySlugs = featuredSlugs
+    .map((slug) => publicWorks.find((work) => work.slug === slug))
+    .filter((work): work is (typeof publicWorks)[number] => Boolean(work));
+
+  if (worksBySlugs.length > 0) {
+    return worksBySlugs;
+  }
+
+  return publicWorks.filter(
+    (work) =>
+      work.authorSlug === person.slug ||
+      work.author.toLowerCase() === person.name?.toLowerCase()
+  );
+}
+
 function slugifyCurrentProfile(value?: string | null) {
   return (value || "")
     .trim()
@@ -704,137 +728,42 @@ function getCurrentProfilePublicMirror(slug: string) {
     return null;
   }
 
+  const projects = getPublishedStoredProjects();
   const role = profile.jobTitle || profile.role || "";
-  const location =
-    profile.location ||
-    [profile.city, profile.country].filter(Boolean).join(", ");
-
-  const skills =
-    splitCurrentProfileList(profile.skills).length
-      ? splitCurrentProfileList(profile.skills)
-      : splitCurrentProfileList(resume.skills);
-
-  const software = splitCurrentProfileList(profile.software);
-
-  const localWorks = getPublishedStoredProjects();
 
   return {
-    slug: currentSlug,
-    name: fullName || "Not specified",
+    fullName,
+    avatarUrl: profile.avatarPreview || "",
+    coverUrl: (profile as any).coverUrl || "",
     role,
-    category: role,
-    location,
+    location:
+      profile.location ||
+      [profile.city, profile.country].filter(Boolean).join(", ") ||
+      "Kazakhstan",
     experience: profile.experienceYears
       ? `${profile.experienceYears}+ years experience`
       : "Not specified",
-    availability: "Not specified",
-    shortBio: profile.bio || resume.about || "",
-    about: resume.about || profile.bio || "",
-    avatar: profile.avatarPreview || "",
-    coverImage:
-      profile.coverUrl ||
-      (profile as any).coverPreview ||
-      "",
-    rating: 0,
-    projectsCount: localWorks.length,
-    skills,
-    software,
-    languages: splitCurrentProfileList((resume as any).languages || (profile as any).languages),
-    featuredWorkSlugs: localWorks.map((work: any) => work.id),
-    email: profile.email,
-    resumeUrl: profile.resumeUrl || resume.pdfUrl || "",
-    resumeName: resume.pdfName || "resume.pdf",
-
-    yearOfBirth: profile.yearOfBirth,
-    gender: profile.gender,
-    mobile: profile.mobile,
+    email: profile.email || "",
+    bio: profile.bio || resume.about || "",
+    skills:
+      splitCurrentProfileList(profile.skills).length > 0
+        ? splitCurrentProfileList(profile.skills)
+        : splitCurrentProfileList(resume.skills),
+    software: splitCurrentProfileList(profile.software),
+    yearOfBirth: profile.yearOfBirth || "",
+    gender: profile.gender || "",
+    mobile: profile.mobile || "",
     minimumSalaryAmount:
       profile.minimumSalary || profile.expectedSalary
         ? `${profile.minimumSalaryCurrency || "Tenge"} ${
             profile.minimumSalary || profile.expectedSalary
           }`
         : "",
-    preferredWorkType: profile.preferredWorkType,
-
+    resumeUrl: profile.resumeUrl || resume.pdfUrl || "",
+    resumeName: resume.pdfName || "resume.pdf",
     resumeData: resume,
-
-    remoteWorks: localWorks.map((work: any) => {
-      const firstMediaUrl =
-        work.coverUrl ||
-        work.media?.find((item: any) => item.type === "image" && item.url)?.url ||
-        work.media?.find((item: any) => item.url)?.url ||
-        "";
-
-      return {
-        slug: work.id,
-        title: work.title,
-        author: fullName || work.authorName,
-        authorSlug: currentSlug,
-        role,
-        company: "MediaHire",
-        category: role,
-        type: work.workType || "Project-based",
-        location,
-        createdAt: new Date(work.publishedAt || work.createdAt).toLocaleDateString("en", {
-          month: "long",
-          year: "numeric",
-        }),
-        coverImage: firstMediaUrl,
-        authorAvatar: profile.avatarPreview || undefined,
-        gallery: work.media
-          .map((item: any) => {
-            if (item.type === "image" && item.url) {
-              return { type: "image" as const, src: item.url, alt: work.title };
-            }
-
-            if (item.type === "video" && item.url) {
-              return { type: "video" as const, src: item.url, title: work.title };
-            }
-
-            if (item.type === "youtube" && item.url) {
-              return { type: "youtube" as const, src: item.url, title: work.title };
-            }
-
-            if (item.type === "pdf" && item.url) {
-              return { type: "pdf" as const, src: item.url, title: item.fileName || work.title };
-            }
-
-            if (item.type === "text" && item.textContent) {
-              return { type: "text" as const, text: item.textContent };
-            }
-
-            return null;
-          })
-          .filter(Boolean),
-        description: work.description || "",
-        responsibilities: ["Portfolio project", "Creative work", "Media production"],
-        tools: ["MediaHire"],
-      };
-    }),
+    projects,
   };
-}
-
-function getPortfolioWorks(person: {
-  slug?: string;
-  name?: string;
-  category?: string;
-  featuredWorkSlugs?: string[];
-}) {
-  const featuredSlugs = person.featuredWorkSlugs ?? [];
-
-  const worksBySlugs = featuredSlugs
-    .map((slug) => publicWorks.find((work) => work.slug === slug))
-    .filter((work): work is (typeof publicWorks)[number] => Boolean(work));
-
-  if (worksBySlugs.length > 0) {
-    return worksBySlugs;
-  }
-
-  return publicWorks.filter(
-    (work) =>
-      work.authorSlug === person.slug ||
-      work.author.toLowerCase() === person.name?.toLowerCase()
-  );
 }
 
 function getSoftwareByCategory(category: string) {
@@ -879,7 +808,7 @@ function getResumeItems(person: { slug: string; role: string }) {
   if (person.slug === "dana-murat") {
     return [
       {
-        period: "",
+        period: "2024 — Present",
         title: "Graphic Designer",
         company: "Freelance / Creative Projects",
         description:
@@ -895,13 +824,13 @@ function getResumeItems(person: { slug: string; role: string }) {
       {
         period: "2022 — 2026",
         title: "Media Technologies",
-        company: "Astana IT University",
+        company: "{publicEducation || 'Not specified'}",
         description:
           "Focus on digital media, visual communication, and interactive platforms.",
       },
     ];
   }
-  if (person.slug === "aruzhan-kanatkyzy") {
+  if (person.slug === "aruzhan-kanatkzyz") {
     return [
       {
         period: "2023 — Present",
@@ -970,7 +899,7 @@ function getResumeItems(person: { slug: string; role: string }) {
       {
         period: "2020 — 2024",
         title: "Media Technologies",
-        company: "Astana IT University",
+        company: "{publicEducation || 'Not specified'}",
         description:
           "Focus on video production, digital media, editing, and visual communication.",
       },
@@ -1020,7 +949,7 @@ function getResumeItems(person: { slug: string; role: string }) {
       {
         period: "2021 — 2025",
         title: "Media Technologies",
-        company: "Astana IT University",
+        company: "{publicEducation || 'Not specified'}",
         description:
           "Focus on video production, editing, digital media, and visual storytelling.",
       },
@@ -1232,6 +1161,28 @@ function getReviews(person: { slug: string; name: string }) {
         role: "Client Review",
         text:
           "Arman helped us edit interview videos for YouTube. The final result was clean, professional, and easy to watch. He worked carefully with sound, subtitles, and video structure.",
+      },
+    ];
+  }
+  if (person.slug === "alina-karimova") {
+    return [
+      {
+        company: "Pixel Motion Studio",
+        role: "Client Review",
+        text:
+          "Alina Karimova created animated visuals for our brand campaign. Her motion design was smooth, modern, and matched the visual identity of the project. She paid attention to timing and transitions.",
+      },
+      {
+        company: "Astana Tech Lab",
+        role: "Client Review",
+        text:
+          "Alina Karimova designed an app promo animation for our product. The animation clearly explained the idea and looked clean and professional. Her work helped make the product presentation more understandable.",
+      },
+      {
+        company: "Creative Ads Agency",
+        role: "Client Review",
+        text:
+          "Alina Karimova prepared motion graphics for several social media ads. Her work helped make the content more dynamic and visually attractive. She followed the brief and delivered the files in the required formats.",
       },
     ];
   }

@@ -3,26 +3,43 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import {
+  ArrowLeft,
+  Bell,
   BriefcaseBusiness,
+  Building2,
   CalendarDays,
+  CircleHelp,
   Edit3,
   FileText,
   GraduationCap,
   ImageIcon,
+  ImagePlus,
   Languages,
-  Link as LinkIcon,
+  LinkIcon,
+  Link2,
+  LogOut,
   Mail,
   MapPin,
+  Menu,
+  PencilLine,
   Play,
   Plus,
+  Search,
+  Star,
+  Trash2,
   Type,
   Upload,
   UserRound,
   Video,
-  Trash2,
+  X,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase-client";
+import {
+  getStoredJobSeekerProfile,
+  saveJobSeekerProfile,
+} from "@/components/mediahire/account-settings/profile-store";
+
 import {
   createProjectId,
   demoProfile,
@@ -165,6 +182,7 @@ function localProfileSummary(): ProfileSummary {
 
   return {
     avatarUrl: profile.avatarPreview,
+    coverUrl: (profile as any).coverUrl || "",
     availableStatus: "Available for Freelance",
     bio: profile.bio || "",
     email: profile.email || "Email not added",
@@ -266,7 +284,7 @@ async function loadProfile() {
   const byUserId = await supabase
     .from("profiles")
     .select(
-      "id,full_name,first_name,last_name,email,avatar_url,location,city,country,profession,job_title,bio,skills,software,available_status",
+      "id,full_name,first_name,last_name,email,avatar_url,cover_url,location,city,country,profession,job_title,bio,skills,software,available_status",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -275,7 +293,7 @@ async function loadProfile() {
     const byId = await supabase
       .from("profiles")
       .select(
-        "id,full_name,first_name,last_name,email,avatar_url,location,city,country,profession,job_title,bio,skills,software,available_status",
+        "id,full_name,first_name,last_name,email,avatar_url,cover_url,location,city,country,profession,job_title,bio,skills,software,available_status",
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -289,6 +307,7 @@ async function loadProfile() {
     | {
         available_status?: string | null;
         avatar_url?: string | null;
+        cover_url?: string | null;
         bio?: string | null;
         city?: string | null;
         country?: string | null;
@@ -319,6 +338,10 @@ async function loadProfile() {
       profile?.avatar_url ||
       user.user_metadata?.avatar_url ||
       localProfileSummary().avatarUrl,
+    coverUrl:
+      (localProfile as any).coverUrl ||
+      profile?.cover_url ||
+      localProfileSummary().coverUrl,
     availableStatus: profile?.available_status || "Available for Freelance",
     bio: localProfile.bio || profile?.bio || localProfileSummary().bio,
     email: localProfile.email || profile?.email || user.email || localProfileSummary().email,
@@ -1474,6 +1497,7 @@ function ResumePanel({
 }
 const initialProfileSummary = {
   avatarUrl: "",
+  coverUrl: "",
   availableStatus: "Available for Freelance",
   bio: "",
   email: "Email not added",
@@ -1581,6 +1605,111 @@ export function MyProfileProjectsPage() {
     };
   }, []);
 
+  async function handleProfileCoverUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData.user;
+
+    if (!user) {
+      return;
+    }
+
+    try {
+      const extension = file.name.split(".").pop() || "jpg";
+      const safeName = file.name
+        .replace(/\.[^/.]+$/, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+
+      const filePath = `${user.id}/cover/${Date.now()}-${safeName}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("profile-assets")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("profile-assets")
+        .getPublicUrl(filePath);
+
+      const publicUrl = publicUrlData.publicUrl;
+      const currentProfile = profile as any;
+
+      const publicSlug = (
+        currentProfile.fullName ||
+        user.email?.split("@")[0] ||
+        "jobseeker"
+      )
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+
+      const payload = {
+        user_id: user.id,
+        email: currentProfile.email || user.email || "",
+        full_name:
+          currentProfile.fullName ||
+          user.email?.split("@")[0] ||
+          "MediaHire creator",
+        public_slug: publicSlug,
+        cover_url: publicUrl,
+        updated_at: new Date().toISOString(),
+      };
+
+      const existing = await supabase
+        .from("profiles")
+        .select("id,user_id")
+        .eq("user_id", user.id)
+        .limit(1);
+
+      if (existing.data?.[0]) {
+        await supabase.from("profiles").update(payload).eq("user_id", user.id);
+      } else {
+        await supabase.from("profiles").insert({
+          ...payload,
+          role: "jobseeker",
+          created_at: new Date().toISOString(),
+        });
+      }
+
+      setProfile((current) => ({
+        ...(current as any),
+        coverUrl: publicUrl,
+      }));
+
+      const storedProfile = getStoredJobSeekerProfile();
+
+      saveJobSeekerProfile({
+        ...storedProfile,
+        fullName: currentProfile.fullName || storedProfile.fullName,
+        email: currentProfile.email || storedProfile.email,
+        avatarPreview: currentProfile.avatarUrl || storedProfile.avatarPreview,
+        jobTitle: currentProfile.profession || storedProfile.jobTitle,
+        role: currentProfile.profession || storedProfile.role,
+        location: currentProfile.location || storedProfile.location,
+        coverUrl: publicUrl,
+      } as any);
+
+      window.dispatchEvent(new Event("mediahire:jobseeker-profile-updated"));
+    } catch (error) {
+      console.error("Could not upload profile cover:", error);
+    }
+  }
+
   function handleProjectSaved(project: MediaHireProject) {
     setProjects((current) => [
       project,
@@ -1619,12 +1748,33 @@ export function MyProfileProjectsPage() {
 
   return (
     <main className="min-h-screen bg-white text-slate-950">
-      <section className="relative overflow-visible bg-[#eef4ff]">
-        <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_top_left,rgba(11,99,229,0.16),transparent_32%),linear-gradient(180deg,#eef4ff_0%,#f8fbff_65%,#ffffff_100%)]" />
+      <section className="relative overflow-hidden bg-[#eef4ff]">
+        <div className="absolute inset-0">
+          {(profile as any).coverUrl ? (
+            <img
+              alt={(profile as any).fullName || "Profile background"}
+              className="h-full w-full object-cover"
+              src={(profile as any).coverUrl}
+            />
+          ) : (
+            <div className="h-full w-full bg-[#eef4ff]" />
+          )}
+          <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px]" />
+        </div>
 
-        <div className="relative z-[9999] pb-24 pt-4 sm:pt-5">
+        <div className="relative z-10 pb-24 pt-4 sm:pt-5">
           <JobSeekerNavbar active="My Profile" />
         </div>
+
+        <label className="absolute bottom-5 right-[max(1rem,calc((100vw-1152px)/2))] z-20 inline-flex h-10 cursor-pointer items-center justify-center rounded-full bg-[#0B63E5] px-5 text-xs font-black text-white shadow-[0_12px_30px_rgba(11,99,229,0.24)] transition hover:bg-[#0958cc]">
+          Add background
+          <input
+            accept="image/png,image/jpeg,image/jpg,image/webp"
+            className="sr-only"
+            onChange={handleProfileCoverUpload}
+            type="file"
+          />
+        </label>
       </section>
 
       <section className="relative z-20 mx-auto grid w-full max-w-6xl gap-5 px-4 pb-16 sm:px-6 lg:grid-cols-[230px_1fr] lg:px-5">

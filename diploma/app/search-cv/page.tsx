@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -14,7 +14,8 @@ import {
 import { Footer } from "@/components/mediahire/footer";
 import { Header } from "@/components/mediahire/header";
 import { kazakhstanCities } from "@/components/mediahire/public/public-jobs-data";
-import { publicPeople } from "@/components/mediahire/public/public-people-data";
+import { publicPeople, type PublicPerson } from "@/components/mediahire/public/public-people-data";
+import { getRemotePublicPeople } from "@/components/mediahire/public/remote-public-people";
 
 const candidateCategories = [
   "All",
@@ -36,10 +37,36 @@ function SearchCvPageContent() {
   );
   const [category, setCategory] = useState("All");
 
+  const [availablePeople, setAvailablePeople] =
+    useState<PublicPerson[]>(publicPeople);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void (async () => {
+      const remotePeople = await getRemotePublicPeople();
+      const peopleBySlug = new Map<string, PublicPerson>();
+
+      [...publicPeople, ...(remotePeople as PublicPerson[])].forEach(
+        (person: PublicPerson) => {
+          peopleBySlug.set(person.slug, person);
+        },
+      );
+
+      if (isMounted) {
+        setAvailablePeople(Array.from(peopleBySlug.values()));
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const candidates = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return publicPeople.filter((person) => {
+    return availablePeople.filter((person: PublicPerson) => {
       const text = [
         person.name,
         person.role,
@@ -61,7 +88,7 @@ function SearchCvPageContent() {
 
       return matchesQuery && matchesLocation && matchesCategory;
     });
-  }, [category, location, query]);
+  }, [availablePeople, category, location, query]);
 
   function handleSearch() {
     const params = new URLSearchParams();
@@ -249,7 +276,7 @@ function SearchCvPageContent() {
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  {person.skills.map((skill) => (
+                  {person.skills.map((skill: string) => (
                     <span
                       key={skill}
                       className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-600"
@@ -294,7 +321,7 @@ function SearchCvPageContent() {
 }
 
 function matchesCandidateCategory(
-  person: (typeof publicPeople)[number],
+  person: PublicPerson,
   category: string,
 ) {
   if (category === "Graphic Design") {
@@ -325,6 +352,7 @@ function matchesCandidateCategory(
 }
 
 export default function SearchCvPage() {
+
   return (
     <Suspense fallback={null}>
       <SearchCvPageContent />

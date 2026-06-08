@@ -26,28 +26,37 @@ const sidebar = [
   { href: "/home/employer/account-settings", label: "Account Setting", icon: BriefcaseBusiness },
   { href: "/home/employer/settings", label: "Settings", icon: Settings },
 ];
+const DEFAULT_EMPLOYER_AVATAR =
+  "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=300&q=90";
 
 function useEmployerProfile() {
-  const [profile, setProfile] = useState(() => getEmployerProfile());
-
+  const [profile, setProfile] = useState<ReturnType<typeof getEmployerProfile> | null>(
+    null,
+  );
+  
   useEffect(() => {
     const sync = () => setProfile(getEmployerProfile());
+  
     sync();
+  
     window.addEventListener("mediahire:employer-updated", sync);
-    window.addEventListener("storage", sync);
+    window.addEventListener("storage", sync);  
     return () => {
       window.removeEventListener("mediahire:employer-updated", sync);
       window.removeEventListener("storage", sync);
     };
   }, []);
-
+  
   return profile;
 }
+
 
 export function EmployerHeader({ active = "Home" }: { active?: string }) {
   const profile = useEmployerProfile();
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const companyName = profile?.companyName || "MediaHire Studio";
+  const companyAvatar = profile?.avatar || DEFAULT_EMPLOYER_AVATAR;
 
   function logout() {
     router.push("/");
@@ -89,10 +98,17 @@ export function EmployerHeader({ active = "Home" }: { active?: string }) {
             type="button"
           >
             <span className="relative block h-8 w-8 overflow-hidden rounded-full ring-2 ring-white">
-              <Image alt={profile.companyName} className="h-full w-full object-cover" height={32} src={profile.avatar} unoptimized={profile.avatar.startsWith("data:")} width={32} />
+            <Image
+              alt={companyName}
+              className="h-full w-full object-cover"
+              height={32}
+              src={companyAvatar}
+              unoptimized={companyAvatar.startsWith("data:")}
+              width={32}
+            />
               <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
             </span>
-            <span className="hidden max-w-[130px] truncate text-xs font-black text-slate-700 md:block">{profile.companyName}</span>
+            <span className="hidden max-w-[130px] truncate text-xs font-black text-slate-700 md:block">{companyName}</span>
             <ChevronDown className={`text-[#0B63E5] transition ${open ? "rotate-180" : ""}`} size={16} />
           </button>
           <AnimatePresence>
@@ -157,6 +173,9 @@ export function EmployerShell({ active, children }: { active?: string; children:
 export function EmployerDashboardShell({ active, children, title, subtitle }: { active: string; children: ReactNode; subtitle: string; title: string }) {
   const profile = useEmployerProfile();
   const pathname = usePathname();
+  const companyName = profile?.companyName || "MediaHire Studio";
+  const companyAvatar = profile?.avatar || DEFAULT_EMPLOYER_AVATAR;
+  const companyEmail = profile?.email || "employer@mediahire.kz";
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] p-4 text-slate-950 md:p-6">
@@ -196,10 +215,17 @@ export function EmployerDashboardShell({ active, children, title, subtitle }: { 
                 <input className="h-10 w-64 rounded-xl border border-slate-200 bg-white px-3 pr-10 text-sm font-semibold outline-none focus:border-[#0B63E5]" placeholder="Search" />
                 <Search className="absolute right-4 top-1/2 -translate-y-1/2" size={18} />
               </label>
-              <Image alt={profile.companyName} className="h-10 w-10 rounded-xl object-cover" height={40} src={profile.avatar} unoptimized={profile.avatar.startsWith("data:")} width={40} />
+              <Image
+                alt={companyName}
+                className="h-10 w-10 rounded-xl object-cover"
+                height={40}
+                src={companyAvatar}
+                unoptimized={companyAvatar.startsWith("data:")}
+                width={40}
+              />
               <div className="hidden sm:block">
-                <p className="text-sm font-black">{profile.companyName}</p>
-                <p className="text-xs font-semibold text-slate-400">{profile.email}</p>
+                <p className="text-sm font-black">{companyName}</p>
+                <p className="text-xs font-semibold text-slate-400">{companyEmail}</p>
               </div>
             </div>
           </header>

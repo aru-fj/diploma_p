@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabase-client";
 import Link from "next/link";
 import {
   Bookmark,
@@ -10,7 +11,10 @@ import {
   Users,
 } from "lucide-react";
 
-import { publicPeople } from "@/components/mediahire/public/public-people-data";
+import { publicPeople, type PublicPerson } from "@/components/mediahire/public/public-people-data";
+import { getStoredJobSeekerProfile } from "@/components/mediahire/account-settings/profile-store";
+import { getPublishedStoredProjects } from "@/components/mediahire/projects-data";
+import { getRemotePublicPeople } from "@/components/mediahire/public/remote-public-people";
 import {
   getSavedProfileIds,
   SAVED_PROFILES_CHANGED_EVENT,
@@ -25,6 +29,230 @@ type PeopleGridProps = {
 };
 
 const bestPeopleSlugs = ["madina-omar", "dimash-karim", "amina-saparova"];
+
+function slugifyProfileName(value?: string | null) {
+  return (value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function splitProfileList(value?: string | null) {
+  return (value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function getAnyStoredJobSeekerProfile() {
+  const activeProfile = getStoredJobSeekerProfile();
+
+  if (
+    activeProfile.fullName ||
+    activeProfile.firstName ||
+    activeProfile.lastName ||
+    activeProfile.email ||
+    activeProfile.avatarPreview
+  ) {
+    return activeProfile;
+  }
+
+  if (typeof window === "undefined") {
+    return activeProfile;
+  }
+
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+
+    if (!key || !key.startsWith("mediahire.jobseeker.profile")) {
+      continue;
+    }
+
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(key) || "{}");
+
+      if (
+        parsed.fullName ||
+        parsed.firstName || parsed.lastName ||
+        parsed.email ||
+        parsed.avatarPreview
+      ) {
+        return {
+          ...activeProfile,
+          ...parsed,
+        };
+      }
+    } catch {
+      // ignore broken localStorage values
+    }
+  }
+
+  return activeProfile;
+}
+
+function getCurrentUserPublicPersonCard(): PublicPerson | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const profile = getAnyStoredJobSeekerProfile();
+  const fullName =
+    profile.fullName ||
+    [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
+    profile.email?.split("@")[0] ||
+    "";
+
+  if (!fullName) {
+    return null;
+  }
+
+  const slug = slugifyProfileName(fullName);
+
+  if (!slug) {
+    return null;
+  }
+
+  const role = profile.jobTitle || profile.role || "Creative specialist";
+  const location =
+    profile.location ||
+    [profile.city, profile.country].filter(Boolean).join(", ") ||
+    "Kazakhstan";
+
+  const projects = getPublishedStoredProjects();
+
+  const localProfileCover =
+    (profile as any).coverUrl ||
+    (profile as any).coverPreview ||
+    "";
+
+  const coverImage =
+    localProfileCover ||
+    "data:image/svg+xml;utf8," +
+      encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420">
+          <rect width="1200" height="420" fill="#EAF3FF"/>
+        </svg>`,
+      );
+
+  const avatar =
+    profile.avatarPreview ||
+    "data:image/svg+xml;utf8," +
+      encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+          <rect width="160" height="160" rx="36" fill="#EAF3FF"/>
+          <circle cx="80" cy="62" r="28" fill="#0B63E5"/>
+          <path d="M34 140c8-30 29-45 46-45s38 15 46 45" fill="#0B63E5"/>
+        </svg>`,
+      );
+
+  const skills = splitProfileList(profile.skills);
+
+  return {
+    slug,
+    name: fullName,
+    role,
+    category: role,
+    location,
+    experience: profile.experienceYears
+      ? `${profile.experienceYears}+ years experience`
+      : "Experience not added",
+    availability: "Available for Freelance",
+    shortBio: profile.bio || "MediaHire creative specialist.",
+    about: profile.bio || "",
+    avatar,
+    coverImage,
+    rating: 0,
+    projectsCount: projects.length,
+    skills: skills.length ? skills : [role],
+    languages: ["Kazakh", "Russian", "English"],
+    featuredWorkSlugs: projects.map((project: any) => project.id),
+  };
+}
+
+
+async function getCurrentUserPublicPersonCardFromSupabase(): Promise<PublicPerson | null> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData.user;
+
+  if (!user) {
+    return null;
+  }
+
+  const profileSelect =
+    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills";
+
+  const byUserId = await supabase
+    .from("profiles")
+    .select(profileSelect)
+    .eq("user_id", user.id)
+    .limit(1);
+
+  const profile = byUserId.data?.[0];
+
+  if (!profile) {
+    return null;
+  }
+
+  const fullName =
+    profile.full_name ||
+    [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
+    user.email?.split("@")[0] ||
+    "MediaHire creator";
+
+  const slug = profile.public_slug || slugifyProfileName(fullName) || user.id;
+  const role = profile.profession || profile.job_title || "Creative specialist";
+  const location =
+    profile.location ||
+    [profile.city, profile.country].filter(Boolean).join(", ") ||
+    "Kazakhstan";
+
+  const { data: projectRows } = await supabase
+    .from("projects")
+    .select("id,title,status")
+    .eq("author_id", user.id)
+    .eq("status", "published");
+
+  const skills = Array.isArray(profile.skills)
+    ? profile.skills.filter(Boolean)
+    : splitProfileList(profile.skills || "");
+
+  return {
+    slug,
+    name: fullName,
+    role,
+    category: role,
+    location,
+    experience: "Experience not added",
+    availability: "Available for Freelance",
+    shortBio: profile.bio || "MediaHire creative specialist.",
+    about: profile.bio || "",
+    avatar:
+      profile.avatar_url ||
+      "data:image/svg+xml;utf8," +
+        encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+            <rect width="160" height="160" rx="36" fill="#EAF3FF"/>
+            <circle cx="80" cy="62" r="28" fill="#0B63E5"/>
+            <path d="M34 140c8-30 29-45 46-45s38 15 46 45" fill="#0B63E5"/>
+          </svg>`,
+        ),
+    coverImage:
+      profile.cover_url ||
+      "data:image/svg+xml;utf8," +
+        encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420">
+            <rect width="1200" height="420" fill="#EAF3FF"/>
+          </svg>`,
+        ),
+    rating: 0,
+    projectsCount: projectRows?.length || 0,
+    skills: skills.length ? skills : [role],
+    languages: ["Kazakh", "Russian", "English"],
+    featuredWorkSlugs: (projectRows || []).map((project: any) => project.id),
+  };
+}
+
 
 function readStorageList(key: string) {
   if (typeof window === "undefined") return [];
@@ -46,6 +274,7 @@ export function PeopleGrid({
   search,
 }: PeopleGridProps) {
   const [savedPeopleSlugs, setSavedPeopleSlugs] = useState<string[]>([]);
+  const [availablePeople, setAvailablePeople] = useState<PublicPerson[]>(publicPeople);
 
   useEffect(() => {
     const syncSavedPeople = () => {
@@ -54,13 +283,69 @@ export function PeopleGrid({
       setSavedPeopleSlugs(Array.from(new Set([...savedProfiles, ...legacySaved])));
     };
 
+    const syncAvailablePeople = () => {
+      void (async () => {
+        const remotePeople = await getRemotePublicPeople();
+        const localCurrentUserPerson = getCurrentUserPublicPersonCard();
+        const remoteCurrentUserPerson =
+          await getCurrentUserPublicPersonCardFromSupabase();
+
+        const currentSlug =
+          localCurrentUserPerson?.slug || remoteCurrentUserPerson?.slug || "";
+
+        const remoteCurrentFromPeople = currentSlug
+          ? remotePeople.find((person) => person.slug === currentSlug)
+          : undefined;
+
+        const currentUserPerson = localCurrentUserPerson || remoteCurrentUserPerson;
+
+        const mergedCurrentUserPerson = currentUserPerson
+          ? ({
+              ...(remoteCurrentFromPeople || {}),
+              ...(remoteCurrentUserPerson || {}),
+              ...currentUserPerson,
+              coverImage:
+                remoteCurrentFromPeople?.coverImage ||
+                remoteCurrentUserPerson?.coverImage ||
+                currentUserPerson.coverImage,
+              avatar:
+                currentUserPerson.avatar ||
+                remoteCurrentUserPerson?.avatar ||
+                remoteCurrentFromPeople?.avatar,
+            } as PublicPerson)
+          : null;
+
+        const peopleBySlug = new Map<string, PublicPerson>();
+
+        [...publicPeople, ...remotePeople].forEach((person) => {
+          peopleBySlug.set(person.slug, person);
+        });
+
+        if (mergedCurrentUserPerson) {
+          peopleBySlug.set(mergedCurrentUserPerson.slug, mergedCurrentUserPerson);
+        }
+
+        setAvailablePeople(Array.from(peopleBySlug.values()));
+      })();
+    };
+
     syncSavedPeople();
+    syncAvailablePeople();
+
     window.addEventListener(SAVED_PROFILES_CHANGED_EVENT, syncSavedPeople);
+    window.addEventListener("mediahire:projects-updated", syncAvailablePeople);
+    window.addEventListener("mediahire:jobseeker-profile-updated", syncAvailablePeople);
+    window.addEventListener("mediahire:settings-updated", syncAvailablePeople);
     window.addEventListener("storage", syncSavedPeople);
+    window.addEventListener("storage", syncAvailablePeople);
 
     return () => {
       window.removeEventListener(SAVED_PROFILES_CHANGED_EVENT, syncSavedPeople);
+      window.removeEventListener("mediahire:projects-updated", syncAvailablePeople);
+      window.removeEventListener("mediahire:jobseeker-profile-updated", syncAvailablePeople);
+      window.removeEventListener("mediahire:settings-updated", syncAvailablePeople);
       window.removeEventListener("storage", syncSavedPeople);
+      window.removeEventListener("storage", syncAvailablePeople);
     };
   }, []);
 
@@ -75,7 +360,7 @@ export function PeopleGrid({
   }
 
   const filteredPeople = useMemo(() => {
-    let people = [...publicPeople];
+    let people = [...availablePeople];
 
     if (activeCategory === "Saved" || activeCategory === "Following") {
       people = people.filter((person) => savedPeopleSlugs.includes(person.slug));
@@ -135,11 +420,66 @@ export function PeopleGrid({
     return people;
   }, [activeCategory, activeSort, search, savedPeopleSlugs]);
 
+  const pinnedPeople = (() => {
+    const currentUserPerson = getCurrentUserPublicPersonCard();
+    const currentSlug = currentUserPerson?.slug || "";
+
+    if (!currentSlug) {
+      return filteredPeople;
+    }
+
+    const currentFromAvailable =
+      availablePeople.find((person) => person.slug === currentSlug) ||
+      currentUserPerson;
+
+    if (!currentFromAvailable) {
+      return filteredPeople;
+    }
+
+    const normalizedSearch = search.trim().toLowerCase();
+
+    const matchesSearch =
+      !normalizedSearch ||
+      [
+        currentFromAvailable.name,
+        currentFromAvailable.role,
+        currentFromAvailable.category,
+        currentFromAvailable.location,
+        currentFromAvailable.experience,
+        currentFromAvailable.availability,
+        currentFromAvailable.shortBio,
+        ...currentFromAvailable.skills,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedSearch);
+
+    const matchesCategory =
+      activeCategory === "For You" ||
+      activeCategory === "People" ||
+      activeCategory === "All" ||
+      activeCategory === currentFromAvailable.category ||
+      (activeCategory === "Animation" &&
+        currentFromAvailable.category.includes("Animation")) ||
+      activeCategory === "Saved" ||
+      activeCategory === "Following";
+
+    if (!matchesSearch || !matchesCategory) {
+      return filteredPeople;
+    }
+
+    const withoutCurrentUser = filteredPeople.filter(
+      (person) => person.slug !== currentFromAvailable.slug,
+    );
+
+    return [...withoutCurrentUser, currentFromAvailable];
+  })();
+
   return (
     <section className="mx-auto mt-6 w-full max-w-none">
-      {filteredPeople.length > 0 ? (
+      {pinnedPeople.length > 0 ? (
         <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-          {filteredPeople.map((person) => {
+          {pinnedPeople.map((person) => {
             const isSaved = savedPeopleSlugs.includes(person.slug);
 
             return (

@@ -21,6 +21,7 @@ import {
   type PublicWorkMedia,
 } from "@/components/mediahire/public/public-works-data";
 import { publicPeople } from "@/components/mediahire/public/public-people-data";
+import { supabase } from "@/lib/supabase-client";
 import {
   isProjectSaved,
   SAVED_PROJECTS_CHANGED_EVENT,
@@ -235,11 +236,88 @@ export default function JobSeekerWorkDetailPage() {
     );
   }
 
-  const authorAvatar = work.authorAvatar || work.coverImage;
+  const currentWork = work;
+
   const authorProfile = publicPeople.find(
     (person) => person.slug === work.authorSlug || person.name === work.author,
   );
+  const localProfile = getStoredJobSeekerProfile();
+  const shouldUseLocalProfile = !authorProfile && Boolean(localProfile.fullName || localProfile.avatarPreview);
+  const [remoteAuthor, setRemoteAuthor] = useState<{
+    avatarUrl?: string;
+    fullName?: string;
+  } | null>(null);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadAuthorProfile() {
+      if (!currentWork.authorSlug) {
+        return;
+      }
+
+      const profileSelect = "id,user_id,full_name,first_name,last_name,email,avatar_url";
+
+      const byUserId = await supabase
+        .from("profiles")
+        .select(profileSelect)
+        .eq("user_id", currentWork.authorSlug)
+        .maybeSingle();
+
+      let profile = byUserId.data;
+
+      if (!profile) {
+        const byId = await supabase
+          .from("profiles")
+          .select(profileSelect)
+          .eq("id", currentWork.authorSlug)
+          .maybeSingle();
+
+        profile = byId.data;
+      }
+
+      if (!isMounted || !profile) {
+        return;
+      }
+
+      const fullName =
+        profile.full_name ||
+        [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
+        profile.email?.split("@")[0] ||
+        currentWork.author;
+
+      setRemoteAuthor({
+        avatarUrl: profile.avatar_url || undefined,
+        fullName,
+      });
+    }
+
+    void loadAuthorProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentWork.authorSlug, currentWork.author]);
+
+  const authorName =
+    remoteAuthor?.fullName ||
+    (shouldUseLocalProfile ? localProfile.fullName : "") ||
+    currentWork.author;
+  const authorAvatar =
+    remoteAuthor?.avatarUrl ||
+    (shouldUseLocalProfile ? localProfile.avatarPreview : "") ||
+    work.authorAvatar ||
+    authorProfile?.avatar;
+  const fallbackAuthorAvatar =
+    "data:image/svg+xml;utf8," +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+        <rect width="160" height="160" rx="36" fill="#EAF3FF"/>
+        <circle cx="80" cy="62" r="28" fill="#0B63E5"/>
+        <path d="M34 140c8-30 29-45 46-45s38 15 46 45" fill="#0B63E5"/>
+      </svg>`,
+    );
+  const visibleAuthorAvatar = authorAvatar || fallbackAuthorAvatar;
   const authorProfileHref = authorProfile
     ? `/home/jobseeker/people/${authorProfile.slug}`
     : `/home/jobseeker/people/${createSlug(work.author)}`;
@@ -270,8 +348,8 @@ export default function JobSeekerWorkDetailPage() {
             >
               <div className="h-12 w-14 overflow-hidden rounded-xl bg-slate-200">
                 <img
-                  src={authorAvatar}
-                  alt={work.author}
+                  src={visibleAuthorAvatar}
+                  alt={authorName}
                   className="h-full w-full object-cover object-[center_10%]"
                 />
               </div>
@@ -282,7 +360,7 @@ export default function JobSeekerWorkDetailPage() {
                 </h2>
 
                 <p className="mt-0.5 text-xs font-black text-slate-500 transition hover:text-blue-600">
-                  {work.author}
+                  {authorName}
                 </p>
               </div>
             </Link>
@@ -320,14 +398,14 @@ export default function JobSeekerWorkDetailPage() {
               <footer className="mx-auto mt-6 max-w-2xl text-center">
                 <div className="mx-auto h-9 w-12 overflow-hidden rounded-xl bg-slate-200 shadow-sm">
                   <img
-                    src={authorAvatar}
-                    alt={work.author}
+                    src={visibleAuthorAvatar}
+                    alt={authorName}
                     className="h-full w-full object-cover object-[center_10%]"
                   />
                 </div>
 
                 <p className="mt-3 text-[11px] font-black text-slate-600">
-                  {work.author}
+                  {authorName}
                 </p>
 
                 <h2 className="mt-1 text-lg font-black italic text-slate-950">

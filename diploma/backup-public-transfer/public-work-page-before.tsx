@@ -1,6 +1,5 @@
 "use client";
 
-import { Header } from "@/components/mediahire/header";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -16,6 +15,7 @@ import {
   Send,
 } from "lucide-react";
 
+import { DashboardHeader } from "@/components/mediahire/dashboard/dashboard-header";
 import {
   getPublicWorkBySlug,
   type PublicWorkMedia,
@@ -102,12 +102,6 @@ function isCurrentUserComment(comment: ProjectComment) {
 
 export default function JobSeekerWorkDetailPage() {
   const params = useParams<{ id: string }>();
-  const [hasHydrated, setHasHydrated] = useState(false);
-
-  useEffect(() => {
-    setHasHydrated(true);
-  }, []);
-
   const work = getPublicWorkBySlug(params.id);
   const commentsStorageKey = `mediahire_jobseeker_project_comments_${params.id}`;
 
@@ -205,81 +199,16 @@ export default function JobSeekerWorkDetailPage() {
     );
   }
 
-  const [remoteAuthor, setRemoteAuthor] = useState<{
-    avatarUrl?: string;
-    fullName?: string;
-  } | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadAuthorProfile() {
-      if (!work?.authorSlug) {
-        return;
-      }
-
-      const profileSelect = "id,user_id,full_name,first_name,last_name,email,avatar_url";
-
-      const byUserId = await supabase
-        .from("profiles")
-        .select(profileSelect)
-        .eq("user_id", work?.authorSlug)
-        .maybeSingle();
-
-      let profile = byUserId.data;
-
-      if (!profile) {
-        const byId = await supabase
-          .from("profiles")
-          .select(profileSelect)
-          .eq("id", work?.authorSlug)
-          .maybeSingle();
-
-        profile = byId.data;
-      }
-
-      if (!isMounted || !profile) {
-        return;
-      }
-
-      const fullName =
-        profile.full_name ||
-        [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
-        profile.email?.split("@")[0] ||
-        work?.author;
-
-      setRemoteAuthor({
-        avatarUrl: profile.avatar_url || undefined,
-        fullName,
-      });
-    }
-
-    void loadAuthorProfile();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [work?.authorSlug, work?.author]);
-
-
-  if (!hasHydrated) {
-    return (
-      <main className="min-h-screen bg-white text-slate-950">
-        <Header role="jobseeker" activeItem="Home" />
-        <section className="mx-auto flex min-h-[55vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
-          <div className="h-16 w-16 animate-pulse rounded-2xl bg-blue-50" />
-          <div className="mt-6 h-7 w-56 animate-pulse rounded-full bg-slate-100" />
-          <div className="mt-4 h-4 w-80 animate-pulse rounded-full bg-slate-100" />
-        </section>
-      </main>
-    );
-  }
-
   if (!work) {
     return (
       <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
         <div className="mx-auto min-h-screen w-full px-4 pt-6 pb-8 sm:px-8 lg:px-12">
-          <Header role="jobseeker" activeItem="Home" />
+          <DashboardHeader
+            isMenuOpen={isMenuOpen}
+            isUserMenuOpen={isUserMenuOpen}
+            onToggleMenu={() => setIsMenuOpen((current) => !current)}
+            onToggleUserMenu={() => setIsUserMenuOpen((current) => !current)}
+          />
 
           <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
             <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 text-blue-600">
@@ -314,10 +243,66 @@ export default function JobSeekerWorkDetailPage() {
   );
   const localProfile = getStoredJobSeekerProfile();
   const shouldUseLocalProfile = !authorProfile && Boolean(localProfile.fullName || localProfile.avatarPreview);
+  const [remoteAuthor, setRemoteAuthor] = useState<{
+    avatarUrl?: string;
+    fullName?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadAuthorProfile() {
+      if (!currentWork.authorSlug) {
+        return;
+      }
+
+      const profileSelect = "id,user_id,full_name,first_name,last_name,email,avatar_url";
+
+      const byUserId = await supabase
+        .from("profiles")
+        .select(profileSelect)
+        .eq("user_id", currentWork.authorSlug)
+        .maybeSingle();
+
+      let profile = byUserId.data;
+
+      if (!profile) {
+        const byId = await supabase
+          .from("profiles")
+          .select(profileSelect)
+          .eq("id", currentWork.authorSlug)
+          .maybeSingle();
+
+        profile = byId.data;
+      }
+
+      if (!isMounted || !profile) {
+        return;
+      }
+
+      const fullName =
+        profile.full_name ||
+        [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
+        profile.email?.split("@")[0] ||
+        currentWork.author;
+
+      setRemoteAuthor({
+        avatarUrl: profile.avatar_url || undefined,
+        fullName,
+      });
+    }
+
+    void loadAuthorProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentWork.authorSlug, currentWork.author]);
+
   const authorName =
     remoteAuthor?.fullName ||
     (shouldUseLocalProfile ? localProfile.fullName : "") ||
-    work?.author;
+    currentWork.author;
   const authorAvatar =
     remoteAuthor?.avatarUrl ||
     (shouldUseLocalProfile ? localProfile.avatarPreview : "") ||
@@ -340,7 +325,12 @@ export default function JobSeekerWorkDetailPage() {
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
       <div className="mx-auto min-h-screen w-full px-4 pt-6 pb-8 sm:px-8 lg:px-12">
-        <Header role="jobseeker" activeItem="Home" />
+        <DashboardHeader
+          isMenuOpen={isMenuOpen}
+          isUserMenuOpen={isUserMenuOpen}
+          onToggleMenu={() => setIsMenuOpen((current) => !current)}
+          onToggleUserMenu={() => setIsUserMenuOpen((current) => !current)}
+        />
 
         <section className="mx-auto w-full max-w-4xl px-4 pb-12 pt-6 sm:px-6 lg:px-5">
           <div className="mb-5 flex flex-col gap-3 sm:grid sm:grid-cols-[auto_1fr] sm:items-center lg:grid-cols-[0px_1fr]">

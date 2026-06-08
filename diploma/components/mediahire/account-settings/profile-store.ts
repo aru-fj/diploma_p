@@ -1,6 +1,7 @@
 export type JobSeekerProfile = {
   avatarPreview: string;
   bio: string;
+  coverUrl: string;
   city: string;
   country: string;
   email: string;
@@ -85,7 +86,9 @@ function readStoredProfileByKey(key: string) {
   }
 
   try {
-    return normalizeProfile(JSON.parse(storedProfile) as Partial<JobSeekerProfile>);
+    return removeUnsafeProfileData(
+      normalizeProfile(JSON.parse(storedProfile) as Partial<JobSeekerProfile>),
+    );
   } catch {
     return defaultJobSeekerProfile;
   }
@@ -129,6 +132,7 @@ export function getStoredJobSeekerProfileForEmail(email: string) {
 export const defaultJobSeekerProfile: JobSeekerProfile = {
   avatarPreview: "",
   bio: "",
+  coverUrl: "",
   city: "",
   country: "",
   email: "",
@@ -169,25 +173,55 @@ export function getStoredJobSeekerProfile(): JobSeekerProfile {
   return readStoredProfileByKey(jobSeekerProfileStorageKey);
 }
 
+function removeUnsafeProfileData(profile: JobSeekerProfile): JobSeekerProfile {
+  return {
+    ...profile,
+    avatarPreview: profile.avatarPreview?.startsWith("data:")
+      ? ""
+      : profile.avatarPreview,
+  };
+}
+
+function safeSetLocalStorage(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (error) {
+    console.warn("Could not save profile to localStorage. Cleaning old profile cache.", error);
+
+    Object.keys(window.localStorage)
+      .filter((itemKey) =>
+        itemKey.startsWith(jobSeekerProfileStorageKey) ||
+        itemKey.toLowerCase().includes("profile") ||
+        itemKey.toLowerCase().includes("resume"),
+      )
+      .forEach((itemKey) => window.localStorage.removeItem(itemKey));
+
+    window.localStorage.setItem(key, value);
+  }
+}
+
 export function saveJobSeekerProfile(
   profile: JobSeekerProfile,
   eventDetail?: Record<string, unknown>,
 ) {
-  const normalizedProfile = normalizeProfile(profile);
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const normalizedProfile = removeUnsafeProfileData(normalizeProfile(profile));
   const email = normalizeProfileEmail(normalizedProfile.email);
+  const serializedProfile = JSON.stringify(normalizedProfile);
 
   if (email) {
     setActiveJobSeekerEmail(email);
-    window.localStorage.setItem(
+    safeSetLocalStorage(
       getScopedJobSeekerProfileStorageKey(email),
-      JSON.stringify(normalizedProfile),
+      serializedProfile,
     );
   }
 
-  window.localStorage.setItem(
-    jobSeekerProfileStorageKey,
-    JSON.stringify(normalizedProfile),
-  );
+  safeSetLocalStorage(jobSeekerProfileStorageKey, serializedProfile);
+
   window.dispatchEvent(
     new CustomEvent("mediahire:jobseeker-profile-updated", {
       detail: { ...normalizedProfile, ...eventDetail },

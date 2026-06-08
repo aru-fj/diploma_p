@@ -12,6 +12,7 @@ import {
   useEffect,
   useState } from "react";
 import Link from "next/link";
+import { Header } from "@/components/mediahire/header";
 import { useParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -33,7 +34,6 @@ import {
 } from "lucide-react";
 
 import { SaveProfileButton } from "@/components/mediahire/save-profile-button";
-import { Header } from "@/components/mediahire/header";
 import {
   getPublicPersonBySlug,
   publicPeople,
@@ -48,6 +48,11 @@ type ProfileTab = "portfolio" | "resume" | "reviews";
 export default function JobSeekerPersonProfilePage() {
   const params = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<ProfileTab>("portfolio");
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const staticPerson = getPublicPersonBySlug(params.id);
   const [remotePerson, setRemotePerson] = useState<Awaited<ReturnType<typeof getRemotePublicPersonById>> | null>(null);
@@ -78,7 +83,39 @@ export default function JobSeekerPersonProfilePage() {
     };
   }, [params.id, staticPerson]);
 
-  const currentProfileMirror = getCurrentProfilePublicMirror(params.id);
+const [remoteCoverUrl, setRemoteCoverUrl] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProfileCover() {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("cover_url,public_slug,full_name")
+        .eq("public_slug", params.id)
+        .limit(1);
+
+      const row = data?.[0];
+
+      console.log("MediaHire public profile cover:", {
+        slug: params.id,
+        row,
+        error,
+      });
+
+      if (isMounted && row?.cover_url) {
+        setRemoteCoverUrl(row.cover_url);
+      }
+    }
+
+    void loadProfileCover();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [params.id]);
+
+  const currentProfileMirror = hasMounted ? getCurrentProfilePublicMirror(params.id) : null;
   const person = currentProfileMirror || staticPerson || remotePerson;
 
   if (!person && isRemoteLoading) {
@@ -182,37 +219,7 @@ export default function JobSeekerPersonProfilePage() {
       </svg>`,
     );
 
-  const [remoteCoverUrl, setRemoteCoverUrl] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadProfileCover() {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("cover_url,public_slug,full_name")
-        .eq("public_slug", params.id)
-        .limit(1);
-
-      const row = data?.[0];
-
-      console.log("MediaHire public profile cover:", {
-        slug: params.id,
-        row,
-        error,
-      });
-
-      if (isMounted && row?.cover_url) {
-        setRemoteCoverUrl(row.cover_url);
-      }
-    }
-
-    void loadProfileCover();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [params.id]);
 
   const profileCoverSrc =
     remoteCoverUrl || person.coverImage || fallbackProfileCover;
@@ -520,6 +527,9 @@ export default function JobSeekerPersonProfilePage() {
     </main>
   );
 }
+
+
+
 
 
 

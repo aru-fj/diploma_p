@@ -725,9 +725,9 @@ export function getAllPublicWorks() {
   const storedWorks = getStoredPublicWorks();
 
   return [
-    ...storedWorks,
-    ...publicWorks.filter(
-      (work) => !storedWorks.some((storedWork) => storedWork.slug === work.slug),
+    ...publicWorks,
+    ...storedWorks.filter(
+      (work) => !publicWorks.some((publicWork) => publicWork.slug === work.slug),
     ),
   ];
 }

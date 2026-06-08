@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Bookmark, CalendarDays, FileText, Play, Type } from "lucide-react";
+import { getRemotePublishedWorks } from "@/components/mediahire/public/remote-public-works";
 
 import {
   getAllPublicWorks,
@@ -41,17 +42,32 @@ export function ProjectGrid({
     const syncSavedProjects = () => {
       setSavedWorkSlugs(getSavedProjectIds());
     };
+  
     const syncAvailableWorks = () => {
-      setAvailableWorks(getAllPublicWorks());
-    };
+      void (async () => {
+        const localWorks = getAllPublicWorks();
+        const remoteWorks = await getRemotePublishedWorks();
+  
+        const worksBySlug = new Map<string, PublicWork>();
+  
+        const localSlugs = new Set(localWorks.map((work) => work.slug));
 
+        const uniqueRemoteWorks = remoteWorks.filter(
+          (work) => !localSlugs.has(work.slug),
+          );
+
+        setAvailableWorks([...localWorks, ...uniqueRemoteWorks]);
+      })();
+    };
+  
     syncSavedProjects();
     syncAvailableWorks();
+  
     window.addEventListener(SAVED_PROJECTS_CHANGED_EVENT, syncSavedProjects);
     window.addEventListener("mediahire:projects-updated", syncAvailableWorks);
     window.addEventListener("storage", syncSavedProjects);
     window.addEventListener("storage", syncAvailableWorks);
-
+  
     return () => {
       window.removeEventListener(
         SAVED_PROJECTS_CHANGED_EVENT,
@@ -151,66 +167,66 @@ export function ProjectGrid({
             return (
               <article
                 key={work.slug}
-                className="group overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]"
+                className="group relative z-0 overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]"
               >
-                <Link href={`/home/jobseeker/work/${work.slug}`} className="block">
-                  <div className="relative h-36 overflow-hidden bg-slate-100">
-                    <ProjectCover work={work} />
+                <div className="relative h-36 overflow-hidden bg-slate-100">
+                <ProjectCover work={work} />
 
-                    <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-black text-slate-900 shadow-lg backdrop-blur">
-                      {work.category}
-                    </div>
+                <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-black text-slate-900 shadow-lg backdrop-blur">
+                  {work.category}
+                </div>
 
-                    <div className="absolute bottom-3 left-3 rounded-full bg-slate-950/80 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur">
-                      {work.type}
-                    </div>
-                  </div>
-                </Link>
+                <div className="absolute bottom-3 left-3 rounded-full bg-slate-950/80 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur">
+                  {work.type}
+                </div>
+                </div>
 
                 <div className="p-3.5">
-                  <Link href={`/home/jobseeker/work/${work.slug}`} className="block">
-                    <h3 className="text-sm font-black text-slate-950 transition group-hover:text-blue-600">
-                      {work.title}
-                    </h3>
-                  </Link>
+                  <h3 className="text-sm font-black text-slate-950 transition group-hover:text-blue-600">
+                    {work.title}
+                  </h3>
 
                   <p className="mt-1 text-xs font-bold text-slate-500">
                     {work.authorSlug ? (
                       <Link
                         href={`/home/jobseeker/people/${work.authorSlug}`}
-                        className="transition hover:text-blue-600"
+                        className="relative z-10 transition hover:text-blue-600"
                       >
-                        {work.author}
+                      {work.author}
                       </Link>
-                    ) : (
+                      ) : (
                       <span>{work.author}</span>
                     )}{" "}
-                    · {work.role}
-                  </p>
+                      · {work.role}
+                    </p>
 
-                  <div className="mt-2.5 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
+                    <div className="mt-2.5 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
                     <CalendarDays className="h-4 w-4 text-blue-500" />
                     {work.createdAt}
-                  </div>
+                    </div>
 
-                  <div className="mt-3.5 flex gap-2">
-                    <Link
+                    <div className="mt-3.5 flex gap-2">
+                      <Link
                       href={`/home/jobseeker/work/${work.slug}`}
-                      className="flex h-9 flex-1 items-center justify-center rounded-lg bg-blue-600 px-3 text-[11px] font-black text-white transition hover:bg-blue-700"
-                    >
+                        className="relative z-10 flex h-9 flex-1 items-center justify-center rounded-lg bg-blue-600 px-3 text-[11px] font-black text-white transition hover:bg-blue-700"
+                      >
                       View details
                     </Link>
 
                     <button
-                      type="button"
-                      onClick={() => toggleSavedWork(work.slug)}
+                    type="button"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        toggleSavedWork(work.slug);
+                      }}
                       title={isSaved ? "Remove from saved" : "Save project"}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-                    >
+                        className="relative z-10 flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                      >
                       <Bookmark
                         className={`h-4 w-4 ${
-                          isSaved ? "fill-blue-600 text-blue-600" : ""
-                        }`}
+                        isSaved ? "fill-blue-600 text-blue-600" : ""
+                      }`}
                       />
                     </button>
                   </div>

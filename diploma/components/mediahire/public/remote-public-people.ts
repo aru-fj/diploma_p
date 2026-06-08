@@ -1,0 +1,382 @@
+import { supabase } from "@/lib/supabase-client";
+import type { PublicPerson } from "./public-people-data";
+import type { PublicWork, PublicWorkMedia } from "./public-works-data";
+
+const fallbackCover =
+  "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=90";
+
+const fallbackAvatar =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+      <rect width="160" height="160" rx="36" fill="#EAF3FF"/>
+      <circle cx="80" cy="62" r="28" fill="#0B63E5"/>
+      <path d="M34 140c8-30 29-45 46-45s38 15 46 45" fill="#0B63E5"/>
+    </svg>`,
+  );
+
+type ProfileRow = {
+  id: string;
+  user_id?: string | null;
+  public_slug?: string | null;
+  full_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  avatar_url?: string | null;
+  cover_url?: string | null;
+  profession?: string | null;
+  job_title?: string | null;
+  location?: string | null;
+  city?: string | null;
+  country?: string | null;
+  bio?: string | null;
+  skills?: string[] | string | null;
+  software?: string[] | string | null;
+  resume_url?: string | null;
+  resume_name?: string | null;
+};
+
+type ProjectRow = {
+  id: string;
+  title: string;
+  description?: string | null;
+  status: string;
+  cover_url?: string | null;
+  created_at?: string | null;
+  published_at?: string | null;
+  author_id: string;
+};
+
+type MediaRow = {
+  id: string;
+  project_id: string;
+  type: string;
+  url?: string | null;
+  text_content?: string | null;
+  file_name?: string | null;
+  order_index?: number | null;
+};
+
+export type RemotePublicPerson = PublicPerson & {
+  email?: string;
+  remoteWorks?: PublicWork[];
+  resumeUrl?: string;
+  resumeName?: string;
+  software?: string[];
+};
+
+function slugify(value?: string | null) {
+  return (value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function splitList(value?: string[] | string | null) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+
+  return (value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function profileName(profile: ProfileRow) {
+  return (
+    profile.full_name ||
+    [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
+    profile.email?.split("@")[0] ||
+    "MediaHire creator"
+  );
+}
+
+function profileRole(profile: ProfileRow) {
+  return profile.profession || profile.job_title || "Creative specialist";
+}
+
+function profileLocation(profile: ProfileRow) {
+  return (
+    profile.location ||
+    [profile.city, profile.country].filter(Boolean).join(", ") ||
+    "Kazakhstan"
+  );
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return "Recently added";
+
+  try {
+    return new Intl.DateTimeFormat("en", {
+      month: "long",
+      year: "numeric",
+    }).format(new Date(value));
+  } catch {
+    return "Recently added";
+  }
+}
+
+function mediaToGallery(mediaRows: MediaRow[], project: ProjectRow): PublicWorkMedia[] {
+  const gallery = mediaRows
+    .slice()
+    .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+    .map((media): PublicWorkMedia | null => {
+      if ((media.type === "image" || media.type === "photo_grid") && media.url) {
+        return {
+          type: "image",
+          src: media.url,
+          alt: media.file_name || project.title,
+        };
+      }
+
+      if (media.type === "video" && media.url) {
+        return {
+          type: "video",
+          src: media.url,
+          title: media.file_name || project.title,
+        };
+      }
+
+      if (media.type === "youtube" && media.url) {
+        return {
+          type: "youtube",
+          src: media.url,
+          title: media.file_name || project.title,
+        };
+      }
+
+      if (media.type === "pdf" && media.url) {
+        return {
+          type: "pdf",
+          src: media.url,
+          title: media.file_name || project.title,
+        };
+      }
+
+      if (media.type === "text" && media.text_content) {
+        return {
+          type: "text",
+          text: media.text_content,
+        };
+      }
+
+      return null;
+    })
+    .filter((item): item is PublicWorkMedia => Boolean(item));
+
+  return gallery.length
+    ? gallery
+    : [
+        {
+          type: "image",
+          src: project.cover_url || fallbackCover,
+          alt: project.title,
+        },
+      ];
+}
+
+async function loadPublishedProjects(authorId: string, profile: ProfileRow) {
+  const { data: projectRows } = await supabase
+    .from("projects")
+    .select(
+      "id,title,description,status,cover_url,created_at,published_at,author_id",
+    )
+    .eq("author_id", authorId)
+    .eq("status", "published")
+    .order("published_at", { ascending: true });
+
+  const projects = (projectRows || []) as ProjectRow[];
+  const projectIds = projects.map((project) => project.id);
+
+  const { data: mediaRows } = projectIds.length
+    ? await supabase
+        .from("project_media")
+        .select("id,project_id,type,url,text_content,file_name,order_index")
+        .in("project_id", projectIds)
+        .order("order_index", { ascending: true })
+    : { data: [] };
+
+  return projects.map((project): PublicWork => {
+    const gallery = mediaToGallery(
+      ((mediaRows || []) as MediaRow[]).filter(
+        (media) => media.project_id === project.id,
+      ),
+      project,
+    );
+
+    const firstImage = gallery.find((item) => item.type === "image");
+    const name = profileName(profile);
+    const role = profileRole(profile);
+
+    return {
+      slug: project.id,
+      title: project.title,
+      author: name,
+      authorSlug: profile.public_slug || slugify(name) || authorId,
+      role,
+      company: "MediaHire",
+      category: role,
+      type: "Project-based",
+      location: profileLocation(profile),
+      createdAt: formatDate(project.published_at || project.created_at),
+      coverImage:
+        project.cover_url ||
+        (firstImage?.type === "image" ? firstImage.src : undefined) ||
+        fallbackCover,
+      authorAvatar: profile.avatar_url || undefined,
+      gallery,
+      description: project.description || "",
+      responsibilities: ["Portfolio project", "Creative work", "Media production"],
+      tools: ["MediaHire"],
+    };
+  });
+}
+
+function toPublicPerson(profile: ProfileRow, works: PublicWork[]): RemotePublicPerson {
+  const authorId = profile.user_id || profile.id;
+  const name = profileName(profile);
+  const role = profileRole(profile);
+  const location = profileLocation(profile);
+  const skills = splitList(profile.skills);
+  const software = splitList(profile.software);
+  const publicSlug = profile.public_slug || slugify(name) || authorId;
+
+  return {
+    slug: publicSlug,
+    name,
+    role,
+    category: role,
+    location,
+    experience: "Experience not added",
+    availability: "Available for Freelance",
+    shortBio:
+      profile.bio ||
+      (works.length
+        ? `${name} shared ${works.length} published portfolio project${works.length === 1 ? "" : "s"} on MediaHire.`
+        : "MediaHire creative specialist."),
+    about: profile.bio || "",
+    avatar: profile.avatar_url || fallbackAvatar,
+    coverImage: profile.cover_url || works[0]?.coverImage || fallbackCover,
+    rating: 0,
+    projectsCount: works.length,
+    skills: skills.length ? skills : [role],
+    languages: ["Kazakh", "Russian", "English"],
+    featuredWorkSlugs: works.map((work) => work.slug),
+    email: profile.email || "",
+    remoteWorks: works,
+    resumeUrl: profile.resume_url || "",
+    resumeName: profile.resume_name || "",
+    software,
+  };
+}
+
+async function findProfileBySlug(id: string) {
+  const profileSelect =
+    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,resume_url,resume_name";
+
+  const byPublicSlug = await supabase
+    .from("profiles")
+    .select(profileSelect)
+    .eq("public_slug", id)
+    .limit(1);
+
+  if (byPublicSlug.data?.[0]) {
+    return byPublicSlug.data[0] as ProfileRow;
+  }
+
+  const byUserId = await supabase
+    .from("profiles")
+    .select(profileSelect)
+    .eq("user_id", id)
+    .limit(1);
+
+  if (byUserId.data?.[0]) {
+    return byUserId.data[0] as ProfileRow;
+  }
+
+  const byId = await supabase
+    .from("profiles")
+    .select(profileSelect)
+    .eq("id", id)
+    .limit(1);
+
+  if (byId.data?.[0]) {
+    return byId.data[0] as ProfileRow;
+  }
+
+  const { data: allProfiles } = await supabase.from("profiles").select(profileSelect);
+
+  return (
+    ((allProfiles || []) as ProfileRow[]).find((profile) => {
+      const nameSlug = slugify(profileName(profile));
+      const emailSlug = slugify(profile.email?.split("@")[0]);
+
+      return nameSlug === id || emailSlug === id;
+    }) || null
+  );
+}
+
+export async function getRemotePublicPersonById(id: string) {
+  const profileRow = await findProfileBySlug(id);
+
+  if (!profileRow) {
+    return null;
+  }
+
+  const authorId = profileRow.user_id || profileRow.id;
+  const works = await loadPublishedProjects(authorId, profileRow);
+
+  return toPublicPerson(profileRow, works);
+}
+
+export async function getRemotePublicPeople() {
+  const { data: projectRows } = await supabase
+    .from("projects")
+    .select("author_id")
+    .eq("status", "published");
+
+  const authorIds = Array.from(
+    new Set((projectRows || []).map((project) => project.author_id).filter(Boolean)),
+  );
+
+  if (!authorIds.length) {
+    return [];
+  }
+
+  const profileSelect =
+    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,resume_url,resume_name";
+
+  const byUserId = await supabase
+    .from("profiles")
+    .select(profileSelect)
+    .in("user_id", authorIds);
+
+  const foundUserIds = new Set(
+    ((byUserId.data || []) as ProfileRow[])
+      .map((profile) => profile.user_id)
+      .filter(Boolean),
+  );
+
+  const missingIds = authorIds.filter((id) => !foundUserIds.has(id));
+
+  const byId = missingIds.length
+    ? await supabase.from("profiles").select(profileSelect).in("id", missingIds)
+    : { data: [] };
+
+  const profiles = [
+    ...((byUserId.data || []) as ProfileRow[]),
+    ...((byId.data || []) as ProfileRow[]),
+  ];
+
+  const people = await Promise.all(
+    profiles.map(async (profile) => {
+      const authorId = profile.user_id || profile.id;
+      const works = await loadPublishedProjects(authorId, profile);
+
+      return toPublicPerson(profile, works);
+    }),
+  );
+
+  return people.filter((person) => person.projectsCount > 0);
+}

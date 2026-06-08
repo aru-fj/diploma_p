@@ -43,6 +43,8 @@ import { publicWorks } from "@/components/mediahire/public/public-works-data";
 const accountAccessKey = "mediahire.jobseeker.accountAccess";
 
 type ProfileRow = {
+  id?: string | null;
+  user_id?: string | null;
   avatar_url?: string | null;
   bio?: string | null;
   city?: string | null;
@@ -1644,90 +1646,8 @@ export function JobSeekerDashboardRouteSwitcher({
       applyPeopleListRules();
     }
 
-    function handlePeopleCardClick(event: MouseEvent) {
-      const target = event.target;
-
-      if (!(target instanceof HTMLElement)) {
-        return;
-      }
-
-      const directProfileLink = target.closest<HTMLAnchorElement>(
-        'a[href^="/home/jobseeker/people/"]',
-      );
-
-      if (directProfileLink) {
-        const href = directProfileLink.getAttribute("href");
-
-        if (href) {
-          event.preventDefault();
-          event.stopPropagation();
-          router.push(href);
-          return;
-        }
-      }
-
-      const actionControl = target.closest<HTMLElement>("button, a");
-      const actionLabel = actionControl?.textContent?.trim().toLowerCase() || "";
-
-      // Не перехватываем кнопку проекта.
-      // Иначе View details может открыть профиль автора, например Alex Fernández.
-      if (actionLabel.includes("view details")) {
-        return;
-      }
-
-      // Не перехватываем View profile.
-      // Пусть обычный Link из PeopleGrid открывает /home/jobseeker/people/[slug].
-      if (actionLabel.includes("view profile")) {
-        return;
-      }
-
-      // Не перехватываем View profile.
-      // Пусть обычный Link из PeopleGrid открывает /home/jobseeker/people/[slug].
-      if (actionLabel.includes("view profile")) {
-        return;
-      }
-
-      if (actionLabel === "message") {
-        if (
-          actionControl instanceof HTMLAnchorElement &&
-          actionControl.href.includes("/dashboard/jobseeker/community")
-        ) {
-          return;
-        }
-
-        event.preventDefault();
-        event.stopPropagation();
-        void requireJobSeekerAuth("message people");
-        return;
-      }
-
-      const card = target.closest<HTMLElement>(
-        "[data-mediahire-person-card='true']",
-      );
-
-      if (!card) {
-        return;
-      }
-
-      const cardText = card.textContent?.toLowerCase() || "";
-      const looksLikeProjectCard =
-        cardText.includes("view details") ||
-        cardText.includes("project") ||
-        card.hasAttribute("data-mediahire-home-project-id");
-
-      if (looksLikeProjectCard) {
-        return;
-      }
-
-      const href = card.dataset.mediahirePersonHref;
-
-      if (!href) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      router.push(href);
+    function handlePeopleCardClick(_event: MouseEvent) {
+      return;
     }
 
     applyPeopleListRules();
@@ -1738,12 +1658,12 @@ export function JobSeekerDashboardRouteSwitcher({
       childList: true,
       subtree: true,
     });
-    document.addEventListener("click", handlePeopleCardClick, true);
+    //document.addEventListener("click", handlePeopleCardClick, true);
     window.addEventListener("mediahire:settings-updated", loadRemotePeople);
 
     return () => {
       observer.disconnect();
-      document.removeEventListener("click", handlePeopleCardClick, true);
+      //document.removeEventListener("click", handlePeopleCardClick, true);
       window.removeEventListener("mediahire:settings-updated", loadRemotePeople);
       document
         .querySelectorAll<HTMLElement>(
@@ -1834,15 +1754,40 @@ export function JobSeekerDashboardRouteSwitcher({
           visibleProjectRows.map((project) => project.author_id).filter(Boolean),
         ),
       );
-      const { data: profileRows } = authorIds.length
+      const profileSelect =
+        "id,user_id,full_name,first_name,last_name,email,avatar_url";
+
+      const byUserId = authorIds.length
         ? await supabase
             .from("profiles")
-            .select("id,full_name,first_name,last_name,email,avatar_url")
-            .in("id", authorIds)
+            .select(profileSelect)
+            .in("user_id", authorIds)
         : { data: [] };
-      const profileById = new Map(
-        (profileRows || []).map((profile) => [profile.id, profile]),
+
+      const foundUserIds = new Set(
+        (byUserId.data || [])
+          .map((profile) => profile.user_id)
+          .filter(Boolean),
       );
+
+      const missingAuthorIds = authorIds.filter((id) => !foundUserIds.has(id));
+
+      const byId = missingAuthorIds.length
+        ? await supabase
+            .from("profiles")
+            .select(profileSelect)
+            .in("id", missingAuthorIds)
+        : { data: [] };
+
+      const profileById = new Map();
+
+      [...(byUserId.data || []), ...(byId.data || [])].forEach((profile) => {
+        profileById.set(profile.id, profile);
+
+        if (profile.user_id) {
+          profileById.set(profile.user_id, profile);
+        }
+      });
 
       const activeEmail = getStoredJobSeekerProfile().email.trim().toLowerCase();
       const shouldHideActiveUserProjects =
@@ -1904,148 +1849,9 @@ export function JobSeekerDashboardRouteSwitcher({
   }, [pathname]);
 
 
-  // mediahire: dynamic stored project click fix
-  useEffect(() => {
-    if (pathname !== "/home/jobseeker") {
-      return;
-    }
 
-    const fallbackCover =
-      "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=90";
-
-    function isUsableImage(url?: string) {
-      return Boolean(
-        url &&
-          !url.startsWith("blob:") &&
-          !url.includes("undefined") &&
-          !url.includes("null"),
-      );
-    }
-
-    function getProjectCover(project: ReturnType<typeof getPublishedStoredProjects>[number]) {
-      const mediaCover = project.media.find(
-        (block) =>
-          (block.type === "image" || block.type === "photo_grid") &&
-          isUsableImage(block.url),
-      )?.url;
-
-      if (isUsableImage(project.coverUrl)) {
-        return project.coverUrl;
-      }
-
-      return mediaCover || fallbackCover;
-    }
-
-    function normalizeText(value: string) {
-      return value.trim().toLowerCase().replace(/\s+/g, " ");
-    }
-
-    function findProjectGrid() {
-      const main = document.querySelector("main");
-
-      if (!main) {
-        return null;
-      }
-
-      const candidates = Array.from(
-        main.querySelectorAll<HTMLElement>("div, section"),
-      );
-
-      return (
-        candidates.find((candidate) => {
-          const imageCount = candidate.querySelectorAll("img").length;
-          const text = candidate.textContent || "";
-
-          return (
-            imageCount >= 3 &&
-            (text.includes("Tales from the River") ||
-              text.includes("Chubby Characters") ||
-              text.includes("Festival of Light"))
-          );
-        }) || null
-      );
-    }
-
-    function injectStoredProjects() {
-      document
-        .querySelectorAll<HTMLElement>("[data-mediahire-home-project-id]")
-        .forEach((card) => card.remove());
-
-      const grid = findProjectGrid();
-
-      if (!grid) {
-        return;
-      }
-
-      grid
-        .querySelectorAll<HTMLElement>("[data-mediahire-home-project-id]")
-        .forEach((card) => card.remove());
-    }
-
-    function findProjectCardFromClick(target: HTMLElement) {
-      const projects = getPublishedStoredProjects();
-
-      let current: HTMLElement | null = target;
-
-      for (let depth = 0; current && depth < 8; depth += 1) {
-        const projectId = current.dataset.mediahireHomeProjectId;
-
-        if (projectId) {
-          const project = projects.find((item) => item.id === projectId);
-
-          if (project) {
-            return project;
-          }
-        }
-
-        const text = normalizeText(current.textContent || "");
-        const matchedProject = projects.find((project) =>
-          text.includes(normalizeText(project.title)),
-        );
-
-        if (matchedProject) {
-          return matchedProject;
-        }
-
-        current = current.parentElement;
-      }
-
-      return null;
-    }
-
-    function handleProjectClick(event: MouseEvent) {
-      const target = event.target;
-
-      if (!(target instanceof HTMLElement)) {
-        return;
-      }
-
-      const project = findProjectCardFromClick(target);
-
-      if (!project) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      router.push(`/home/jobseeker/work/${project.id}`);
-    }
-
-    injectStoredProjects();
-
-    const observer = new MutationObserver(injectStoredProjects);
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-
-    document.addEventListener("click", handleProjectClick, true);
-
-    return () => {
-      observer.disconnect();
-      document.removeEventListener("click", handleProjectClick, true);
-    };
-  }, [pathname, router]);
+  // Removed broken global project click handler.
+  // Project cards now use normal Link buttons from ProjectGrid.
 
   useEffect(() => {
     const shouldHydrate =

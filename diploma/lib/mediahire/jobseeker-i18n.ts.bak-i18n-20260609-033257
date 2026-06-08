@@ -1,0 +1,136 @@
+export type JobSeekerLanguage = "en" | "kk" | "ru";
+
+export const DEFAULT_JOBSEEKER_LANGUAGE: JobSeekerLanguage = "en";
+
+export const JOBSEEKER_LANGUAGE_STORAGE_KEY = "mediahire-jobseeker-language";
+
+export function isJobSeekerLanguage(value: string | null): value is JobSeekerLanguage {
+  return value === "en" || value === "kk" || value === "ru";
+}
+
+const dictionary: Record<string, Record<JobSeekerLanguage, string>> = {
+  // Navbar
+  "nav.home": {
+    en: "Home",
+    kk: "Басты бет",
+    ru: "Главная",
+  },
+  "nav.searchJob": {
+    en: "Search Job",
+    kk: "Жұмыс іздеу",
+    ru: "Поиск работы",
+  },
+  "nav.myProfile": {
+    en: "My Profile",
+    kk: "Менің профилім",
+    ru: "Мой профиль",
+  },
+  "nav.community": {
+    en: "Community",
+    kk: "Қауымдастық",
+    ru: "Сообщество",
+  },
+
+  // Common
+  "common.save": {
+    en: "Save",
+    kk: "Сақтау",
+    ru: "Сохранить",
+  },
+  "common.saved": {
+    en: "Saved",
+    kk: "Сақталды",
+    ru: "Сохранено",
+  },
+  "common.search": {
+    en: "Search",
+    kk: "Іздеу",
+    ru: "Поиск",
+  },
+  "common.filters": {
+    en: "Filters",
+    kk: "Сүзгілер",
+    ru: "Фильтры",
+  },
+  "common.viewDetails": {
+    en: "View details",
+    kk: "Толығырақ көру",
+    ru: "Подробнее",
+  },
+  "common.viewProfile": {
+    en: "View profile",
+    kk: "Профильді көру",
+    ru: "Посмотреть профиль",
+  },
+  "common.apply": {
+    en: "Apply",
+    kk: "Өтініш беру",
+    ru: "Откликнуться",
+  },
+
+  // Profile
+  "profile.portfolio": {
+    en: "Portfolio",
+    kk: "Портфолио",
+    ru: "Портфолио",
+  },
+  "profile.resume": {
+    en: "Resume",
+    kk: "Түйіндеме",
+    ru: "Резюме",
+  },
+  "profile.reviews": {
+    en: "Reviews",
+    kk: "Пікірлер",
+    ru: "Отзывы",
+  },
+  "profile.addProject": {
+    en: "Add Project",
+    kk: "Жоба қосу",
+    ru: "Добавить проект",
+  },
+
+  // Settings
+  "settings.title": {
+    en: "Settings",
+    kk: "Баптаулар",
+    ru: "Настройки",
+  },
+  "settings.language": {
+    en: "Language",
+    kk: "Тіл",
+    ru: "Язык",
+  },
+  "settings.english": {
+    en: "English",
+    kk: "Ағылшын тілі",
+    ru: "Английский",
+  },
+  "settings.kazakh": {
+    en: "Kazakh",
+    kk: "Қазақ тілі",
+    ru: "Казахский",
+  },
+  "settings.russian": {
+    en: "Russian",
+    kk: "Орыс тілі",
+    ru: "Русский",
+  },
+  "common.cancel": {
+  en: "Cancel",
+  kk: "Болдырмау",
+  ru: "Отмена",
+},
+"settings.description": {
+  en: "Manage notifications, profile visibility, integrations, and security.",
+  kk: "Хабарландыруларды, профиль көрінуін, интеграцияларды және қауіпсіздікті басқарыңыз.",
+  ru: "Управляйте уведомлениями, видимостью профиля, интеграциями и безопасностью.",
+},
+};
+
+export function translateJobSeekerText(
+  language: JobSeekerLanguage,
+  key: string
+) {
+  return dictionary[key]?.[language] ?? dictionary[key]?.en ?? key;
+}
