@@ -17,7 +17,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { supabase } from "@/lib/supabase-client";
 
 import {
   fadeIn,
@@ -185,74 +184,16 @@ function ToggleRow({
 }
 
 export function JobSeekerSettingsPage() {
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
-
   const { language, setLanguage, t } = useJobSeekerLanguage();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [settings, setSettings] = useState<JobSeekerSettings>(() => ({
-    ...getSettings(),
-    profileVisibility: false,
-    publicPortfolio: false,
-  }));
+  const [settings, setSettings] = useState<JobSeekerSettings>(() => getSettings());
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
   const [profile, setProfile] = useState<ReturnType<typeof getCurrentUserProfile> | null>(null);
 
   useEffect(() => {
     setProfile(getCurrentUserProfile());
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadPublicSettings() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        return;
-      }
-
-      const byUserId = await supabase
-        .from("profiles")
-        .select("profile_visibility,public_portfolio")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      let profileRow = byUserId.data;
-
-      if (!profileRow) {
-        const byId = await supabase
-          .from("profiles")
-          .select("profile_visibility,public_portfolio")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        profileRow = byId.data;
-      }
-
-      if (!isMounted || !profileRow) {
-        return;
-      }
-
-      setSettings((current) => ({
-        ...current,
-        profileVisibility: Boolean(profileRow.profile_visibility),
-        publicPortfolio: Boolean(profileRow.public_portfolio),
-      }));
-    }
-
-    loadPublicSettings();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   const avatarSrc = profile?.avatarPreview || "";
@@ -268,95 +209,13 @@ export function JobSeekerSettingsPage() {
     setSavedMessage("");
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (passwordError) {
       return;
     }
 
     updateSettings(settings);
-    setSavedMessage("");
-
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        const payload = {
-          email: user.email || null,
-          profile_visibility: Boolean(settings.profileVisibility),
-          public_portfolio: Boolean(settings.publicPortfolio),
-          role: "jobseeker",
-          user_id: user.id,
-          updated_at: new Date().toISOString(),
-        };
-
-        const byUserId = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (byUserId.data) {
-          const { error } = await supabase
-            .from("profiles")
-            .update(payload)
-            .eq("user_id", user.id);
-
-          if (error) {
-            throw error;
-          }
-        } else {
-          const byId = await supabase
-            .from("profiles")
-            .select("id")
-            .eq("id", user.id)
-            .maybeSingle();
-
-          if (byId.data) {
-            const { error } = await supabase
-              .from("profiles")
-              .update(payload)
-              .eq("id", user.id);
-
-            if (error) {
-              throw error;
-            }
-          } else {
-            const { error } = await supabase.from("profiles").insert({
-              ...payload,
-              created_at: new Date().toISOString(),
-            });
-
-            if (error) {
-              throw error;
-            }
-          }
-        }
-      }
-
-      setSavedMessage(t("settings.savedSuccess"));
-    } catch (error) {
-      setSavedMessage(
-        error instanceof Error
-          ? error.message
-          : "Could not save settings. Please try again.",
-      );
-    }
-  }
-
-  if (!isHydrated) {
-    return (
-    <main className="min-h-screen bg-[#f5f7fb] px-4 py-4 text-slate-950 sm:px-5 lg:px-6">
-      <div className="mx-auto grid w-full max-w-[1240px] gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <section className="min-w-0 lg:col-start-2">
-          <div className="rounded-2xl bg-white p-5 text-sm font-black text-slate-400 shadow-sm">
-            Loading settings...
-          </div>
-        </section>
-      </div>
-    </main>
-    );
+    setSavedMessage(t("settings.savedSuccess"));
   }
 
   return (

@@ -284,7 +284,7 @@ async function loadProfile() {
   const byUserId = await supabase
     .from("profiles")
     .select(
-      "id,full_name,first_name,last_name,email,avatar_url,cover_url,location,city,country,profession,job_title,bio,skills,software,available_status,mobile,experience_years,year_of_birth,gender,preferred_work_type,expected_salary,minimum_salary,payment_period,postal_code,resume_url,resume_name",
+      "id,full_name,first_name,last_name,email,avatar_url,cover_url,location,city,country,profession,job_title,bio,skills,software,available_status",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -293,7 +293,7 @@ async function loadProfile() {
     const byId = await supabase
       .from("profiles")
       .select(
-        "id,full_name,first_name,last_name,email,avatar_url,cover_url,location,city,country,profession,job_title,bio,skills,software,available_status,mobile,experience_years,year_of_birth,gender,preferred_work_type,expected_salary,minimum_salary,payment_period,postal_code,resume_url,resume_name",
+        "id,full_name,first_name,last_name,email,avatar_url,cover_url,location,city,country,profession,job_title,bio,skills,software,available_status",
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -321,32 +321,8 @@ async function loadProfile() {
         profession?: string | null;
         skills?: string[] | string | null;
         software?: string[] | string | null;
-        mobile?: string | null;
-        experience_years?: string | number | null;
-        year_of_birth?: string | number | null;
-        gender?: string | null;
-        preferred_work_type?: string | null;
-        expected_salary?: string | number | null;
-        minimum_salary?: string | number | null;
-        payment_period?: string | null;
-        postal_code?: string | null;
-        resume_url?: string | null;
-        resume_name?: string | null;
       }
     | null;
-
-  const remoteSkills = splitList(profile?.skills);
-  const remoteSoftware = splitList(profile?.software);
-  const remoteExperienceYears =
-    profile?.experience_years == null ? "" : String(profile.experience_years);
-  const remoteYearOfBirth =
-    profile?.year_of_birth == null ? "" : String(profile.year_of_birth);
-  const remoteMinimumSalary =
-    profile?.minimum_salary == null
-      ? profile?.expected_salary == null
-        ? ""
-        : String(profile.expected_salary)
-      : String(profile.minimum_salary);
 
   const fullName =
     localFullName ||
@@ -370,28 +346,28 @@ async function loadProfile() {
     bio: localProfile.bio || profile?.bio || localProfileSummary().bio,
     email: localProfile.email || profile?.email || user.email || localProfileSummary().email,
     experience:
-      formatExperienceYears(localProfile.experienceYears || remoteExperienceYears) ||
+      formatExperienceYears(localProfile.experienceYears) ||
       localProfileSummary().experience,
     fullName,
-    gender: localProfile.gender || profile?.gender || localProfileSummary().gender,
+    gender: localProfile.gender || localProfileSummary().gender,
     id: user.id,
     location:
       localLocation ||
       "Location not added",
     minimumSalaryAmount:
       formatMinimumSalaryAmount(
-        localProfile.minimumSalary || localProfile.expectedSalary || remoteMinimumSalary,
+        localProfile.minimumSalary || localProfile.expectedSalary,
         localProfile.minimumSalaryCurrency,
       ) || localProfileSummary().minimumSalaryAmount,
-    mobile: localProfile.mobile || profile?.mobile || localProfileSummary().mobile,
+    mobile: localProfile.mobile || localProfileSummary().mobile,
     profession:
       localProfile.jobTitle ||
       localProfile.role ||
       "Role not added",
-    preferredWorkType: localProfile.preferredWorkType || profile?.preferred_work_type || "",
-    skills: localSkills.length ? localSkills : remoteSkills,
-    software: localSoftware.length ? localSoftware : remoteSoftware,
-    yearOfBirth: localProfile.yearOfBirth || remoteYearOfBirth || localProfileSummary().yearOfBirth,
+    preferredWorkType: localProfile.preferredWorkType,
+    skills: localSkills,
+    software: localSoftware,
+    yearOfBirth: localProfile.yearOfBirth || localProfileSummary().yearOfBirth,
   } satisfies ProfileSummary;
 }
 

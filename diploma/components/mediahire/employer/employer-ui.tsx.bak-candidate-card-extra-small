@@ -9,7 +9,6 @@ import {
   BriefcaseBusiness,
   ChevronDown,
   HelpCircle,
-  ImageIcon,
   LogOut,
   MapPin,
   MessageCircle,
@@ -40,25 +39,8 @@ const sidebar = [
   { href: "/home/employer/account-settings", label: "Account Setting", icon: BriefcaseBusiness },
   { href: "/home/employer/settings", label: "Settings", icon: Settings },
 ];
-const DEFAULT_EMPLOYER_AVATAR = "";
-
-function removeEmployerDefaultAvatarFromStorage() {
-  if (typeof window === "undefined") return;
-
-  const badAvatarPattern =
-    /https:\/\/images\.unsplash\.com\/photo-1560250097-0b93528c311a[^"\\]*/g;
-
-  Object.keys(window.localStorage).forEach((key) => {
-    const value = window.localStorage.getItem(key);
-
-    if (!value || !value.includes("photo-1560250097-0b93528c311a")) {
-      return;
-    }
-
-    window.localStorage.setItem(key, value.replace(badAvatarPattern, ""));
-  });
-}
-
+const DEFAULT_EMPLOYER_AVATAR =
+  "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=300&q=90";
 
 function useEmployerProfile() {
   const [profile, setProfile] = useState<ReturnType<typeof getEmployerProfile> | null>(
@@ -66,10 +48,7 @@ function useEmployerProfile() {
   );
   
   useEffect(() => {
-    const sync = () => {
-      removeEmployerDefaultAvatarFromStorage();
-      setProfile(getEmployerProfile());
-    };
+    const sync = () => setProfile(getEmployerProfile());
   
     sync();
   
@@ -90,7 +69,7 @@ export function EmployerHeader({ active = "Home" }: { active?: string }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const companyName = profile?.companyName || "MediaHire Studio";
-  const companyAvatar = profile?.avatar || "";
+  const companyAvatar = profile?.avatar || DEFAULT_EMPLOYER_AVATAR;
 
   function logout() {
     router.push("/");
@@ -131,19 +110,16 @@ export function EmployerHeader({ active = "Home" }: { active?: string }) {
             className="inline-flex min-h-9 items-center gap-2 rounded-xl px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-[#eef4ff]"
             aria-label="Open employer account settings"
           >
-            <span className="relative grid h-8 w-8 place-items-center overflow-hidden rounded-full border border-dashed border-slate-300 bg-slate-50 ring-2 ring-white">
-              {companyAvatar ? (
-                <Image
-                  alt={companyName}
-                  className="h-full w-full object-cover"
-                  height={32}
-                  src={companyAvatar}
-                  unoptimized={companyAvatar.startsWith("data:")}
-                  width={32}
-                />
-              ) : (
-                <ImageIcon className="text-slate-400" size={16} />
-              )}
+            <span className="relative block h-8 w-8 overflow-hidden rounded-full ring-2 ring-white">
+              <Image
+                alt={companyName}
+                className="h-full w-full object-cover"
+                height={32}
+                src={companyAvatar}
+                unoptimized={companyAvatar.startsWith("data:")}
+                width={32}
+              />
+              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
             </span>
             <span className="hidden max-w-[130px] truncate text-xs font-semibold text-slate-700 md:block">
               {companyName}
@@ -243,7 +219,7 @@ export function EmployerDashboardShell({
   const profile = useEmployerProfile();
   const pathname = usePathname();
   const companyName = profile?.companyName || "MediaHire Studio";
-  const companyAvatar = profile?.avatar || "";
+  const companyAvatar = profile?.avatar || DEFAULT_EMPLOYER_AVATAR;
   const companyEmail = profile?.email || "employer@mediahire.kz";
 
   return (
@@ -347,20 +323,14 @@ export function EmployerDashboardShell({
                 className="flex min-w-0 items-center gap-2 rounded-xl bg-white px-2 py-1.5 shadow-sm sm:max-w-[220px]"
                 href="/home/employer/account-settings"
               >
-                <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50">
-                  {companyAvatar ? (
-                    <Image
-                      alt={companyName}
-                      className="h-full w-full object-cover"
-                      height={32}
-                      src={companyAvatar}
-                      unoptimized={companyAvatar.startsWith("data:")}
-                      width={32}
-                    />
-                  ) : (
-                    <ImageIcon className="text-slate-400" size={16} />
-                  )}
-                </div>
+                <Image
+                  alt={companyName}
+                  className="h-8 w-8 shrink-0 rounded-xl object-cover"
+                  height={32}
+                  src={companyAvatar}
+                  unoptimized={companyAvatar.startsWith("data:")}
+                  width={32}
+                />
                 <div className="min-w-0">
                   <p className="truncate text-[11px] font-black text-slate-950">
                     {companyName}
@@ -488,7 +458,7 @@ export function CandidateCard({
     candidate.resume?.jobPreferences || "Available for Freelance";
 
   return (
-    <article className="grp   overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(37,99,235,0.14)] w-full max-w-[340px]">
+    <article className="grp w-full max-w-[430px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(37,99,235,0.14)]">
       <Link href={`/home/employer/people/${candidate.id}`} className="block">
         <div className="relative h-28 overflow-hidden bg-slate-100">
           <Image
@@ -499,14 +469,14 @@ export function CandidateCard({
             width={420}
           />
 
-          <div className="absolute left-4 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-black text-slate-950 shadow-sm backdrop-blur">
+          <div className="absolute left-4 top-4 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-black text-slate-950 shadow-sm backdrop-blur">
             {candidate.category}
           </div>
         </div>
 
         <div className="relative px-3.5 pb-3.5 pt-0">
           <div className="-mt-8 flex items-start justify-between gap-3">
-            <div className="h-9 w-12 overflow-hidden rounded-xl border-4 border-white bg-slate-100 shadow-lg">
+            <div className="h-10 w-12 overflow-hidden rounded-xl border-4 border-white bg-slate-100 shadow-lg">
               <Image
                 alt={candidate.name}
                 className="h-full w-full object-cover object-[center_10%]"
@@ -522,7 +492,7 @@ export function CandidateCard({
             </div>
           </div>
 
-          <h3 className="mt-3 text-sm font-black tracking-tight text-slate-950 transition group-hover:text-blue-600">
+          <h3 className="mt-3 text-lg font-black tracking-tight text-slate-950 transition group-hover:text-blue-600">
             {candidate.name}
           </h3>
 
@@ -530,7 +500,7 @@ export function CandidateCard({
             {candidate.role}
           </p>
 
-          <p className="mt-3 text-xs font-semibold leading-5 text-slate-500 line-clamp-2">
+          <p className="mt-3 text-xs font-semibold leading-5 text-slate-500 line-clamp-3">
             {aboutText}
           </p>
 

@@ -1,10 +1,5 @@
 "use client";
 
-import { publicWorks, type PublicWork } from "@/components/mediahire/public/public-works-data";
-import { publicPeople } from "@/components/mediahire/public/public-people-data";
-
-type PublicPerson = (typeof publicPeople)[number];
-
 export type EmployerCandidate = {
   avatar: string;
   bio: string;
@@ -169,7 +164,7 @@ function safeWrite<T>(key: string, value: T) {
   window.dispatchEvent(new Event("mediahire:employer-updated"));
 }
 
-const employerSeedProjects: EmployerProject[] = [
+export const employerProjects: EmployerProject[] = [
   {
     authorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=90",
     authorId: "alex-fernandez",
@@ -214,291 +209,71 @@ const employerSeedProjects: EmployerProject[] = [
   },
 ];
 
-function toEmployerProjectSlug(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-const employerProjectAuthorFallbacks: Record<
-  string,
-  { avatar: string; id: string; name: string }
-> = {
-  "alex-fernandez": {
-    avatar:
-      "https://imasplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=90",
+export const employerCandidates: EmployerCandidate[] = [
+  {
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=90",
+    bio: "Photographer and cinematographer focused on documentary light, urban atmosphere, and campaign storytelling.",
+    category: "Photographer",
+    city: "Madrid",
+    education: "Madrid School of Visual Arts",
+    email: "alexfernandezdp@gmail.com",
+    experience: "3+ years of experience",
     id: "alex-fernandez",
+    languages: ["English", "Spanish"],
+    location: "Madrid, Spain",
     name: "Alex Fernández",
-  },
-  "dimash-hasenov": {
-    avatar:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=90",
-    id: "dimash-hasenov",
-    name: "Dimash Hasenov",
-  },
-  "dimash-karim": {
-    avatar:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=90",
-    id: "dimash-hasenov",
-    name: "Dimash Hasenov",
-  },
-};
-
-function getEmployerVideoEmbedUrl(url: string) {
-  try {
-    const parsedUrl = new URL(url);
-
-    if (parsedUrl.hostname === "youtu.be") {
-      const id = parsedUrl.pathname.replace("/", "");
-      return id ? `https://www.youtube.com/embed/${id}` : url;
-    }
-
-    if (
-      parsedUrl.hostname === "youtube.com" ||
-      parsedUrl.hostname === "www.youtube.com"
-    ) {
-      const watchId = parsedUrl.searchParams.get("v");
-
-      if (watchId) {
-        return `https://www.youtube.com/embed/${watchId}`;
-      }
-
-      if (parsedUrl.pathname.startsWith("/embed/")) {
-        return url;
-      }
-
-      if (parsedUrl.pathname.startsWith("/shorts/")) {
-        const id = parsedUrl.pathname.replace("/shorts/", "");
-        return id ? `https://www.youtube.com/embed/${id}` : url;
-      }
-    }
-
-    if (parsedUrl.hostname.includes("vimeo.com")) {
-      const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-
-      if (match?.[1]) {
-        return `https://player.vimeo.com/video/${match[1]}`;
-      }
-    }
-
-    return url;
-  } catch {
-    return url;
-  }
-}
-
-function mapPublicMediaToEmployerMedia(
-  media: any,
-): NonNullable<EmployerProject["media"]>[number] | null {
-  if (!media || typeof media !== "object") {
-    return null;
-  }
-
-  if (media.type === "image" && media.src) {
-    return {
-      type: "image",
-      url: String(media.src),
-    };
-  }
-
-  if (
-    (media.type === "youtube" ||
-      media.type === "video" ||
-      media.type === "vimeo") &&
-    media.src
-  ) {
-    return {
-      type: "video",
-      url: getEmployerVideoEmbedUrl(String(media.src)),
-    };
-  }
-
-  if (media.type === "text" && media.text) {
-    return {
-      type: "text",
-      text: String(media.text),
-    };
-  }
-
-  if (media.src) {
-    return {
-      type: "pdf",
-      url: String(media.src),
-      fileName: String(media.title || "Project PDF"),
-    };
-  }
-
-  return null;
-}
-
-function resolveEmployerProjectAuthor(work: PublicWork) {
-  const rawWork = work as PublicWork & {
-    authorAvatar?: string;
-    authorSlug?: string;
-  };
-
-  const sourceSlug =
-    rawWork.authorSlug || toEmployerProjectSlug(work.author || "creator");
-
-  const fallback =
-    employerProjectAuthorFallbacks[sourceSlug] ||
-    employerProjectAuthorFallbacks[toEmployerProjectSlug(work.author || "")];
-
-  return {
-    avatar:
-      rawWork.authorAvatar ||
-      fallback?.avatar ||
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=90",
-    id: sourceSlug,
-    name: work.author || fallback?.name || "MediaHire Creator",
-  };
-}
-
-function mapPublicWorkToEmployerProject(work: PublicWork): EmployerProject {
-  const rawWork = work as PublicWork & {
-    coverImage?: string;
-    gallery?: any[];
-    type?: string;
-  };
-
-  const author = resolveEmployerProjectAuthor(work);
-  const gallery = Array.isArray(rawWork.gallery) ? rawWork.gallery : [];
-  const mappedMedia = gallery
-    .map(mapPublicMediaToEmployerMedia)
-    .filter(Boolean) as NonNullable<EmployerProject["media"]>;
-
-  const firstImage = gallery.find((media) => {
-    return Boolean(
-      media &&
-        typeof media === "object" &&
-        "type" in media &&
-        media.type === "image" &&
-        "src" in media &&
-        typeof media.src === "string",
-    );
-  }) as { src?: string } | undefined;
-
-  const firstImageSrc =
-    rawWork.coverImage || firstImage?.src || "/projects/image-1.1.png";
-
-  return {
-    authorAvatar: author.avatar,
-    authorId: author.id,
-    authorName: author.name,
-    category: work.category,
-    description: work.description || work.title,
-    id: work.slug,
-    image: firstImageSrc,
-    media:
-      mappedMedia.length > 0
-        ? mappedMedia
-        : [{ type: "image", url: firstImageSrc }],
-    title: work.title,
-  };
-}
-
-const publicEmployerProjects = publicWorks.map(mapPublicWorkToEmployerProject);
-const publicEmployerProjectIds = new Set(
-  publicEmployerProjects.map((project) => project.id),
-);
-
-export const employerProjects: EmployerProject[] = publicEmployerProjects;
-
-
-function splitPublicTextList(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.map(String).map((item) => item.trim()).filter(Boolean);
-  }
-
-  if (typeof value === "string") {
-    return value
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-
-  return [];
-}
-
-function getPublicPersonResume(person: PublicPerson) {
-  const rawPerson = person as PublicPerson & {
-    resumeData?: Record<string, string>;
-  };
-
-  return rawPerson.resumeData || {};
-}
-
-function mapPublicPersonToEmployerCandidate(
-  person: PublicPerson,
-): EmployerCandidate {
-  const rawPerson = person as PublicPerson & {
-    about?: string;
-    availability?: string;
-    bio?: string;
-    city?: string;
-    email?: string;
-    resumeData?: Record<string, string>;
-    software?: string[];
-  };
-
-  const resume = getPublicPersonResume(person);
-
-  const skillsFromResume = splitPublicTextList(resume.skills);
-  const skillsFromPerson = splitPublicTextList((person as any).skills);
-  const skills = skillsFromResume.length ? skillsFromResume : skillsFromPerson;
-
-  const software = splitPublicTextList(rawPerson.software);
-
-  const candidateProjects = employerProjects.filter(
-    (project) => project.authorId === person.slug,
-  );
-
-  return {
-    avatar: person.avatar,
-    bio: rawPerson.bio || rawPerson.about || person.shortBio || "",
-    category: person.category,
-    city:
-      rawPerson.city ||
-      person.location?.split(",")[0]?.trim() ||
-      person.location ||
-      "Not specified",
-    education: resume.education || "Not specified",
-    email: rawPerson.email || `${person.slug}@mediahire.local`,
-    experience: person.experience || "Not specified",
-    id: person.slug,
-    languages: splitPublicTextList(resume.languages),
-    location: person.location || "Not specified",
-    name: person.name,
-    portfolio: candidateProjects,
-    rating: Number(person.rating || 0),
+    portfolio: employerProjects.filter((project) => project.authorId === "alex-fernandez"),
+    rating: 4.8,
     resume: {
-      about: resume.about || rawPerson.about || person.shortBio || "Not specified",
-      education: resume.education || "Not specified",
-      experience: resume.experience || person.experience || "Not specified",
-      jobPreferences:
-        resume.jobPreferences ||
-        rawPerson.availability ||
-        "Available for Freelance",
-      languages: resume.languages || "Not specified",
-      links: resume.links || "Not specified",
-      skills: resume.skills || skills.join(", ") || "Not specified",
+      about: "Creative photographer with experience in branded editorial and cinematic campaigns.",
+      education: "Madrid School of Visual Arts, Photography",
+      experience: "Freelance campaigns, documentaries, short films, and commercial photo shoots.",
+      jobPreferences: "Open to contract, remote editing, and campaign production roles.",
+      languages: "English, Spanish",
+      links: "behance.net/alexfernandez",
+      skills: "Photography, cinematography, color grading, retouching",
     },
-    reviews: [],
-    role: person.role,
-    skills: skills.length ? skills : [person.category],
-    software,
-  };
-}
-
-export const employerCandidates: EmployerCandidate[] =
-  publicPeople.map(mapPublicPersonToEmployerCandidate);
-
+    reviews: [
+      { company: "Freedom Media", id: "alex-review-1", rating: 5, text: "Alex delivered a beautiful campaign with excellent visual discipline." },
+    ],
+    role: "Photographer / Cinematographer",
+    skills: ["photography", "videography", "color grading", "retouching"],
+    software: ["Adobe Photoshop", "Adobe Lightroom", "Premiere Pro"],
+  },
+  {
+    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=90",
+    bio: "Videographer and motion creator with a strong eye for brand films, music edits, and social-first content.",
+    category: "Videographer",
+    city: "Astana",
+    education: "Astana IT University, Media Technology",
+    email: "dimashasenov@gmail.com",
+    experience: "3+ years of experience",
+    id: "dimash-hasenov",
+    languages: ["Kazakh", "Russian", "English"],
+    location: "Astana, Kazakhstan",
+    name: "Dimash Hasenov",
+    portfolio: employerProjects.filter((project) => project.authorId === "dimash-hasenov"),
+    rating: 4.7,
+    resume: {
+      about: "Videographer building modern social videos, brand content, and short-form edits.",
+      education: "Astana IT University, Media Technology",
+      experience: "Brand films, music clips, motion campaigns, and social content editing.",
+      jobPreferences: "Open to full-time or project-based creative roles.",
+      languages: "Kazakh, Russian, English",
+      links: "behance.net/dimashhasenov",
+      skills: "Videography, editing, creative direction, lighting",
+    },
+    reviews: [
+      { company: "BTS Digital", id: "dimash-review-1", rating: 5, text: "Dimash is fast, thoughtful, and understands visual rhythm." },
+    ],
+    role: "Videographer",
+    skills: ["videography", "video editing", "creative direction", "content creation"],
+    software: ["Adobe Premiere Pro", "After Effects", "DaVinci Resolve"],
+  },
+];
 
 export const defaultEmployerProfile: EmployerProfile = {
-  avatar: "",
+  avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=240&q=85",
   companyDescription: "A creative company hiring media specialists for modern digital campaigns.",
   companyField: "Media & Creative Production",
   companyName: "MediaHire Studio",

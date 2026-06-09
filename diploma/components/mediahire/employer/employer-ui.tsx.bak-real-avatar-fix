@@ -90,7 +90,7 @@ export function EmployerHeader({ active = "Home" }: { active?: string }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const companyName = profile?.companyName || "MediaHire Studio";
-  const companyAvatar = profile?.avatar || "";
+  const companyAvatar = profile?.avatar || DEFAULT_EMPLOYER_AVATAR;
 
   function logout() {
     router.push("/");
@@ -131,19 +131,20 @@ export function EmployerHeader({ active = "Home" }: { active?: string }) {
             className="inline-flex min-h-9 items-center gap-2 rounded-xl px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-[#eef4ff]"
             aria-label="Open employer account settings"
           >
-            <span className="relative grid h-8 w-8 place-items-center overflow-hidden rounded-full border border-dashed border-slate-300 bg-slate-50 ring-2 ring-white">
+            <span className="relative block h-8 w-8 overflow-hidden rounded-full ring-2 ring-white">
               {companyAvatar ? (
-                <Image
-                  alt={companyName}
-                  className="h-full w-full object-cover"
-                  height={32}
-                  src={companyAvatar}
-                  unoptimized={companyAvatar.startsWith("data:")}
-                  width={32}
-                />
-              ) : (
-                <ImageIcon className="text-slate-400" size={16} />
-              )}
+                  <Image
+                    alt={companyName}
+                    className="h-full w-full object-cover"
+                    height={32}
+                    src={companyAvatar}
+                    unoptimized={companyAvatar.startsWith("data:")}
+                    width={32}
+                  />
+                ) : (
+                  <ImageIcon className="text-slate-400" size={16} />
+                )}
+              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
             </span>
             <span className="hidden max-w-[130px] truncate text-xs font-semibold text-slate-700 md:block">
               {companyName}
@@ -243,7 +244,7 @@ export function EmployerDashboardShell({
   const profile = useEmployerProfile();
   const pathname = usePathname();
   const companyName = profile?.companyName || "MediaHire Studio";
-  const companyAvatar = profile?.avatar || "";
+  const companyAvatar = profile?.avatar || DEFAULT_EMPLOYER_AVATAR;
   const companyEmail = profile?.email || "employer@mediahire.kz";
 
   return (
@@ -347,20 +348,18 @@ export function EmployerDashboardShell({
                 className="flex min-w-0 items-center gap-2 rounded-xl bg-white px-2 py-1.5 shadow-sm sm:max-w-[220px]"
                 href="/home/employer/account-settings"
               >
-                <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50">
-                  {companyAvatar ? (
-                    <Image
-                      alt={companyName}
-                      className="h-full w-full object-cover"
-                      height={32}
-                      src={companyAvatar}
-                      unoptimized={companyAvatar.startsWith("data:")}
-                      width={32}
-                    />
-                  ) : (
-                    <ImageIcon className="text-slate-400" size={16} />
-                  )}
-                </div>
+                {companyAvatar ? (
+                  <Image
+                    alt={companyName}
+                    className="h-8 w-8 shrink-0 rounded-xl object-cover"
+                    height={32}
+                    src={companyAvatar}
+                    unoptimized={companyAvatar.startsWith("data:")}
+                    width={32}
+                  />
+                ) : (
+                  <ImageIcon className="text-slate-400" size={16} />
+                )}
                 <div className="min-w-0">
                   <p className="truncate text-[11px] font-black text-slate-950">
                     {companyName}

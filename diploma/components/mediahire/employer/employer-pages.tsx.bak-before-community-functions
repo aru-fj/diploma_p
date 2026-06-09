@@ -20,6 +20,7 @@ import {
   Mail,
   MapPin,
   MessageCircle,
+  Paperclip,
   Play,
   Plus,
   Search,
@@ -32,18 +33,7 @@ import {
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SearchFilterBar, type DashboardMode } from "../dashboard/search-filter-bar";
-import {
-  fadeIn,
-  mediaHireMotion,
-} from "@/components/mediahire/ui/design-system";
 import { kazakhstanCities } from "@/components/mediahire/public/public-jobs-data";
-import { ChatSidebar } from "@/components/mediahire/community/chat-sidebar";
-import { ChatWindow } from "@/components/mediahire/community/chat-window";
-import { EmptyChatState } from "@/components/mediahire/community/empty-chat-state";
-import type {
-  ChatMessage,
-  Conversation,
-} from "@/components/mediahire/community/community-data";
 
 import {
   defaultEmployerProfile,
@@ -126,6 +116,7 @@ function useEmployerRefresh() {
 }
 
 function openChat(router: ReturnType<typeof useRouter>, candidateId: string) {
+  getOrCreateChat(candidateId);
   router.push(`/home/employer/community?chat=${candidateId}`);
 }
 
@@ -205,7 +196,7 @@ function getEmployerCommentAuthor() {
   const profile = getEmployerProfile();
 
   return {
-    avatar: profile.avatar || "",
+    avatar: profile.avatar || employerCommentFallbackAvatar,
     name:
       profile.companyName ||
       [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
@@ -234,7 +225,7 @@ function normalizeEmployerProjectDetailComments(
       return {
         id: item.id || `employer-comment-${index}`,
         name: isCurrent ? author.name : item.name || "Employer",
-        avatar: isCurrent ? author.avatar : item.avatar || "",
+        avatar: isCurrent ? author.avatar : item.avatar || employerCommentFallbackAvatar,
         date: item.date || formatEmployerCommentDate(),
         text: item.text,
         isCurrentUser: true,
@@ -519,7 +510,7 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState<EmployerDetailComment[]>([]);
   const [commentAuthor, setCommentAuthor] = useState(() => ({
-    avatar: "",
+    avatar: employerCommentFallbackAvatar,
     name: "Employer",
   }));
   const [hasMounted, setHasMounted] = useState(false);
@@ -729,19 +720,15 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
         <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
           <div className="border-b border-slate-200 p-4">
             <div className="flex gap-3">
-              <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-dashed border-slate-300 bg-slate-50">
-                {commentAuthor.avatar ? (
-                  <Image
-                    src={commentAuthor.avatar}
-                    alt={commentAuthor.name}
-                    width={36}
-                    height={36}
-                    unoptimized={commentAuthor.avatar.startsWith("data:")}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <ImageIcon className="text-slate-400" size={18} />
-                )}
+              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-slate-200">
+                <Image
+                  src={commentAuthor.avatar}
+                  alt={commentAuthor.name}
+                  width={36}
+                  height={36}
+                  unoptimized={commentAuthor.avatar.startsWith("data:")}
+                  className="h-full w-full object-cover"
+                />
               </div>
 
               <div className="flex-1">
@@ -770,7 +757,7 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
             {comments.map((item, index) => (
               <EmployerCommentItem
                 key={`${item.id}-${index}`}
-                avatar={item.avatar || commentAuthor.avatar || ""}
+                avatar={item.avatar || commentAuthor.avatar}
                 name={item.name}
                 date={item.date}
                 text={item.text}
@@ -893,23 +880,19 @@ function EmployerCommentItem({
   date: string;
   text: string;
 }) {
-  const visibleAvatar = avatar || "";
+  const visibleAvatar = avatar || employerCommentFallbackAvatar;
 
   return (
     <div className="flex gap-3">
-      <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-dashed border-slate-300 bg-slate-50">
-        {visibleAvatar ? (
-          <Image
-            src={visibleAvatar}
-            alt={name}
-            width={36}
-            height={36}
-            unoptimized={visibleAvatar.startsWith("data:")}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <ImageIcon className="text-slate-400" size={18} />
-        )}
+      <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-slate-200">
+        <Image
+          src={visibleAvatar}
+          alt={name}
+          width={36}
+          height={36}
+          unoptimized={visibleAvatar.startsWith("data:")}
+          className="h-full w-full object-cover"
+        />
       </div>
 
       <div>
@@ -1740,7 +1723,7 @@ export function EmployerPostJobPage() {
             <RadioGroup items={["No Travel", "Occasional Travel", "Frequent Travel", "Travel Required"]} onChange={(value) => setValue("travel", value)} selected={form.travel} />
             <label className="block">
               <span className="text-sm font-black">Job Description & Required Skills*</span>
-              <textarea className="mt-2 min-h-28 w-full resize-none rounded-2xl border border-slate-200 p-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" maxLength={720} onChange={(event) => setValue("description", event.target.value)} value={form.description} />
+              <textarea className="mt-2 min-h-36 w-full resize-none rounded-2xl border border-slate-200 p-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" maxLength={720} onChange={(event) => setValue("description", event.target.value)} value={form.description} />
               <span className="mt-1 block text-right text-xs font-bold text-slate-400">{form.description.length}/720</span>
             </label>
           </FormSection>
@@ -2091,413 +2074,108 @@ export function EmployerSearchCvPage() {
 }
 
 
-type EmployerCommunityContact = {
-  avatar: string;
-  bio: string;
-  id: string;
-  name: string;
-  role: string;
-};
-
-const employerCommunityStorageKey = "mediahire_employer_community_chats";
-
-function formatEmployerCommunityMessageTime() {
-  return new Intl.DateTimeFormat("en", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date());
-}
-
-function getEmployerCommunityInitials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
-
-const employerMediaHireConversation: Conversation = {
-  color: "bg-[#0B63E5] text-white",
-  id: "mediahire",
-  initials: "M",
-  lastSeen: "MediaHire Support",
-  messages: [
-    {
-      id: "mediahire-welcome-1",
-      sender: "contact",
-      text: "Welcome to MediaHire. We are here to help you with candidates, messages, saved profiles, and platform questions.",
-      time: "Now",
-      type: "text",
-    },
-  ],
-  name: "MediaHire",
-  participantType: "system",
-  preview: "Welcome to MediaHire.",
-  time: "Now",
-  unread: 1,
-};
-
-function normalizeEmployerCommunityChatId(chatId: string | null) {
-  if (!chatId || chatId === "mediahire-welcome") {
-    return "mediahire";
-  }
-
-  return chatId;
-}
-
-function toEmployerCommunitySlug(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-function createEmployerConversationFromId(chatId: string): Conversation | null {
-  if (chatId === "mediahire") {
-    return employerMediaHireConversation;
-  }
-
-  const normalizedChatId = toEmployerCommunitySlug(chatId);
-
-  const candidate = employerCandidates.find((item) => {
-    return (
-      item.id === chatId ||
-      item.id === normalizedChatId ||
-      toEmployerCommunitySlug(item.id) === normalizedChatId ||
-      toEmployerCommunitySlug(item.name) === normalizedChatId
-    );
-  });
-
-  if (candidate) {
-    return {
-      avatar: candidate.avatar,
-      color: "bg-blue-50 text-blue-700",
-      id: chatId,
-      initials: getEmployerCommunityInitials(candidate.name),
-      lastSeen: "Online",
-      messages: [],
-      name: candidate.name,
-      participantType: "person",
-      preview: "Start the conversation.",
-      profileHref: `/home/employer/people/${candidate.id}`,
-      time: "Now",
-      unread: 0,
-    };
-  }
-
-  const fallbackName = chatId
-    .split("-")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-
-  return {
-    color: "bg-blue-50 text-blue-700",
-    id: chatId,
-    initials: getEmployerCommunityInitials(fallbackName || "Candidate"),
-    lastSeen: "Online",
-    messages: [],
-    name: fallbackName || "Candidate",
-    participantType: "person",
-    preview: "Start the conversation.",
-    profileHref: `/home/employer/people/${chatId}`,
-    time: "Now",
-    unread: 0,
-  };
-}
-
-function getEmployerPersistableConversations(conversations: Conversation[]) {
-  const conversationsById = new Map<string, Conversation>();
-
-  conversations.forEach((conversation) => {
-    if (conversation.id === "mediahire" || conversation.messages.length > 0) {
-      conversationsById.set(conversation.id, conversation);
-    }
-  });
-
-  if (!conversationsById.has("mediahire")) {
-    conversationsById.set("mediahire", employerMediaHireConversation);
-  }
-
-  return Array.from(conversationsById.values());
-}
-
-function sortEmployerCommunityConversations(conversations: Conversation[]) {
-  return [...conversations].sort((firstConversation, secondConversation) => {
-    if (firstConversation.id === "mediahire") return -1;
-    if (secondConversation.id === "mediahire") return 1;
-
-    const starredDifference =
-      Number(Boolean(secondConversation.starred)) -
-      Number(Boolean(firstConversation.starred));
-
-    if (starredDifference !== 0) {
-      return starredDifference;
-    }
-
-    return 0;
-  });
-}
-
-function persistEmployerCommunityConversations(conversations: Conversation[]) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(
-    employerCommunityStorageKey,
-    JSON.stringify(getEmployerPersistableConversations(conversations)),
-  );
-}
-
-function readEmployerCommunityConversations() {
-  if (typeof window === "undefined") {
-    return [employerMediaHireConversation];
-  }
-
-  try {
-    const raw = window.localStorage.getItem(employerCommunityStorageKey);
-    const parsed = raw ? JSON.parse(raw) : null;
-
-    if (!Array.isArray(parsed)) {
-      return [employerMediaHireConversation];
-    }
-
-    return getEmployerPersistableConversations(parsed as Conversation[]);
-  } catch {
-    return [employerMediaHireConversation];
-  }
-}
-
-function getInitialEmployerCommunityConversations(initialChatId: string | null) {
-  const storedConversations = readEmployerCommunityConversations();
-  const normalizedChatId = normalizeEmployerCommunityChatId(initialChatId);
-
-  if (
-    storedConversations.some(
-      (conversation) => conversation.id === normalizedChatId,
-    )
-  ) {
-    return storedConversations;
-  }
-
-  const createdConversation = createEmployerConversationFromId(normalizedChatId);
-
-  if (!createdConversation) {
-    return storedConversations;
-  }
-
-  return [createdConversation, ...storedConversations];
-}
-
-export function EmployerCommunityPage({ initialChatId = null }: { initialChatId?: string | null }) {
-  const [conversations, setConversations] = useState<Conversation[]>([
-    employerMediaHireConversation,
-  ]);
+export function EmployerCommunityPage() {
+  const version = useEmployerRefresh();
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>("mediahire");
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const chats = useMemo(() => getChats(), [version]);
 
   useEffect(() => {
-    const normalizedChatId = normalizeEmployerCommunityChatId(initialChatId);
-    const storedConversations = readEmployerCommunityConversations();
+    const params = new URLSearchParams(window.location.search);
+    const candidate = params.get("chat");
+    const nextId = candidate ? getOrCreateChat(candidate).id : chats[0]?.id;
+    if (!nextId || activeId) return;
+    const timer = window.setTimeout(() => setActiveId(nextId), 0);
+    return () => window.clearTimeout(timer);
+  }, [activeId, chats]);
 
-    if (initialChatId && normalizedChatId !== "mediahire") {
-      const existingConversation = storedConversations.find(
-        (conversation) => conversation.id === normalizedChatId,
-      );
+  const filtered = chats.filter((chat) => {
+    const candidate = employerCandidates.find((item) => item.id === chat.candidateId);
+    return candidate?.name.toLowerCase().includes(query.toLowerCase());
+  });
+  const active = chats.find((chat) => chat.id === activeId) || filtered[0];
+  const activeCandidate = active ? employerCandidates.find((item) => item.id === active.candidateId) : null;
 
-      const pendingConversation =
-        existingConversation || createEmployerConversationFromId(normalizedChatId);
-
-      if (pendingConversation) {
-        const nextConversations = [
-          ...storedConversations.filter(
-            (conversation) => conversation.id === "mediahire",
-          ),
-          pendingConversation,
-          ...storedConversations.filter(
-            (conversation) =>
-              conversation.id !== "mediahire" &&
-              conversation.id !== pendingConversation.id,
-          ),
-        ];
-
-        setConversations(nextConversations);
-        setSelectedId(pendingConversation.id);
-
-        if (typeof window !== "undefined") {
-          window.history.replaceState(null, "", "/home/employer/community");
-        }
-
-        return;
-      }
-    }
-
-    setConversations(storedConversations);
-    setSelectedId("mediahire");
-  }, [initialChatId]);
-
-  const sidebarConversations = useMemo(() => {
-    return conversations.filter(
-      (conversation) =>
-        conversation.id === "mediahire" ||
-        conversation.messages.length > 0 ||
-        conversation.id === selectedId,
-    );
-  }, [conversations, selectedId]);
-
-  const filteredConversations = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-
-    if (!normalizedQuery) {
-      return sortEmployerCommunityConversations(sidebarConversations);
-    }
-
-    return sortEmployerCommunityConversations(
-      sidebarConversations.filter((conversation) =>
-        `${conversation.name} ${conversation.preview}`
-          .toLowerCase()
-          .includes(normalizedQuery),
-      ),
-    );
-  }, [query, sidebarConversations]);
-
-  const selectedConversation =
-    conversations.find((conversation) => conversation.id === selectedId) ??
-    null;
-
-  function handleSelect(conversationId: string) {
-    setSelectedId(conversationId);
-
-    setConversations((currentConversations) => {
-      const nextConversations = currentConversations.map((conversation) =>
-        conversation.id === conversationId
-          ? { ...conversation, unread: 0 }
-          : conversation,
-      );
-
-      persistEmployerCommunityConversations(nextConversations);
-      return nextConversations;
-    });
-  }
-
-  function handleSend(message: string) {
-    const trimmedMessage = message.trim();
-
-    if (!trimmedMessage || !selectedId) {
-      return;
-    }
-
-    setConversations((currentConversations) => {
-      const existingConversation =
-        currentConversations.find(
-          (conversation) => conversation.id === selectedId,
-        ) || createEmployerConversationFromId(selectedId);
-
-      if (!existingConversation) {
-        return currentConversations;
-      }
-
-      const updatedConversation: Conversation = {
-        ...existingConversation,
-        messages: [
-          ...existingConversation.messages.filter(
-            (item) => !item.id.endsWith("-pending-start"),
-          ),
-          {
-            id: `${existingConversation.id}-${Date.now()}`,
-            sender: "me",
-            text: trimmedMessage,
-            time: formatEmployerCommunityMessageTime(),
-            type: "text",
-          } satisfies ChatMessage,
-        ],
-        preview: trimmedMessage,
-        time: "Now",
-        unread: 0,
-      };
-
-      const nextConversations = [
-        updatedConversation,
-        ...currentConversations.filter(
-          (conversation) => conversation.id !== updatedConversation.id,
-        ),
-      ];
-
-      const nextPersisted =
-        getEmployerPersistableConversations(nextConversations);
-
-      persistEmployerCommunityConversations(nextPersisted);
-      setSelectedId(updatedConversation.id);
-      return nextPersisted;
-    });
-  }
-
-  function handleToggleStar(conversationId: string) {
-    setConversations((currentConversations) => {
-      const nextConversations = currentConversations.map((conversation) =>
-        conversation.id === conversationId
-          ? { ...conversation, starred: !conversation.starred }
-          : conversation,
-      );
-
-      persistEmployerCommunityConversations(nextConversations);
-      return nextConversations;
-    });
+  function send(type: "text" | "file" = "text", fileName?: string) {
+    if (!active) return;
+    const text = type === "file" ? fileName || "Attachment" : message.trim();
+    if (!text) return;
+    saveMessage(active.id, { fileName, sender: "employer", text, type });
+    setMessage("");
   }
 
   return (
     <EmployerShell active="Community">
-      <motion.section
-        animate="show"
-        className="mx-auto w-[min(1152px,calc(100%-32px))] px-0 pb-20 pt-8"
-        initial="hidden"
-        transition={mediaHireMotion.page}
-        variants={fadeIn}
-      >
-        <section>
-          <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
-            Message
-          </h1>
-
-          <p className="mt-2 text-sm font-medium text-slate-500">
-            Communicate with candidates and stay updated on hiring conversations
-          </p>
-        </section>
-
-        <section className="mt-4 grid gap-4 lg:h-[500px] lg:grid-cols-[470px_1fr]">
-          <div className={selectedConversation ? "hidden lg:block" : "block"}>
-            <ChatSidebar
-              conversations={filteredConversations}
-              onQueryChange={setQuery}
-              onSelect={handleSelect}
-              query={query}
-              selectedId={selectedId}
-            />
-          </div>
-
-          <div className={selectedConversation ? "block" : "hidden lg:block"}>
-            {selectedConversation ? (
-              <ChatWindow
-                conversation={selectedConversation}
-                onBack={() => setSelectedId(null)}
-                onSend={handleSend}
-                onToggleStar={handleToggleStar}
-              />
-            ) : (
-              <EmptyChatState />
-            )}
-          </div>
-        </section>
-      </motion.section>
+      <section className="mx-auto mt-8 w-[min(1320px,calc(100%-32px))]">
+        <h1 className="text-2xl font-black">Message</h1>
+        <p className="mt-2 text-sm font-semibold text-slate-500">Communicate with candidates and keep hiring updates in one place.</p>
+        <div className="mt-8 grid min-h-[680px] gap-5 lg:grid-cols-[360px_1fr]">
+          <aside className="rounded-[32px] bg-white p-5 shadow-sm">
+            <label className="relative block">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+              <input className="h-10 w-full rounded-2xl border border-slate-200 pl-11 pr-4 text-sm font-bold outline-none focus:border-[#0B63E5]" onChange={(event) => setQuery(event.target.value)} placeholder="Search" value={query} />
+            </label>
+            <div className="mt-4 grid gap-2">
+              {filtered.map((chat) => {
+                const candidate = employerCandidates.find((item) => item.id === chat.candidateId);
+                if (!candidate) return null;
+                const last = chat.messages.at(-1);
+                return (
+                  <button className={`rounded-2xl p-3 text-left transition ${active?.id === chat.id ? "bg-[#eef4ff]" : "hover:bg-slate-50"}`} key={chat.id} onClick={() => setActiveId(chat.id)} type="button">
+                    <div className="flex gap-3">
+                      <Image alt={candidate.name} className="h-10 w-10 rounded-2xl object-cover" height={48} src={candidate.avatar} width={48} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="truncate text-sm font-black">{candidate.name}</p>
+                          {chat.unread ? <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-black text-white">{chat.unread}</span> : null}
+                        </div>
+                        <p className="mt-1 truncate text-xs font-semibold text-slate-500">{last?.text || "No messages yet"}</p>
+                        {chat.status ? <span className="mt-2 inline-flex rounded-full bg-amber-50 px-2 py-1 text-[11px] font-black text-amber-700">{chat.status}</span> : null}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+          <section className="flex rounded-[32px] bg-white shadow-sm">
+            {active && activeCandidate ? (
+              <div className="flex w-full flex-col">
+                <header className="flex items-center gap-4 border-b border-slate-100 p-5">
+                  <Image alt={activeCandidate.name} className="h-10 w-10 rounded-2xl object-cover" height={48} src={activeCandidate.avatar} width={48} />
+                  <div>
+                    <h2 className="font-black">{activeCandidate.name}</h2>
+                    <p className="text-xs font-bold text-slate-400">Last seen 2 minutes ago</p>
+                  </div>
+                  {active.status ? <span className="ml-auto rounded-full bg-[#eef4ff] px-3 py-1 text-xs font-black text-[#0B63E5]">{active.status}</span> : null}
+                </header>
+                <div className="flex-1 space-y-4 overflow-y-auto p-5">
+                  {active.messages.map((item) => (
+                    <div className={`flex ${item.sender === "employer" ? "justify-end" : "justify-start"}`} key={item.id}>
+                      <div className={`max-w-[70%] rounded-2xl px-4 py-3 text-sm font-semibold ${item.sender === "employer" ? "bg-[#0B63E5] text-white" : "bg-slate-100 text-slate-600"}`}>
+                        {item.type === "file" ? <span className="inline-flex items-center gap-2"><FileText size={16} />{item.fileName || item.text}</span> : item.text.startsWith("http") ? <a className="underline" href={item.text}>{item.text}</a> : item.text}
+                        <span className="mt-1 block text-[11px] opacity-70">{item.time}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {!active.messages.length ? <p className="text-center text-sm font-semibold text-slate-400">Start the conversation.</p> : null}
+                </div>
+                <footer className="flex items-center gap-3 border-t border-slate-100 p-5">
+                  <input className="hidden" onChange={(event) => send("file", event.target.files?.[0]?.name)} ref={fileRef} type="file" />
+                  <button className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 text-slate-500" onClick={() => fileRef.current?.click()} type="button"><Paperclip size={18} /></button>
+                  <input className="h-10 flex-1 rounded-2xl border border-slate-200 px-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" onChange={(event) => setMessage(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") send(); }} placeholder="Write a message..." value={message} />
+                  <button className="grid h-11 w-11 place-items-center rounded-full bg-[#0B63E5] text-white" onClick={() => send()} type="button"><Send size={18} /></button>
+                </footer>
+              </div>
+            ) : <div className="grid flex-1 place-items-center text-sm font-bold text-slate-400">Select a chat to start messaging</div>}
+          </section>
+        </div>
+      </section>
     </EmployerShell>
   );
 }
-
 
 export function EmployerHiredSpecialistsPage() {
   const version = useEmployerRefresh();
@@ -2550,12 +2228,6 @@ function HiredSpecialistCard({ candidate, expanded, onToggle }: { candidate: Emp
 }
 
 export function EmployerFavoritesPage() {
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
-
   const router = useRouter();
   const version = useEmployerRefresh();
   const [tab, setTab] = useState<FavoriteTab>("candidates");
@@ -2564,28 +2236,18 @@ export function EmployerFavoritesPage() {
   const candidates = employerCandidates.filter((candidate) => savedCandidates.includes(candidate.id));
   const projects = employerProjects.filter((project) => savedProjects.includes(project.id));
 
-  if (!isHydrated) {
-    return (
-    <EmployerDashboardShell active="Favorites" subtitle="Saved candidates, works, and jobs." title="Favorites">
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-black text-slate-400">
-        Loading favorites...
-      </div>
-    </EmployerDashboardShell>
-    );
-  }
-
   return (
     <EmployerDashboardShell active="Favorites" subtitle="Saved candidates and creative posts." title="Favorites">
       <div className="mb-6 inline-flex rounded-2xl bg-slate-100 p-1">
         {(["candidates", "projects"] as const).map((item) => <button className={`h-7 rounded-lg px-3 text-[9px] font-semibold capitalize leading-none transition ${tab === item ? "bg-white text-slate-950 shadow-sm" : "text-slate-500 hover:text-[#0B63E5]"}`} key={item} onClick={() => setTab(item)} type="button">{item === "projects" ? "Posts / Projects" : item}</button>)}
       </div>
       {tab === "candidates" ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2">
           {candidates.map((candidate) => <CandidateCard candidate={candidate} key={candidate.id} onMessage={() => openChat(router, candidate.id)} onSave={() => toggleSavedCandidate(candidate.id)} saved />)}
           {!candidates.length ? <EmptyState text="No saved candidates yet." /> : null}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2">
           {projects.map((project) => <ProjectCard key={project.id} onSave={() => toggleSavedProject(project.id)} project={project} saved />)}
           {!projects.length ? <EmptyState text="No saved projects yet." /> : null}
         </div>
@@ -2595,28 +2257,12 @@ export function EmployerFavoritesPage() {
 }
 
 export function EmployerAccountSettingsPage() {
-  const [profile, setProfile] = useState<EmployerProfile>(defaultEmployerProfile);
+  const [profile, setProfile] = useState<EmployerProfile>(() => getEmployerProfile());
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const sync = () => {
-      if (typeof window !== "undefined") {
-        const badAvatarPattern =
-          /https:\/\/images\.unsplash\.com\/photo-1560250097-0b93528c311a[^"\\]*/g;
-
-        Object.keys(window.localStorage).forEach((key) => {
-          const value = window.localStorage.getItem(key);
-
-          if (value && value.includes("photo-1560250097-0b93528c311a")) {
-            window.localStorage.setItem(key, value.replace(badAvatarPattern, ""));
-          }
-        });
-      }
-
-      setProfile(getEmployerProfile());
-    };
-    sync();
+    const sync = () => setProfile(getEmployerProfile());
     window.addEventListener("mediahire:employer-updated", sync);
     window.addEventListener("storage", sync);
     return () => {
@@ -2652,89 +2298,48 @@ export function EmployerAccountSettingsPage() {
   }
 
   return (
-    <EmployerDashboardShell
-      active="Account Setting"
-      subtitle="Update your company and account settings."
-      title="Account Setting"
-    >
-      <div className="max-w-[900px] rounded-[24px] bg-white p-5 shadow-sm md:p-6">
-        <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 md:flex-row md:items-center">
-          <label className="grid h-20 w-20 shrink-0 cursor-pointer place-items-center overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-slate-50">
-            {profile.avatar ? (
-              <Image
-                alt={profile.companyName || "Employer"}
-                className="h-full w-full object-cover"
-                height={96}
-                src={profile.avatar}
-                unoptimized={profile.avatar.startsWith("data:")}
-                width={96}
-              />
-            ) : (
-              <ImageIcon className="text-slate-400" />
-            )}
+    <EmployerDashboardShell active="Account Setting" subtitle="Update your company and account settings." title="Account Setting">
+      <div className="rounded-[32px] bg-white p-5 shadow-sm md:p-5">
+        <div className="flex flex-col gap-5 border-b border-slate-100 pb-8 md:flex-row md:items-center">
+          <label className="grid h-28 w-28 cursor-pointer place-items-center overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-slate-50">
+            {profile.avatar ? <Image alt={profile.companyName} className="h-full w-full object-cover" height={128} src={profile.avatar} unoptimized={profile.avatar.startsWith("data:")} width={128} /> : <ImageIcon className="text-slate-400" />}
             <input className="hidden" onChange={(event) => upload(event.target.files?.[0])} type="file" />
           </label>
-
           <div>
-            <h2 className="text-lg font-black text-[#0B63E5]">Profile Picture</h2>
-            <p className="mt-1 text-xs font-semibold text-slate-500">
-              We support PNGs and JPEGs under 10MB
-            </p>
-            <div className="mt-3 flex gap-3">
-              <label className="inline-flex h-10 cursor-pointer items-center rounded-xl bg-[#0B63E5] px-4 text-xs font-black text-white">
+            <h2 className="text-xl font-black text-[#0B63E5]">Profile Picture</h2>
+            <p className="mt-1 text-sm font-semibold text-slate-500">We support PNGs and JPEGs under 10MB</p>
+            <div className="mt-4 flex gap-3">
+              <label className="inline-flex h-11 cursor-pointer items-center rounded-xl bg-[#0B63E5] px-5 text-sm font-black text-white">
                 Upload Picture
                 <input className="hidden" onChange={(event) => upload(event.target.files?.[0])} type="file" />
               </label>
-              <OutlineButton onClick={() => update("avatar", defaultEmployerProfile.avatar)}>
-                Remove
-              </OutlineButton>
+              <OutlineButton onClick={() => update("avatar", defaultEmployerProfile.avatar)}>Remove</OutlineButton>
             </div>
           </div>
         </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
+        {error ? <p className="mt-5 rounded-2xl bg-red-50 p-4 text-sm font-black text-red-600">{error}</p> : null}
+        {saved ? <p className="mt-5 rounded-2xl bg-emerald-50 p-4 text-sm font-black text-emerald-700">Saved successfully.</p> : null}
+        <div className="mt-8 grid gap-5 md:grid-cols-2">
           <Input label="First Name*" onChange={(value) => update("firstName", value)} value={profile.firstName} />
           <Input label="Last Name*" onChange={(value) => update("lastName", value)} value={profile.lastName} />
           <Input label="Role" onChange={(value) => update("role", value)} value={profile.role} />
           <Input label="Company Name" onChange={(value) => update("companyName", value)} value={profile.companyName} />
           <Input label="Email*" onChange={(value) => update("email", value)} value={profile.email} />
           <Input label="Company Field" onChange={(value) => update("companyField", value)} value={profile.companyField} />
-
           <label className="md:col-span-2">
             <span className="text-sm font-black">Company Description*</span>
-            <textarea
-              className="mt-2 min-h-28 w-full resize-none rounded-2xl border border-slate-200 p-4 text-sm font-semibold outline-none focus:border-[#0B63E5]"
-              maxLength={512}
-              onChange={(event) => update("companyDescription", event.target.value)}
-              value={profile.companyDescription}
-            />
-            <span className="mt-1 block text-right text-xs font-bold text-slate-400">
-              {profile.companyDescription.length}/512
-            </span>
+            <textarea className="mt-2 min-h-36 w-full resize-none rounded-2xl border border-slate-200 p-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" maxLength={512} onChange={(event) => update("companyDescription", event.target.value)} value={profile.companyDescription} />
+            <span className="mt-1 block text-right text-xs font-bold text-slate-400">{profile.companyDescription.length}/512</span>
           </label>
         </div>
-
-        <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="mt-8 flex gap-3">
           <OutlineButton onClick={() => setProfile(getEmployerProfile())}>Cancel</OutlineButton>
           <PrimaryButton onClick={save}>Save</PrimaryButton>
-
-          {error ? (
-            <span className="inline-flex min-h-10 items-center rounded-xl border border-[#0B63E5]/10 bg-[#eef4ff] px-4 text-xs font-black text-[#0B63E5]">
-              {error}
-            </span>
-          ) : null}
-
-          {saved ? (
-            <span className="inline-flex min-h-10 items-center rounded-xl border border-[#0B63E5]/10 bg-[#eef4ff] px-4 text-xs font-black text-[#0B63E5]">
-              Saved successfully.
-            </span>
-          ) : null}
         </div>
       </div>
     </EmployerDashboardShell>
   );
 }
-
 
 export function EmployerSettingsPage() {
   const [settings, setSettings] = useState<EmployerSettings>(() => getEmployerSettings());
@@ -2747,7 +2352,7 @@ export function EmployerSettingsPage() {
 
   function save() {
     if ((password.next || password.confirm) && password.next !== password.confirm) {
-      setMessage("Passwords must match");
+      setMessage("Passwords do not match.");
       return;
     }
     saveEmployerSettings(settings);
@@ -2755,141 +2360,48 @@ export function EmployerSettingsPage() {
   }
 
   return (
-    <EmployerDashboardShell
-      active="Settings"
-      subtitle="Manage employer notifications, privacy, integrations, and security."
-      title="Settings"
-    >
-      <div className="max-w-[900px] rounded-[24px] bg-white p-5 shadow-sm md:p-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <button
-            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100"
-            onClick={() => update("messages", !settings.messages)}
-            type="button"
-          >
-            <span>Messages</span>
-            <span className={`relative h-6 w-10 rounded-full transition ${settings.messages ? "bg-[#0B63E5]" : "bg-slate-300"}`}>
-              <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${settings.messages ? "left-5" : "left-1"}`} />
-            </span>
-          </button>
-
-          <button
-            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100"
-            onClick={() => update("interviewUpdates", !settings.interviewUpdates)}
-            type="button"
-          >
-            <span>Interview Updates</span>
-            <span className={`relative h-6 w-10 rounded-full transition ${settings.interviewUpdates ? "bg-[#0B63E5]" : "bg-slate-300"}`}>
-              <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${settings.interviewUpdates ? "left-5" : "left-1"}`} />
-            </span>
-          </button>
-
-          <button
-            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100"
-            onClick={() => update("newApplications", !settings.newApplications)}
-            type="button"
-          >
-            <span>New Applications</span>
-            <span className={`relative h-6 w-10 rounded-full transition ${settings.newApplications ? "bg-[#0B63E5]" : "bg-slate-300"}`}>
-              <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${settings.newApplications ? "left-5" : "left-1"}`} />
-            </span>
-          </button>
-
-          <button
-            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100"
-            onClick={() => update("companyVisibility", !settings.companyVisibility)}
-            type="button"
-          >
-            <span>Company Visibility</span>
-            <span className={`relative h-6 w-10 rounded-full transition ${settings.companyVisibility ? "bg-[#0B63E5]" : "bg-slate-300"}`}>
-              <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${settings.companyVisibility ? "left-5" : "left-1"}`} />
-            </span>
-          </button>
-
-          <button
-            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100"
-            onClick={() => update("publicJobPosts", !settings.publicJobPosts)}
-            type="button"
-          >
-            <span>Public Job Posts</span>
-            <span className={`relative h-6 w-10 rounded-full transition ${settings.publicJobPosts ? "bg-[#0B63E5]" : "bg-slate-300"}`}>
-              <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${settings.publicJobPosts ? "left-5" : "left-1"}`} />
-            </span>
-          </button>
-
-          <button
-            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100"
-            onClick={() => update("googleIntegration", !settings.googleIntegration)}
-            type="button"
-          >
-            <span>Google integration</span>
-            <span className={`relative h-6 w-10 rounded-full transition ${settings.googleIntegration ? "bg-[#0B63E5]" : "bg-slate-300"}`}>
-              <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${settings.googleIntegration ? "left-5" : "left-1"}`} />
-            </span>
-          </button>
-
-          <label className="block">
-            <span className="text-sm font-black text-slate-700">Language</span>
-            <select
-              className="mt-2 h-10 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold outline-none focus:border-[#0B63E5]"
-              onChange={(event) => update("language", event.target.value)}
-              value={settings.language}
-            >
-              {["English", "Kazakh", "Russian"].map((option) => (
-                <option key={option}>{option}</option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block">
-            <span className="text-sm font-black text-slate-700">Theme</span>
-            <select
-              className="mt-2 h-10 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold outline-none focus:border-[#0B63E5]"
-              onChange={(event) => update("theme", event.target.value)}
-              value={settings.theme}
-            >
-              {["Light", "Dark", "System"].map((option) => (
-                <option key={option}>{option}</option>
-              ))}
-            </select>
-          </label>
-
-          <Input
-            label="New Password"
-            onChange={(value) => setPassword((current) => ({ ...current, next: value }))}
-            value={password.next}
-          />
-
-          <Input
-            label="Confirm Password"
-            onChange={(value) => setPassword((current) => ({ ...current, confirm: value }))}
-            value={password.confirm}
-          />
+    <EmployerDashboardShell active="Settings" subtitle="Manage employer notifications, privacy, integrations, and security." title="Settings">
+      <div className="rounded-[32px] bg-white p-5 shadow-sm md:p-5">
+        {message ? <p className="mb-6 rounded-2xl bg-[#eef4ff] p-4 text-sm font-black text-[#0B63E5]">{message}</p> : null}
+        <div className="grid gap-5">
+          <SettingsSection title="Notification">
+            <Toggle checked={settings.messages} label="Messages" onChange={(value) => update("messages", value)} />
+            <Toggle checked={settings.interviewUpdates} label="Interview Updates" onChange={(value) => update("interviewUpdates", value)} />
+            <Toggle checked={settings.newApplications} label="New Applications" onChange={(value) => update("newApplications", value)} />
+          </SettingsSection>
+          <SettingsSection title="Privacy">
+            <Toggle checked={settings.companyVisibility} label="Company Visibility" onChange={(value) => update("companyVisibility", value)} />
+            <Toggle checked={settings.publicJobPosts} label="Public Job Posts" onChange={(value) => update("publicJobPosts", value)} />
+          </SettingsSection>
+          <SettingsSection title="Integrations">
+            <Toggle checked={settings.googleIntegration} label="Google integration" onChange={(value) => update("googleIntegration", value)} />
+          </SettingsSection>
+          <SettingsSection title="Preferences">
+            <Select label="Select Language" onChange={(value) => update("language", value)} options={["English", "Kazakh", "Russian"]} value={settings.language} />
+            <Select label="Select Theme" onChange={(value) => update("theme", value)} options={["Light", "Dark", "System"]} value={settings.theme} />
+          </SettingsSection>
+          <SettingsSection title="Security">
+            <Input label="New Password" onChange={(value) => setPassword((current) => ({ ...current, next: value }))} value={password.next} />
+            <Input label="Confirm Password" onChange={(value) => setPassword((current) => ({ ...current, confirm: value }))} value={password.confirm} />
+          </SettingsSection>
         </div>
-
-        <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="mt-8 flex gap-3">
           <OutlineButton onClick={() => setSettings(getEmployerSettings())}>Cancel</OutlineButton>
           <PrimaryButton onClick={save}>Save</PrimaryButton>
-          {message ? (
-            <span className="inline-flex min-h-10 items-center rounded-xl border border-[#0B63E5]/10 bg-[#eef4ff] px-4 text-xs font-black text-[#0B63E5]">
-              {message}
-            </span>
-          ) : null}
         </div>
       </div>
     </EmployerDashboardShell>
   );
 }
 
-
 function SettingsSection({ children, title }: { children: React.ReactNode; title: string }) {
-  return <section className="rounded-2xl border border-slate-200 p-3.5"><h2 className="text-base font-black">{title}</h2><div className="mt-3 grid gap-3 md:grid-cols-2">{children}</div></section>;
+  return <section className="rounded-2xl border border-slate-200 p-5"><h2 className="text-xl font-black">{title}</h2><div className="mt-5 grid gap-4 md:grid-cols-2">{children}</div></section>;
 }
 
 function Toggle({ checked, label, onChange }: { checked: boolean; label: string; onChange: (value: boolean) => void }) {
-  return <button className="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-xs font-black" onClick={() => onChange(!checked)} type="button"><span>{label}</span><span className={`relative h-6 w-9 rounded-full transition ${checked ? "bg-[#0B63E5]" : "bg-slate-300"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${checked ? "left-5" : "left-1"}`} /></span></button>;
+  return <button className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 text-sm font-black" onClick={() => onChange(!checked)} type="button"><span>{label}</span><span className={`relative h-7 w-10 rounded-full transition ${checked ? "bg-[#0B63E5]" : "bg-slate-300"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${checked ? "left-6" : "left-1"}`} /></span></button>;
 }
 
 function Select({ label, onChange, options, value }: { label: string; onChange: (value: string) => void; options: string[]; value: string }) {
-  return <label className="block"><span className="text-sm font-black">{label}</span><select className="mt-2 h-9 w-full rounded-xl border border-slate-200 px-3 text-xs font-semibold outline-none focus:border-[#0B63E5]" onChange={(event) => onChange(event.target.value)} value={value}>{options.map((option) => <option key={option}>{option}</option>)}</select></label>;
+  return <label className="block"><span className="text-sm font-black">{label}</span><select className="mt-2 h-10 w-full rounded-2xl border border-slate-200 px-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" onChange={(event) => onChange(event.target.value)} value={value}>{options.map((option) => <option key={option}>{option}</option>)}</select></label>;
 }

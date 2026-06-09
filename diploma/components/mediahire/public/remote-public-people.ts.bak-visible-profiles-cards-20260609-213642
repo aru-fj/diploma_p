@@ -275,7 +275,7 @@ function toPublicPerson(profile: ProfileRow, works: PublicWork[]): RemotePublicP
 
 async function findProfileBySlug(id: string) {
   const profileSelect =
-    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,resume_url,resume_name,role,profile_visibility,preferred_work_type,experience_years,year_of_birth,gender,mobile,minimum_salary,payment_period,postal_code,role,profile_visibility,preferred_work_type,experience_years,year_of_birth,gender,mobile,minimum_salary,payment_period,postal_code,role,profile_visibility";
+    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,resume_url,resume_name,role,profile_visibility,preferred_work_type,experience_years,year_of_birth,gender,mobile,minimum_salary,payment_period,postal_code,role,profile_visibility";
 
   const byPublicSlug = await supabase
     .from("profiles")

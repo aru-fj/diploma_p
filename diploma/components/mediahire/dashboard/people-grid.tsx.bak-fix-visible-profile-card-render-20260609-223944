@@ -333,6 +333,20 @@ export function PeopleGrid({
           });
         }
 
+        console.log(
+          "VISIBLE JOBSEEKER DEBUG TEXT",
+          JSON.stringify(
+            {
+              currentEmail,
+              currentSlug,
+              visibleProfilesCount: visibleProfiles?.length || 0,
+              visibleProfiles,
+            },
+            null,
+            2,
+          ),
+        );
+
         const visibleOtherPeople = ((visibleProfiles || []) as Array<{
           avatar_url?: string | null;
           bio?: string | null;
@@ -393,7 +407,7 @@ export function PeopleGrid({
             const role =
               profile.profession ||
               profile.job_title ||
-              "Graphic Designer";
+              "Creative specialist";
 
             const location =
               profile.location ||
@@ -402,15 +416,11 @@ export function PeopleGrid({
 
             return {
               about: profile.bio || "",
-              avatar:
-                profile.avatar_url ||
-                "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=240&q=80",
+              avatar: profile.avatar_url || "",
               availability:
                 profile.preferred_work_type || "Available for opportunities",
               category: role,
-              coverImage:
-                profile.cover_url ||
-                "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80",
+              coverImage: profile.cover_url || "",
               email: profile.email || "",
               experience: profile.experience_years
                 ? `${profile.experience_years} years`
@@ -425,9 +435,7 @@ export function PeopleGrid({
               resumeName: "",
               resumeUrl: "",
               role,
-              shortBio:
-                profile.bio ||
-                `${fullName} is a MediaHire creative specialist.`,
+              shortBio: profile.bio || "MediaHire creative specialist.",
               skills: skills.length ? skills : [role],
               slug,
               software,
@@ -533,7 +541,7 @@ export function PeopleGrid({
     }
 
     return people;
-  }, [activeCategory, activeSort, availablePeople, search, savedPeopleSlugs]);
+  }, [activeCategory, activeSort, search, savedPeopleSlugs]);
 
   const pinnedPeople = filteredPeople;
 

@@ -205,7 +205,7 @@ function getEmployerCommentAuthor() {
   const profile = getEmployerProfile();
 
   return {
-    avatar: profile.avatar || "",
+    avatar: profile.avatar || employerCommentFallbackAvatar,
     name:
       profile.companyName ||
       [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
@@ -234,7 +234,7 @@ function normalizeEmployerProjectDetailComments(
       return {
         id: item.id || `employer-comment-${index}`,
         name: isCurrent ? author.name : item.name || "Employer",
-        avatar: isCurrent ? author.avatar : item.avatar || "",
+        avatar: isCurrent ? author.avatar : item.avatar || employerCommentFallbackAvatar,
         date: item.date || formatEmployerCommentDate(),
         text: item.text,
         isCurrentUser: true,
@@ -519,7 +519,7 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState<EmployerDetailComment[]>([]);
   const [commentAuthor, setCommentAuthor] = useState(() => ({
-    avatar: "",
+    avatar: employerCommentFallbackAvatar,
     name: "Employer",
   }));
   const [hasMounted, setHasMounted] = useState(false);
@@ -729,19 +729,15 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
         <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
           <div className="border-b border-slate-200 p-4">
             <div className="flex gap-3">
-              <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-dashed border-slate-300 bg-slate-50">
-                {commentAuthor.avatar ? (
-                  <Image
-                    src={commentAuthor.avatar}
-                    alt={commentAuthor.name}
-                    width={36}
-                    height={36}
-                    unoptimized={commentAuthor.avatar.startsWith("data:")}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <ImageIcon className="text-slate-400" size={18} />
-                )}
+              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-slate-200">
+                <Image
+                  src={commentAuthor.avatar}
+                  alt={commentAuthor.name}
+                  width={36}
+                  height={36}
+                  unoptimized={commentAuthor.avatar.startsWith("data:")}
+                  className="h-full w-full object-cover"
+                />
               </div>
 
               <div className="flex-1">
@@ -770,7 +766,7 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
             {comments.map((item, index) => (
               <EmployerCommentItem
                 key={`${item.id}-${index}`}
-                avatar={item.avatar || commentAuthor.avatar || ""}
+                avatar={item.avatar || commentAuthor.avatar}
                 name={item.name}
                 date={item.date}
                 text={item.text}
@@ -893,23 +889,19 @@ function EmployerCommentItem({
   date: string;
   text: string;
 }) {
-  const visibleAvatar = avatar || "";
+  const visibleAvatar = avatar || employerCommentFallbackAvatar;
 
   return (
     <div className="flex gap-3">
-      <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-dashed border-slate-300 bg-slate-50">
-        {visibleAvatar ? (
-          <Image
-            src={visibleAvatar}
-            alt={name}
-            width={36}
-            height={36}
-            unoptimized={visibleAvatar.startsWith("data:")}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <ImageIcon className="text-slate-400" size={18} />
-        )}
+      <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-slate-200">
+        <Image
+          src={visibleAvatar}
+          alt={name}
+          width={36}
+          height={36}
+          unoptimized={visibleAvatar.startsWith("data:")}
+          className="h-full w-full object-cover"
+        />
       </div>
 
       <div>

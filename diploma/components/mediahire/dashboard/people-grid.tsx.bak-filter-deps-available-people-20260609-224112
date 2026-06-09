@@ -533,7 +533,7 @@ export function PeopleGrid({
     }
 
     return people;
-  }, [activeCategory, activeSort, availablePeople, search, savedPeopleSlugs]);
+  }, [activeCategory, activeSort, search, savedPeopleSlugs]);
 
   const pinnedPeople = filteredPeople;
 

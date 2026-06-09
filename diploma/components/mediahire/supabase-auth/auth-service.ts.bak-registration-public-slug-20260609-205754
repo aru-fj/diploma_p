@@ -43,28 +43,6 @@ export type ProfileUpsertPayload = {
   userId: string;
 };
 
-function createStablePublicSlug(
-  firstName?: string | null,
-  lastName?: string | null,
-  email?: string | null,
-) {
-  const baseName =
-    [firstName, lastName].filter(Boolean).join(" ").trim() ||
-    email?.split("@")[0] ||
-    "jobseeker";
-
-  const slug = baseName
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 64);
-
-  return slug || "jobseeker";
-}
-
-
 type VerificationCodeRequest = {
   email: string;
   provider?: MediaHireProvider;
@@ -214,10 +192,6 @@ export async function signUpWithEmail({
         provider: "email",
         resume_url: "",
         role,
-      public_slug:
-        role === "jobseeker"
-          ? createStablePublicSlug(firstName, lastName, email)
-          : null,
       },
       emailRedirectTo: getAuthRedirectUrl(
         role === "jobseeker" ? "/home/jobseeker" : "/account/employer",

@@ -4,7 +4,6 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
-import { supabase } from "@/lib/supabase-client";
 import { AuthImagePanel } from "./auth-image-panel";
 import { AuthLogo } from "./logo";
 import { PrimaryButton } from "./primary-button";
@@ -25,106 +24,6 @@ function readFileAsDataUrl(file: File) {
       resolve(typeof reader.result === "string" ? reader.result : "");
     reader.readAsDataURL(file);
   });
-}
-
-async function saveResumeToSupabase(file: File) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    const fallbackUrl = await readFileAsDataUrl(file);
-
-    return {
-      resumeName: file.name,
-      resumeUrl: fallbackUrl,
-    };
-  }
-
-  const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-  const filePath = `${user.id}/${Date.now()}-${safeFileName}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("resumes")
-    .upload(filePath, file, {
-      cacheControl: "3600",
-      contentType: "application/pdf",
-      upsert: true,
-    });
-
-  if (uploadError) {
-    throw uploadError;
-  }
-
-  const { data: publicUrlData } = supabase.storage
-    .from("resumes")
-    .getPublicUrl(filePath);
-
-  const resumeUrl = publicUrlData.publicUrl;
-
-  const payload = {
-    resume_name: file.name,
-    resume_url: resumeUrl,
-    email: user.email || null,
-    role: "jobseeker",
-    user_id: user.id,
-    updated_at: new Date().toISOString(),
-  };
-
-  const byUserId = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (byUserId.data) {
-    const { error } = await supabase
-      .from("profiles")
-      .update(payload)
-      .eq("user_id", user.id);
-
-    if (error) {
-      throw error;
-    }
-
-    return {
-      resumeName: file.name,
-      resumeUrl,
-    };
-  }
-
-  const byId = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (byId.data) {
-    const { error } = await supabase
-      .from("profiles")
-      .update(payload)
-      .eq("id", user.id);
-
-    if (error) {
-      throw error;
-    }
-
-    return {
-      resumeName: file.name,
-      resumeUrl,
-    };
-  }
-
-  const { error } = await supabase.from("profiles").insert(payload);
-
-  if (error) {
-    throw error;
-  }
-
-  return {
-    resumeName: file.name,
-    resumeUrl,
-  };
 }
 
 export function JobSeekerResumePage() {
@@ -189,27 +88,22 @@ export function JobSeekerResumePage() {
       return;
     }
 
-    setIsLoading(true);
-    setError("");
-
     try {
-      const savedResume = await saveResumeToSupabase(resumeFile);
-
+      const pdfUrl = await readFileAsDataUrl(resumeFile);
       updateJobSeekerSignupProfile({
-        pdfName: savedResume.resumeName,
-        pdfUrl: savedResume.resumeUrl,
-        resumeUrl: savedResume.resumeUrl,
+        pdfName: resumeFile.name,
+        pdfUrl,
+        resumeUrl: pdfUrl,
       });
-
-      router.push(jobSeekerHomeRoute);
-    } catch (error) {
-      setIsLoading(false);
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Could not upload resume. Please try again.",
-      );
+    } catch {
+      updateJobSeekerSignupProfile({
+        pdfName: resumeFile.name,
+        pdfUrl: "",
+        resumeUrl: "",
+      });
     }
+
+    goToJobSeekerHome();
   }
 
   function handleSkip() {

@@ -286,12 +286,14 @@ export function PeopleGrid({
 
     const syncAvailablePeople = () => {
       void (async () => {
+        const remotePeople = await getRemotePublicPeople();
+
         const {
           data: { user },
         } = await supabase.auth.getUser();
 
-        let currentSlug = "";
         let currentEmail = user?.email?.trim().toLowerCase() || "";
+        let currentSlug = "";
 
         if (user) {
           const byUserId = await supabase
@@ -316,131 +318,21 @@ export function PeopleGrid({
           }
         }
 
-        const { data: visibleProfiles, error } = await supabase
-          .from("profiles")
-          .select(
-            "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,preferred_work_type,experience_years,profile_visibility,role",
-          )
-          .eq("role", "jobseeker")
-          .eq("profile_visibility", true);
+        const visibleOtherPeople = remotePeople.filter((person) => {
+          const personEmail = person.email?.trim().toLowerCase() || "";
 
-        if (error) {
-          console.error("Could not load visible jobseeker profiles:", {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code,
-          });
-        }
+          if (currentSlug && person.slug === currentSlug) {
+            return false;
+          }
 
-        const visibleOtherPeople = ((visibleProfiles || []) as Array<{
-          avatar_url?: string | null;
-          bio?: string | null;
-          city?: string | null;
-          country?: string | null;
-          cover_url?: string | null;
-          email?: string | null;
-          experience_years?: string | number | null;
-          first_name?: string | null;
-          full_name?: string | null;
-          id?: string | null;
-          job_title?: string | null;
-          last_name?: string | null;
-          location?: string | null;
-          preferred_work_type?: string | null;
-          profession?: string | null;
-          public_slug?: string | null;
-          skills?: string[] | string | null;
-          software?: string[] | string | null;
-          user_id?: string | null;
-        }>)
-          .filter((profile) => {
-            const profileSlug = profile.public_slug || profile.user_id || profile.id || "";
-            const profileEmail = profile.email?.trim().toLowerCase() || "";
+          if (currentEmail && personEmail === currentEmail) {
+            return false;
+          }
 
-            if (currentSlug && profileSlug === currentSlug) {
-              return false;
-            }
-
-            if (currentEmail && profileEmail === currentEmail) {
-              return false;
-            }
-
-            return true;
-          })
-          .map((profile) => {
-            const fullName =
-              profile.full_name ||
-              [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
-              profile.email?.split("@")[0] ||
-              "MediaHire creator";
-
-            const slug =
-              profile.public_slug ||
-              slugifyProfileName(fullName) ||
-              profile.user_id ||
-              profile.id ||
-              "";
-
-            const skills = Array.isArray(profile.skills)
-              ? profile.skills.filter(Boolean)
-              : splitProfileList(profile.skills || "");
-
-            const software = Array.isArray(profile.software)
-              ? profile.software.filter(Boolean)
-              : splitProfileList(profile.software || "");
-
-            const role =
-              profile.profession ||
-              profile.job_title ||
-              "Graphic Designer";
-
-            const location =
-              profile.location ||
-              [profile.city, profile.country].filter(Boolean).join(", ") ||
-              "Kazakhstan";
-
-            return {
-              about: profile.bio || "",
-              avatar:
-                profile.avatar_url ||
-                "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=240&q=80",
-              availability:
-                profile.preferred_work_type || "Available for opportunities",
-              category: role,
-              coverImage:
-                profile.cover_url ||
-                "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80",
-              email: profile.email || "",
-              experience: profile.experience_years
-                ? `${profile.experience_years} years`
-                : "Experience not added",
-              featuredWorkSlugs: [],
-              languages: ["Kazakh", "Russian", "English"],
-              location,
-              name: fullName,
-              projectsCount: 0,
-              rating: 0,
-              remoteWorks: [],
-              resumeName: "",
-              resumeUrl: "",
-              role,
-              shortBio:
-                profile.bio ||
-                `${fullName} is a MediaHire creative specialist.`,
-              skills: skills.length ? skills : [role],
-              slug,
-              software,
-            } as PublicPerson;
-          });
-
-        const peopleBySlug = new Map<string, PublicPerson>();
-
-        [...publicPeople, ...visibleOtherPeople].forEach((person) => {
-          peopleBySlug.set(person.slug, person);
+          return true;
         });
 
-        setAvailablePeople(Array.from(peopleBySlug.values()));
+        setAvailablePeople(visibleOtherPeople);
       })();
     };
 
@@ -533,9 +425,62 @@ export function PeopleGrid({
     }
 
     return people;
-  }, [activeCategory, activeSort, availablePeople, search, savedPeopleSlugs]);
+  }, [activeCategory, activeSort, search, savedPeopleSlugs]);
 
-  const pinnedPeople = filteredPeople;
+  const pinnedPeople = (() => {
+    const currentUserPerson = getCurrentUserPublicPersonCard();
+    const currentSlug = currentUserPerson?.slug || "";
+
+    if (!currentSlug) {
+      return filteredPeople;
+    }
+
+    const currentFromAvailable =
+      availablePeople.find((person) => person.slug === currentSlug) ||
+      currentUserPerson;
+
+    if (!currentFromAvailable) {
+      return filteredPeople;
+    }
+
+    const normalizedSearch = search.trim().toLowerCase();
+
+    const matchesSearch =
+      !normalizedSearch ||
+      [
+        currentFromAvailable.name,
+        currentFromAvailable.role,
+        currentFromAvailable.category,
+        currentFromAvailable.location,
+        currentFromAvailable.experience,
+        currentFromAvailable.availability,
+        currentFromAvailable.shortBio,
+        ...currentFromAvailable.skills,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedSearch);
+
+    const matchesCategory =
+      activeCategory === "For You" ||
+      activeCategory === "People" ||
+      activeCategory === "All" ||
+      activeCategory === currentFromAvailable.category ||
+      (activeCategory === "Animation" &&
+        currentFromAvailable.category.includes("Animation")) ||
+      activeCategory === "Saved" ||
+      activeCategory === "Following";
+
+    if (!matchesSearch || !matchesCategory) {
+      return filteredPeople;
+    }
+
+    const withoutCurrentUser = filteredPeople.filter(
+      (person) => person.slug !== currentFromAvailable.slug,
+    );
+
+    return [...withoutCurrentUser, currentFromAvailable];
+  })();
 
   return (
     <section className="mx-auto mt-6 w-full max-w-none">

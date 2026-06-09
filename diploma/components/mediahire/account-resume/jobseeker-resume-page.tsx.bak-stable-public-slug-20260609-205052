@@ -1411,41 +1411,6 @@ export function JobSeekerResumePage() {
     };
   }
   
-  async function getStablePublicSlug(userId: string, fallbackName: string) {
-    const fallbackSlug = slugifyProfileName(fallbackName) || userId;
-
-    const byUserId = await supabase
-      .from("profiles")
-      .select("id,public_slug")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (byUserId.data?.public_slug) {
-      return {
-        publicSlug: byUserId.data.public_slug,
-        shouldWriteSlug: false,
-      };
-    }
-
-    const byId = await supabase
-      .from("profiles")
-      .select("id,public_slug")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (byId.data?.public_slug) {
-      return {
-        publicSlug: byId.data.public_slug,
-        shouldWriteSlug: false,
-      };
-    }
-
-    return {
-      publicSlug: fallbackSlug,
-      shouldWriteSlug: true,
-    };
-  }
-
   async function updateCurrentUserProfile(
     userId: string,
     values: Record<string, unknown>,
@@ -1453,59 +1418,40 @@ export function JobSeekerResumePage() {
     const { data: userData } = await supabase.auth.getUser();
     const email = userData.user?.email || "";
   
-    const fallbackPublicSlug =
-      slugifyProfileName(
-        typeof values.full_name === "string" ? values.full_name : email.split("@")[0],
-      ) || userId;
-
     const payload = {
       ...values,
       email,
       role: "jobseeker",
       user_id: userId,
+      public_slug: slugifyProfileName(
+        typeof values.full_name === "string" ? values.full_name : email.split("@")[0],
+      ),
       updated_at: new Date().toISOString(),
     };
   
     const byUserId = await supabase
       .from("profiles")
-      .select("id,user_id,public_slug")
+      .select("id,user_id")
       .eq("user_id", userId)
       .maybeSingle();
   
     if (byUserId.data) {
-      await supabase
-        .from("profiles")
-        .update({
-          ...payload,
-          ...(!byUserId.data.public_slug
-            ? { public_slug: fallbackPublicSlug }
-            : {}),
-        })
-        .eq("user_id", userId);
+      await supabase.from("profiles").update(payload).eq("user_id", userId);
       return;
     }
   
     const byId = await supabase
       .from("profiles")
-      .select("id,user_id,public_slug")
+      .select("id,user_id")
       .eq("id", userId)
       .maybeSingle();
   
     if (byId.data) {
-      await supabase
-        .from("profiles")
-        .update({
-          ...payload,
-          ...(!byId.data.public_slug ? { public_slug: fallbackPublicSlug } : {}),
-        })
-        .eq("id", userId);
+      await supabase.from("profiles").update(payload).eq("id", userId);
       return;
     }
   
-    await supabase.from("profiles").insert({
-      ...payload,
-      public_slug: fallbackPublicSlug,
-    });
+    await supabase.from("profiles").insert(payload);
   }
 
   async function syncProfileAvatar(nextProfile: JobSeekerProfile) {
@@ -1803,35 +1749,6 @@ export function JobSeekerResumePage() {
         preferredWorkType: updatedProfile.preferredWorkType,
       });
 
-      const profileDisplayName =
-        updatedProfile.fullName ||
-        [updatedProfile.firstName, updatedProfile.lastName].filter(Boolean).join(" ") ||
-        data.user.email?.split("@")[0] ||
-        data.user.id;
-
-      const fallbackPublicSlug = slugifyProfileName(profileDisplayName) || data.user.id;
-
-      const slugByUserId = await supabase
-        .from("profiles")
-        .select("id,public_slug")
-        .eq("user_id", data.user.id)
-        .maybeSingle();
-
-      let existingPublicSlug = slugByUserId.data?.public_slug || "";
-
-      if (!existingPublicSlug) {
-        const slugById = await supabase
-          .from("profiles")
-          .select("id,public_slug")
-          .eq("id", data.user.id)
-          .maybeSingle();
-
-        existingPublicSlug = slugById.data?.public_slug || "";
-      }
-
-      const stablePublicSlug = existingPublicSlug || fallbackPublicSlug;
-      const shouldCreatePublicSlug = !existingPublicSlug;
-
       const { error: resumeError } = await supabase.from("jobseeker_resumes").upsert(
         {
           about: formState.about || null,
@@ -1850,17 +1767,6 @@ export function JobSeekerResumePage() {
       if (resumeError) {
         throw resumeError;
       }
-
-      const saveProfileName =
-        updatedProfile.fullName ||
-        [updatedProfile.firstName, updatedProfile.lastName].filter(Boolean).join(" ") ||
-        data.user.email?.split("@")[0] ||
-        data.user.id;
-
-      const { publicSlug, shouldWriteSlug } = await getStablePublicSlug(
-        data.user.id,
-        saveProfileName,
-      );
 
       const { error: profileError } = await supabase
       .from("profiles")
@@ -1892,7 +1798,12 @@ export function JobSeekerResumePage() {
         resume_url: updatedProfile.resumeUrl || resumeData.pdfUrl || null,
         resume_name: resumeData.pdfName || null,
         skills: updatedProfile.skills || null,
-        ...(shouldCreatePublicSlug ? { public_slug: stablePublicSlug } : {}),
+        public_slug: slugifyProfileName(
+          updatedProfile.fullName ||
+            [updatedProfile.firstName, updatedProfile.lastName]
+              .filter(Boolean)
+              .join(" "),
+        ) || null,
       updated_at: new Date().toISOString(),
       })
         .eq("user_id", data.user.id);
@@ -1929,7 +1840,12 @@ export function JobSeekerResumePage() {
           resume_url: updatedProfile.resumeUrl || resumeData.pdfUrl || null,
           resume_name: resumeData.pdfName || null,
           skills: updatedProfile.skills || null,
-        ...(shouldCreatePublicSlug ? { public_slug: stablePublicSlug } : {}),
+        public_slug: slugifyProfileName(
+          updatedProfile.fullName ||
+            [updatedProfile.firstName, updatedProfile.lastName]
+              .filter(Boolean)
+              .join(" "),
+        ) || null,
       updated_at: new Date().toISOString(),
         })
           .eq("id", data.user.id);

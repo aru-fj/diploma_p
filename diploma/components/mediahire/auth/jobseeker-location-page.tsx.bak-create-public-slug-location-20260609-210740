@@ -26,60 +26,6 @@ const initialForm: LocationForm = {
 
 const nextStepRoute = "/signup/jobseeker/salary";
 
-function createStablePublicSlug(value?: string | null) {
-  const baseValue = value?.trim() || "jobseeker";
-
-  return (
-    baseValue
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 64) || "jobseeker"
-  );
-}
-
-function getPendingJobSeekerProfile() {
-  if (typeof window === "undefined") {
-    return {
-      email: "",
-      firstName: "",
-      lastName: "",
-    };
-  }
-
-  try {
-    const rawProfile = window.localStorage.getItem("mediahire.pendingProfile");
-
-    if (!rawProfile) {
-      return {
-        email: "",
-        firstName: "",
-        lastName: "",
-      };
-    }
-
-    const parsedProfile = JSON.parse(rawProfile) as {
-      email?: string;
-      firstName?: string;
-      lastName?: string;
-    };
-
-    return {
-      email: parsedProfile.email || "",
-      firstName: parsedProfile.firstName || "",
-      lastName: parsedProfile.lastName || "",
-    };
-  } catch {
-    return {
-      email: "",
-      firstName: "",
-      lastName: "",
-    };
-  }
-}
-
 export function JobSeekerLocationPage() {
   const router = useRouter();
   const [form, setForm] = useState<LocationForm>(initialForm);
@@ -131,79 +77,14 @@ export function JobSeekerLocationPage() {
       return;
     }
 
-    const pendingProfile = getPendingJobSeekerProfile();
-    const firstName = pendingProfile.firstName.trim();
-    const lastName = pendingProfile.lastName.trim();
-    const fullName = [firstName, lastName].filter(Boolean).join(" ");
-    const email = user.email || pendingProfile.email || "";
-    const fallbackPublicSlug = createStablePublicSlug(
-      fullName || email.split("@")[0] || user.id,
-    );
-
-    const payload = {
-      city: location || null,
-      email: email || null,
-      first_name: firstName || null,
-      full_name: fullName || email.split("@")[0] || "MediaHire creator",
-      last_name: lastName || null,
-      location: location || null,
-      postal_code: postalCode || null,
-      role: "jobseeker",
-      user_id: user.id,
-      updated_at: new Date().toISOString(),
-    };
-
-    const byUserId = await supabase
+    const { error } = await supabase
       .from("profiles")
-      .select("id,public_slug")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (byUserId.data) {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          ...payload,
-          ...(!byUserId.data.public_slug
-            ? { public_slug: fallbackPublicSlug }
-            : {}),
-        })
-        .eq("user_id", user.id);
-
-      if (error) {
-        throw error;
-      }
-
-      return;
-    }
-
-    const byId = await supabase
-      .from("profiles")
-      .select("id,public_slug")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (byId.data) {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          ...payload,
-          ...(!byId.data.public_slug ? { public_slug: fallbackPublicSlug } : {}),
-        })
-        .eq("id", user.id);
-
-      if (error) {
-        throw error;
-      }
-
-      return;
-    }
-
-    const { error } = await supabase.from("profiles").insert({
-      ...payload,
-      created_at: new Date().toISOString(),
-      public_slug: fallbackPublicSlug,
-    });
+      .update({
+        city: location || null,
+        location: location || null,
+        postal_code: postalCode || null,
+      })
+      .eq("user_id", user.id);
 
     if (error) {
       throw error;

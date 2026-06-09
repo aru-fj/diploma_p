@@ -33,8 +33,6 @@ type ProfileRow = {
   bio?: string | null;
   skills?: string[] | string | null;
   software?: string[] | string | null;
-  role?: string | null;
-  profile_visibility?: boolean | null;
   resume_url?: string | null;
   resume_name?: string | null;
 };
@@ -275,13 +273,12 @@ function toPublicPerson(profile: ProfileRow, works: PublicWork[]): RemotePublicP
 
 async function findProfileBySlug(id: string) {
   const profileSelect =
-    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,resume_url,resume_name,role,profile_visibility,preferred_work_type,experience_years,year_of_birth,gender,mobile,minimum_salary,payment_period,postal_code,role,profile_visibility,preferred_work_type,experience_years,year_of_birth,gender,mobile,minimum_salary,payment_period,postal_code,role,profile_visibility";
+    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,resume_url,resume_name";
 
   const byPublicSlug = await supabase
     .from("profiles")
     .select(profileSelect)
     .eq("public_slug", id)
-    .eq("profile_visibility", true)
     .limit(1);
 
   if (byPublicSlug.data?.[0]) {
@@ -292,7 +289,6 @@ async function findProfileBySlug(id: string) {
     .from("profiles")
     .select(profileSelect)
     .eq("user_id", id)
-    .eq("profile_visibility", true)
     .limit(1);
 
   if (byUserId.data?.[0]) {
@@ -303,17 +299,13 @@ async function findProfileBySlug(id: string) {
     .from("profiles")
     .select(profileSelect)
     .eq("id", id)
-    .eq("profile_visibility", true)
     .limit(1);
 
   if (byId.data?.[0]) {
     return byId.data[0] as ProfileRow;
   }
 
-  const { data: allProfiles } = await supabase
-    .from("profiles")
-    .select(profileSelect)
-    .eq("profile_visibility", true);
+  const { data: allProfiles } = await supabase.from("profiles").select(profileSelect);
 
   return (
     ((allProfiles || []) as ProfileRow[]).find((profile) => {
@@ -339,17 +331,46 @@ export async function getRemotePublicPersonById(id: string) {
 }
 
 export async function getRemotePublicPeople() {
-  const profileSelect =
-    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,resume_url,resume_name,role,profile_visibility,preferred_work_type,experience_years,year_of_birth,gender,mobile,minimum_salary,payment_period,postal_code";
+  const { data: projectRows } = await supabase
+    .from("projects")
+    .select("author_id")
+    .eq("status", "published");
 
-  const { data: profileRows } = await supabase
+  const authorIds = Array.from(
+    new Set((projectRows || []).map((project) => project.author_id).filter(Boolean)),
+  );
+
+  if (!authorIds.length) {
+    return [];
+  }
+
+  const profileSelect =
+    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,resume_url,resume_name";
+
+  const byUserId = await supabase
     .from("profiles")
     .select(profileSelect)
-    .eq("role", "jobseeker")
-    .eq("profile_visibility", true);
+    .in("user_id", authorIds);
+
+  const foundUserIds = new Set(
+    ((byUserId.data || []) as ProfileRow[])
+      .map((profile) => profile.user_id)
+      .filter(Boolean),
+  );
+
+  const missingIds = authorIds.filter((id) => !foundUserIds.has(id));
+
+  const byId = missingIds.length
+    ? await supabase.from("profiles").select(profileSelect).in("id", missingIds)
+    : { data: [] };
+
+  const profiles = [
+    ...((byUserId.data || []) as ProfileRow[]),
+    ...((byId.data || []) as ProfileRow[]),
+  ];
 
   const people = await Promise.all(
-    ((profileRows || []) as ProfileRow[]).map(async (profile) => {
+    profiles.map(async (profile) => {
       const authorId = profile.user_id || profile.id;
       const works = await loadPublishedProjects(authorId, profile);
 
@@ -357,5 +378,5 @@ export async function getRemotePublicPeople() {
     }),
   );
 
-  return people;
+  return people.filter((person) => person.projectsCount > 0);
 }
