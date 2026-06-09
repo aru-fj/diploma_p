@@ -341,45 +341,6 @@ function filterCandidatesFromList(
   });
 }
 
-
-function filterProjectsFromList(
-  sourceProjects: EmployerProject[],
-  query: string,
-  city: string,
-  category: string,
-  saved: string[],
-) {
-  const normalizedQuery = query.trim().toLowerCase();
-
-  return sourceProjects.filter((project) => {
-    const matchesQuery =
-      !normalizedQuery ||
-      [
-        project.title,
-        project.authorName,
-        project.category,
-        project.description,
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalizedQuery);
-
-    const matchesCity =
-      city === "All" ||
-      project.description.toLowerCase().includes(city.toLowerCase()) ||
-      project.authorName.toLowerCase().includes(city.toLowerCase());
-
-    const matchesCategory =
-      category === "For You" ||
-      category === "All" ||
-      category === project.category;
-
-    const matchesSaved = category !== "Saved" || saved.includes(project.id);
-
-    return matchesQuery && matchesCity && matchesCategory && matchesSaved;
-  });
-}
-
 function filterProjects(query: string, category: string, saved: string[]) {
   return employerProjects.filter((project) => {
     const search = `${project.title} ${project.authorName} ${project.category}`.toLowerCase();
@@ -713,7 +674,7 @@ export function EmployerHomePage() {
     };
   }, [version]);
   const projects = sortEmployerProjects(
-    filterProjectsFromList(allProjects, query, city, category, savedProjects),
+    filterProjects(query, category, savedProjects),
     activeSort,
   );
   const candidates = sortEmployerCandidates(

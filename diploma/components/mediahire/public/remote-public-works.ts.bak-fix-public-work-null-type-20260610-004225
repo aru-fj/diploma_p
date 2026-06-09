@@ -211,18 +211,18 @@ export async function getRemotePublishedWorks(): Promise<PublicWork[]> {
     mediaByProjectId.set(media.project_id, current);
   });
 
-  return projects.flatMap((project): PublicWork[] => {
-    const profile = profilesById.get(project.author_id);
+  return projects
+    .map((project) => {
+      const profile = profilesById.get(project.author_id);
 
-    if (!profile?.profile_visibility || !profile?.public_portfolio) {
-      return [];
-    }
+      if (!profile?.profile_visibility || !profile?.public_portfolio) {
+        return null;
+      }
 
-    const gallery = mediaToGallery(mediaByProjectId.get(project.id) || [], project);
-    const firstImage = gallery.find((item) => item.type === "image");
+      const gallery = mediaToGallery(mediaByProjectId.get(project.id) || [], project);
+      const firstImage = gallery.find((item) => item.type === "image");
 
-    return [
-      {
+      return {
         slug: project.id,
         title: project.title,
         author: profileName(profile),
@@ -242,9 +242,9 @@ export async function getRemotePublishedWorks(): Promise<PublicWork[]> {
         description: project.description || "",
         responsibilities: ["Portfolio project", "Creative work", "Media production"],
         tools: ["MediaHire"],
-      },
-    ];
-  });
+      };
+    })
+    .filter((work): work is PublicWork => Boolean(work));
 }
 
 export async function getRemotePublishedWorkBySlug(slug: string) {

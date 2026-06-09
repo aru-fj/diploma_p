@@ -34,9 +34,6 @@ type ProfileRow = {
   last_name?: string | null;
   email?: string | null;
   avatar_url?: string | null;
-  public_slug?: string | null;
-  profile_visibility?: boolean | null;
-  public_portfolio?: boolean | null;
   profession?: string | null;
   job_title?: string | null;
   location?: string | null;
@@ -172,7 +169,7 @@ export async function getRemotePublishedWorks(): Promise<PublicWork[]> {
   );
 
   const profileSelect =
-    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,profession,job_title,location,city,country,profile_visibility,public_portfolio";
+    "id,user_id,full_name,first_name,last_name,email,avatar_url,profession,job_title,location,city,country";
 
   const byUserId = authorIds.length
     ? await supabase.from("profiles").select(profileSelect).in("user_id", authorIds)
@@ -211,39 +208,32 @@ export async function getRemotePublishedWorks(): Promise<PublicWork[]> {
     mediaByProjectId.set(media.project_id, current);
   });
 
-  return projects.flatMap((project): PublicWork[] => {
+  return projects.map((project) => {
     const profile = profilesById.get(project.author_id);
-
-    if (!profile?.profile_visibility || !profile?.public_portfolio) {
-      return [];
-    }
-
     const gallery = mediaToGallery(mediaByProjectId.get(project.id) || [], project);
     const firstImage = gallery.find((item) => item.type === "image");
 
-    return [
-      {
-        slug: project.id,
-        title: project.title,
-        author: profileName(profile),
-        authorSlug: profile.public_slug || project.author_id,
-        role: profileRole(profile),
-        company: "MediaHire",
-        category: profileRole(profile),
-        type: "Project-based",
-        location: profileLocation(profile),
-        createdAt: formatDate(project.published_at || project.created_at),
-        coverImage:
-          project.cover_url ||
-          (firstImage?.type === "image" ? firstImage.src : undefined) ||
-          fallbackCover,
-        authorAvatar: profile.avatar_url || undefined,
-        gallery,
-        description: project.description || "",
-        responsibilities: ["Portfolio project", "Creative work", "Media production"],
-        tools: ["MediaHire"],
-      },
-    ];
+    return {
+      slug: project.id,
+      title: project.title,
+      author: profileName(profile),
+      authorSlug: project.author_id,
+      role: profileRole(profile),
+      company: "MediaHire",
+      category: profileRole(profile),
+      type: "Project-based",
+      location: profileLocation(profile),
+      createdAt: formatDate(project.published_at || project.created_at),
+      coverImage:
+        project.cover_url ||
+        (firstImage?.type === "image" ? firstImage.src : undefined) ||
+        fallbackCover,
+      authorAvatar: profile?.avatar_url || undefined,
+      gallery,
+      description: project.description || "",
+      responsibilities: ["Portfolio project", "Creative work", "Media production"],
+      tools: ["MediaHire"],
+    };
   });
 }
 

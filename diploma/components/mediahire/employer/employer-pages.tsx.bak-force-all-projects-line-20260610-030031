@@ -713,7 +713,7 @@ export function EmployerHomePage() {
     };
   }, [version]);
   const projects = sortEmployerProjects(
-    filterProjectsFromList(allProjects, query, city, category, savedProjects),
+    filterProjects(query, category, savedProjects),
     activeSort,
   );
   const candidates = sortEmployerCandidates(

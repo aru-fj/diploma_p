@@ -124,7 +124,7 @@ async function getDirectVisiblePublicPeople(): Promise<PublicPerson[]> {
     return [];
   }
 
-  const publicProfileRows = (data || []) as Array<{
+  return ((data || []) as Array<{
     avatar_url?: string | null;
     bio?: string | null;
     city?: string | null;
@@ -143,30 +143,7 @@ async function getDirectVisiblePublicPeople(): Promise<PublicPerson[]> {
     public_slug?: string | null;
     skills?: string[] | string | null;
     user_id?: string | null;
-  }>;
-
-  const publicUserIds = Array.from(
-    new Set(publicProfileRows.map((profile) => profile.user_id).filter(Boolean)),
-  ) as string[];
-
-  const { data: resumeRows } = publicUserIds.length
-    ? await supabase
-        .from("jobseeker_resumes")
-        .select("user_id,about")
-        .in("user_id", publicUserIds)
-    : { data: [] };
-
-  const bioByUserId = new Map<string, string>();
-
-  ((resumeRows || []) as Array<{ about?: string | null; user_id?: string | null }>).forEach(
-    (resume) => {
-      if (resume.user_id && resume.about) {
-        bioByUserId.set(resume.user_id, resume.about);
-      }
-    },
-  );
-
-  return publicProfileRows.map((profile) => {
+  }>).map((profile) => {
     const name =
       profile.full_name ||
       [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
@@ -187,10 +164,8 @@ async function getDirectVisiblePublicPeople(): Promise<PublicPerson[]> {
       [profile.city, profile.country].filter(Boolean).join(", ") ||
       "Kazakhstan";
 
-    const bio = profile.bio || bioByUserId.get(profile.user_id || "") || "";
-
     return {
-      about: bio,
+      about: profile.bio || "",
       avatar: profile.avatar_url || directPublicPlaceholderAvatar,
       availability: profile.preferred_work_type || "Available for Freelance",
       category: role,
@@ -209,7 +184,9 @@ async function getDirectVisiblePublicPeople(): Promise<PublicPerson[]> {
       resumeName: "",
       resumeUrl: "",
       role,
-      shortBio: bio || "No bio added yet.",
+      shortBio:
+        profile.bio ||
+        "This profile is visible because the job seeker enabled Profile Visibility.",
       skills,
       slug,
       software: [],
@@ -842,8 +819,8 @@ function PersonCard({ person }: { person: PublicPerson }) {
   const avatarSrc = person.avatar || fallbackPublicPersonAvatar;
 
   return (
-    <article className="group flex h-full w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(37,99,235,0.14)]">
-      <div className="relative h-28 shrink-0 overflow-hidden bg-slate-100">
+    <article className="group flex h-full flex-col overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]">
+      <div className="relative h-24 overflow-hidden bg-slate-100">
         <img
           src={coverSrc}
           alt={person.name}
@@ -855,8 +832,8 @@ function PersonCard({ person }: { person: PublicPerson }) {
         </div>
       </div>
 
-      <div className="relative flex flex-1 flex-col p-3.5 pt-12">
-        <div className="absolute -top-8 left-4 h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-4 border-white bg-slate-100 shadow-lg">
+      <div className="relative p-3.5 pt-8">
+        <div className="absolute -top-6 left-4 h-12 w-12 overflow-hidden rounded-xl border-[3px] border-white bg-slate-200 shadow-lg">
           <img
             src={avatarSrc}
             alt={person.name}
@@ -899,7 +876,7 @@ function PersonCard({ person }: { person: PublicPerson }) {
         </div>
 
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {person.skills.slice(0, 7).map((skill) => (
+          {person.skills.map((skill) => (
             <span
               key={skill}
               className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-600"

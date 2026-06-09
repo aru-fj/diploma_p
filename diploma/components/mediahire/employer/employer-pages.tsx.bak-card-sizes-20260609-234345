@@ -31,7 +31,6 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase-client";
-import { getRemotePublishedWorks } from "@/components/mediahire/public/remote-public-works";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SearchFilterBar, type DashboardMode } from "../dashboard/search-filter-bar";
 import {
@@ -248,44 +247,6 @@ function mergeEmployerCandidates(remoteCandidates: EmployerCandidate[]) {
   return Array.from(candidatesById.values());
 }
 
-function toEmployerProjectFromPublicWork(work: {
-  author?: string;
-  authorAvatar?: string;
-  authorSlug?: string;
-  category?: string;
-  coverImage?: string;
-  description?: string;
-  role?: string;
-  slug: string;
-  title: string;
-}) {
-  return {
-    authorAvatar: work.authorAvatar || employerPlaceholderAvatar,
-    authorId: work.authorSlug || work.slug,
-    authorName: work.author || "MediaHire creator",
-    category: work.category || work.role || "Creative Work",
-    description: work.description || "Published portfolio project.",
-    id: work.slug,
-    image: work.coverImage || employerLightBlueCover,
-    title: work.title,
-  } as EmployerProject;
-}
-
-async function loadVisibleEmployerProjects() {
-  const works = await getRemotePublishedWorks();
-  return works.map((work) => toEmployerProjectFromPublicWork(work));
-}
-
-function mergeEmployerProjects(remoteProjects: EmployerProject[]) {
-  const projectsById = new Map<string, EmployerProject>();
-
-  [...employerProjects, ...remoteProjects].forEach((project) => {
-    projectsById.set(project.id, project);
-  });
-
-  return Array.from(projectsById.values());
-}
-
 function cardMotion(index = 0) {
   return {
     animate: { opacity: 1, y: 0 },
@@ -338,45 +299,6 @@ function filterCandidatesFromList(
       candidate.role.includes(category);
 
     return matchesSearch && matchesCity && matchesCategory;
-  });
-}
-
-
-function filterProjectsFromList(
-  sourceProjects: EmployerProject[],
-  query: string,
-  city: string,
-  category: string,
-  saved: string[],
-) {
-  const normalizedQuery = query.trim().toLowerCase();
-
-  return sourceProjects.filter((project) => {
-    const matchesQuery =
-      !normalizedQuery ||
-      [
-        project.title,
-        project.authorName,
-        project.category,
-        project.description,
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalizedQuery);
-
-    const matchesCity =
-      city === "All" ||
-      project.description.toLowerCase().includes(city.toLowerCase()) ||
-      project.authorName.toLowerCase().includes(city.toLowerCase());
-
-    const matchesCategory =
-      category === "For You" ||
-      category === "All" ||
-      category === project.category;
-
-    const matchesSaved = category !== "Saved" || saved.includes(project.id);
-
-    return matchesQuery && matchesCity && matchesCategory && matchesSaved;
   });
 }
 
@@ -686,11 +608,6 @@ export function EmployerHomePage() {
     () => mergeEmployerCandidates(remoteCandidates),
     [remoteCandidates],
   );
-  const [remoteProjects, setRemoteProjects] = useState<EmployerProject[]>([]);
-  const allProjects = useMemo(
-    () => mergeEmployerProjects(remoteProjects),
-    [remoteProjects],
-  );
   const mode = toDashboardMode(tab);
 
   useEffect(() => {
@@ -702,18 +619,12 @@ export function EmployerHomePage() {
       }
     });
 
-    loadVisibleEmployerProjects().then((items) => {
-      if (isMounted) {
-        setRemoteProjects(items);
-      }
-    });
-
     return () => {
       isMounted = false;
     };
   }, [version]);
   const projects = sortEmployerProjects(
-    filterProjectsFromList(allProjects, query, city, category, savedProjects),
+    filterProjects(query, category, savedProjects),
     activeSort,
   );
   const candidates = sortEmployerCandidates(
@@ -752,7 +663,7 @@ export function EmployerHomePage() {
         />
       </section>
       <section className="mx-auto mt-8 w-[min(1320px,calc(100%-32px))] pb-20">
-        <div className="mt-8 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4">
           {tab === "projects"
             ? projects.map((project, index) => (
                 <motion.div key={project.id} {...cardMotion(index)}>
@@ -912,7 +823,7 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
             </div>
 
             <div>
-              <h2 className="line-clamp-1 text-sm font-black text-slate-950">
+              <h2 className="text-sm font-black text-slate-950">
                 {project.title}
               </h2>
 
@@ -1173,7 +1084,7 @@ function EmployerCommentItem({
       </div>
 
       <div>
-        <p className="line-clamp-1 text-sm font-black text-slate-950">
+        <p className="text-sm font-black text-slate-950">
           {name}
           <span className="ml-2 text-[11px] font-semibold text-slate-400">
             · {date}
@@ -1365,7 +1276,7 @@ export function EmployerPeopleProfilePage({ slug }: { slug: string }) {
             <div className="mt-6">
               <h2 className="text-lg font-black text-slate-950">Skills</h2>
 
-              <div className="mt-3 max-h-[52px] overflow-hidden flex flex-wrap gap-1.5">
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 {currentCandidate.skills.length ? (
                   currentCandidate.skills.map((skill) => (
                     <span
@@ -1386,7 +1297,7 @@ export function EmployerPeopleProfilePage({ slug }: { slug: string }) {
             <div className="mt-6">
               <h2 className="text-lg font-black text-slate-950">Software</h2>
 
-              <div className="mt-3 max-h-[52px] overflow-hidden flex flex-wrap gap-1.5">
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 {currentCandidate.software.length ? (
                   currentCandidate.software.map((item) => (
                     <span
@@ -1644,7 +1555,7 @@ function EmployerResumeCard({
           {icon}
         </div>
 
-        <h3 className="line-clamp-1 text-sm font-black text-slate-950">{title}</h3>
+        <h3 className="text-sm font-black text-slate-950">{title}</h3>
       </div>
 
       {children}
@@ -2071,11 +1982,6 @@ export function EmployerSearchCvPage() {
   const [location, setLocation] = useState("All Kazakhstan");
   const [category, setCategory] = useState("All");
   const saved = useMemo(() => getSavedCandidates(), [version]);
-  const [hasMounted, setHasMounted] = useState(false);
-
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
   const [remoteCandidates, setRemoteCandidates] = useState<EmployerCandidate[]>([]);
   const allCandidates = useMemo(
     () => mergeEmployerCandidates(remoteCandidates),
@@ -2264,12 +2170,12 @@ export function EmployerSearchCvPage() {
           {candidates.length > 0 ? (
             <div className="mt-5 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {candidates.map((candidate) => {
-                const isSaved = hasMounted && saved.includes(candidate.id);
+                const isSaved = saved.includes(candidate.id);
 
                 return (
                   <article
                     key={candidate.id}
-                    className="flex h-[320px] flex-col overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white p-3.5 shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]"
+                    className="rounded-[1.15rem] border border-slate-200 bg-white p-3.5 shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]"
                   >
                     <div className="flex items-start gap-3">
                       <div className="h-14 w-14 overflow-hidden rounded-xl bg-slate-200">
@@ -2284,11 +2190,11 @@ export function EmployerSearchCvPage() {
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <h3 className="line-clamp-1 text-sm font-black text-slate-950">
+                        <h3 className="text-sm font-black text-slate-950">
                           {candidate.name}
                         </h3>
 
-                        <p className="mt-1 line-clamp-1 text-[11px] font-bold text-blue-600">
+                        <p className="mt-1 text-[11px] font-bold text-blue-600">
                           {candidate.role}
                         </p>
 
@@ -2326,8 +2232,8 @@ export function EmployerSearchCvPage() {
                       {candidate.experience}
                     </div>
 
-                    <div className="mt-3 max-h-[30px] overflow-hidden flex flex-wrap gap-1.5">
-                      {candidate.skills.slice(0, 3).map((skill) => (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {candidate.skills.map((skill) => (
                         <span
                           key={skill}
                           className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-600"
@@ -2337,7 +2243,7 @@ export function EmployerSearchCvPage() {
                       ))}
                     </div>
 
-                    <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
+                    <div className="mt-3.5 grid grid-cols-2 gap-2">
                       <Link
                         href={`/home/employer/people/${candidate.id}`}
                         className="flex h-9 items-center justify-center rounded-lg bg-blue-600 px-3 text-[11px] font-black text-white transition hover:bg-blue-700"
