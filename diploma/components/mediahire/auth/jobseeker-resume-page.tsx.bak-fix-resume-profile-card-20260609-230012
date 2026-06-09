@@ -62,24 +62,6 @@ async function saveResumeToSupabase(file: File) {
 
   const resumeUrl = publicUrlData.publicUrl;
 
-  const { error: resumeRowError } = await supabase
-    .from("jobseeker_resumes")
-    .upsert(
-      {
-        resume_file_name: file.name,
-        resume_file_path: filePath,
-        resume_file_url: resumeUrl,
-        resume_name: file.name,
-        resume_url: resumeUrl,
-        user_id: user.id,
-      },
-      { onConflict: "user_id" },
-    );
-
-  if (resumeRowError) {
-    throw resumeRowError;
-  }
-
   const payload = {
     resume_name: file.name,
     resume_url: resumeUrl,

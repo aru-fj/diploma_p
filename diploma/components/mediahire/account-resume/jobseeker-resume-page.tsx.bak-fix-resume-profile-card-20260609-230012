@@ -1303,7 +1303,7 @@ export function JobSeekerResumePage() {
         const { data: resumeRow } = await supabase
           .from("jobseeker_resumes")
           .select(
-            "about,education,job_preferences,languages,links,preferred_job_benefits,professional_skill,work_experience,resume_url,resume_name,resume_file_url,resume_file_name,resume_file_path",
+            "about,education,job_preferences,languages,links,preferred_job_benefits,professional_skill,work_experience",
           )
           .eq("user_id", data.user.id)
           .maybeSingle();
@@ -1313,51 +1313,10 @@ export function JobSeekerResumePage() {
           current: storedProfile,
           row: profileRow,
         });
-
-        if (profileRow) {
-          nextProfile = {
-            ...nextProfile,
-            experienceYears:
-              profileRow.experience_years == null
-                ? ""
-                : String(profileRow.experience_years),
-            gender: profileRow.gender || "",
-            jobTitle: profileRow.job_title || "",
-            preferredWorkType: profileRow.preferred_work_type || "",
-            role: profileRow.job_title || "",
-            skills: stringifyProfileList(profileRow.skills),
-            software: stringifyProfileList(profileRow.software),
-            yearOfBirth:
-              profileRow.year_of_birth == null ? "" : String(profileRow.year_of_birth),
-          };
-        }
         nextResumeData = mergeResumeFromSupabase(
           storedResume,
           (resumeRow || null) as ResumeRow | null,
         );
-
-        const resumeFileRow = resumeRow as
-          | {
-              resume_file_name?: string | null;
-              resume_file_url?: string | null;
-              resume_name?: string | null;
-              resume_url?: string | null;
-            }
-          | null;
-
-        const resumeFileUrl =
-          resumeFileRow?.resume_url || resumeFileRow?.resume_file_url || "";
-        const resumeFileName =
-          resumeFileRow?.resume_name || resumeFileRow?.resume_file_name || "";
-
-        if (resumeFileUrl) {
-          nextResumeData = {
-            ...nextResumeData,
-            pdfName: resumeFileName || nextResumeData.pdfName || "Uploaded resume",
-            pdfUrl: resumeFileUrl,
-          };
-        }
-
         if (profileRow?.resume_url) {
           nextResumeData = {
             ...nextResumeData,

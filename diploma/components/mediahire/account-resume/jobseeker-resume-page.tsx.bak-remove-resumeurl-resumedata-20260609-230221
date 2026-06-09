@@ -1355,6 +1355,7 @@ export function JobSeekerResumePage() {
             ...nextResumeData,
             pdfName: resumeFileName || nextResumeData.pdfName || "Uploaded resume",
             pdfUrl: resumeFileUrl,
+            resumeUrl: resumeFileUrl,
           };
         }
 
