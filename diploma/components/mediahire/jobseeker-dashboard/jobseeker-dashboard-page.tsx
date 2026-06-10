@@ -907,7 +907,7 @@ export function JobSeekerActivityDashboardPage() {
       transition={mediaHireMotion.page}
       variants={fadeIn}
     >
-      <div className="mx-auto grid w-full max-w-[1240px] gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+      <div className="mx-auto grid w-full max-w-[1240px] gap-5 lg:grid-cols-[220px_minmax(0,1fr)] mediahire-messages-fixed">
         <DashboardSidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}

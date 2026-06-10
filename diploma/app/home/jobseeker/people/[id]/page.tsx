@@ -12,7 +12,7 @@ import {
   useEffect,
   useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import {
   ArrowLeft,
   BriefcaseBusiness,
@@ -46,12 +46,43 @@ import { getRemotePublicPersonById } from "@/components/mediahire/public/remote-
 type ProfileTab = "portfolio" | "resume" | "reviews";
 
 export default function JobSeekerPersonProfilePage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ id?: string; slug?: string }>();
+  const profileId = (params.id || params.slug || "").toString();
+  const pathname = usePathname();
+  const isJobSeekerRoute = pathname.startsWith("/home/jobseeker");
+  const isEmployerRoute = pathname.startsWith("/home/employer");
+
   const [activeTab, setActiveTab] = useState<ProfileTab>("portfolio");
 
-  const staticPerson = getPublicPersonBySlug(params.id);
+  const staticPerson = getPublicPersonBySlug(profileId);
   const [remotePerson, setRemotePerson] = useState<Awaited<ReturnType<typeof getRemotePublicPersonById>> | null>(null);
   const [isRemoteLoading, setIsRemoteLoading] = useState(!staticPerson);
+  const [remoteCoverUrl, setRemoteCoverUrl] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProfileCover() {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("cover_url,public_slug,full_name")
+        .eq("public_slug", profileId)
+        .limit(1);
+
+      const row = data?.[0];
+
+      if (isMounted && row?.cover_url) {
+        setRemoteCoverUrl(row.cover_url);
+      }
+    }
+
+    void loadProfileCover();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profileId]);
+
 
   useEffect(() => {
     let isMounted = true;
@@ -64,7 +95,7 @@ export default function JobSeekerPersonProfilePage() {
 
     setIsRemoteLoading(true);
 
-    void getRemotePublicPersonById(params.id).then((person) => {
+    void getRemotePublicPersonById(profileId).then((person) => {
       if (!isMounted) {
         return;
       }
@@ -76,10 +107,9 @@ export default function JobSeekerPersonProfilePage() {
     return () => {
       isMounted = false;
     };
-  }, [params.id, staticPerson]);
+  }, [profileId, staticPerson]);
 
-  const currentProfileMirror = getCurrentProfilePublicMirror(params.id);
-  const person = currentProfileMirror || staticPerson || remotePerson;
+  const person = staticPerson || remotePerson;
 
   if (!person && isRemoteLoading) {
     return (
@@ -124,8 +154,10 @@ export default function JobSeekerPersonProfilePage() {
     );
   }
 
+  const hasExplicitRemoteWorks = Array.isArray((person as any).remoteWorks);
+
   const portfolioWorks = enrichPortfolioWorksWithCovers(
-    (person as any).remoteWorks?.length
+    hasExplicitRemoteWorks
       ? (person as any).remoteWorks
       : getPortfolioWorks({
           slug: person.slug,
@@ -182,44 +214,24 @@ export default function JobSeekerPersonProfilePage() {
       </svg>`,
     );
 
-  const [remoteCoverUrl, setRemoteCoverUrl] = useState("");
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadProfileCover() {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("cover_url,public_slug,full_name")
-        .eq("public_slug", params.id)
-        .limit(1);
-
-      const row = data?.[0];
-
-      console.log("MediaHire public profile cover:", {
-        slug: params.id,
-        row,
-        error,
-      });
-
-      if (isMounted && row?.cover_url) {
-        setRemoteCoverUrl(row.cover_url);
-      }
-    }
-
-    void loadProfileCover();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [params.id]);
-
   const profileCoverSrc =
     remoteCoverUrl || person.coverImage || fallbackProfileCover;
 
   const profileCoverStyle = {
     backgroundImage: `url("${profileCoverSrc}")`,
   };
+
+  function getPortfolioProjectHref(projectSlug: string) {
+    if (isJobSeekerRoute) {
+      return `/home/jobseeker/work/${projectSlug}`;
+    }
+
+    if (isEmployerRoute) {
+      return `/home/employer/projects/${projectSlug}`;
+    }
+
+    return `/work/${projectSlug}`;
+  }
 
   const software = displaySoftware;
   const resumeItems: any[] = [];

@@ -1,0 +1,441 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { DashboardHeader } from "@/components/mediahire/dashboard/dashboard-header";
+import { ChatSidebar } from "./chat-sidebar";
+import { ChatWindow } from "./chat-window";
+import { EmptyChatState } from "./empty-chat-state";
+import {
+  loadSupabaseConversationsForCurrentUser,
+  markSupabaseConversationRead,
+  sendSupabaseMessage,
+  startSupabaseConversationWithProfile,
+} from "./supabase-chat";
+import {
+  conversations as initialConversations,
+  type ChatMessage,
+  type Conversation,
+} from "./community-data";
+import { getActiveJobSeekerEmail } from "../account-settings/profile-store";
+import { mediaHireCompanies } from "@/components/mediahire/jobs-data";
+import { publicPeople } from "@/components/mediahire/public/public-people-data";
+import {
+  fadeIn,
+  mediaHireClassNames,
+  mediaHireMotion,
+} from "../ui/design-system";
+
+function formatMessageTime() {
+  return new Intl.DateTimeFormat("en", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date());
+}
+
+const jobSeekerChatsStorageKey = "mediahire_jobseeker_chats";
+const legacySeedConversationIds = new Set([
+  "salem-entertainment",
+  "alem-koskanay",
+]);
+
+function getJobSeekerChatsStorageKey() {
+  const activeEmail = getActiveJobSeekerEmail();
+
+  return activeEmail
+    ? `${jobSeekerChatsStorageKey}:${activeEmail}`
+    : jobSeekerChatsStorageKey;
+}
+
+function readStoredConversations() {
+  if (typeof window === "undefined") {
+    return initialConversations;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(getJobSeekerChatsStorageKey());
+    const parsed = raw ? JSON.parse(raw) : null;
+
+    return Array.isArray(parsed)
+      ? getPersistableConversations(parsed as Conversation[])
+      : initialConversations;
+  } catch {
+    return initialConversations;
+  }
+}
+
+function getPersistableConversations(conversations: Conversation[]) {
+  const seededConversationIds = new Set(
+    initialConversations.map((conversation) => conversation.id),
+  );
+
+  return conversations.filter(
+    (conversation) =>
+      !legacySeedConversationIds.has(conversation.id) &&
+      (seededConversationIds.has(conversation.id) ||
+        conversation.messages.length > 0),
+  );
+}
+
+function ensureSeedConversations(conversations: Conversation[]) {
+  const existingIds = new Set(conversations.map((conversation) => conversation.id));
+
+  return [
+    ...initialConversations.filter(
+      (conversation) => !existingIds.has(conversation.id),
+    ),
+    ...conversations,
+  ];
+}
+
+function sortConversations(conversations: Conversation[]) {
+  return [...conversations].sort((firstConversation, secondConversation) => {
+    const starredDifference =
+      Number(Boolean(secondConversation.starred)) -
+      Number(Boolean(firstConversation.starred));
+
+    if (starredDifference !== 0) {
+      return starredDifference;
+    }
+
+    return 0;
+  });
+}
+
+
+function isSupabaseConversationId(value?: string | null) {
+  return Boolean(
+    value &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        value,
+      ),
+  );
+}
+
+function mergeCommunityConversations(
+  remoteConversations: Conversation[],
+  localConversations: Conversation[],
+) {
+  const conversationsById = new Map<string, Conversation>();
+
+  [...remoteConversations, ...localConversations].forEach((conversation) => {
+    conversationsById.set(conversation.id, conversation);
+  });
+
+  return Array.from(conversationsById.values());
+}
+
+function persistConversations(conversations: Conversation[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(
+    getJobSeekerChatsStorageKey(),
+    JSON.stringify(getPersistableConversations(conversations)),
+  );
+}
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function createConversationFromSlug(slug: string): Conversation | null {
+  const person = publicPeople.find((item) => item.slug === slug);
+
+  if (person) {
+    return {
+      avatar: person.avatar,
+      color: "bg-blue-50 text-blue-700",
+      id: person.slug,
+      initials: getInitials(person.name),
+      lastSeen: "Online",
+      messages: [],
+      name: person.name,
+      participantType: "person",
+      preview: "Start the conversation.",
+      profileHref: `/home/jobseeker/people/${person.slug}`,
+      time: "Now",
+      unread: 0,
+    };
+  }
+
+  const company = mediaHireCompanies.find((item) => item.id === slug);
+
+  if (company) {
+    return {
+      avatar: company.logo,
+      color: "bg-blue-50 text-blue-700",
+      id: company.id,
+      initials: getInitials(company.name),
+      lastSeen: "Online",
+      messages: [],
+      name: company.name,
+      participantType: "company",
+      preview: "Start the conversation.",
+      profileHref: `/home/jobseeker/company/${company.id}`,
+      time: "Now",
+      unread: 0,
+    };
+  }
+
+  return null;
+}
+
+function getInitialConversations(initialChatId: string | null) {
+  const storedConversations = ensureSeedConversations(readStoredConversations());
+
+  if (
+    !initialChatId ||
+    storedConversations.some((item) => item.id === initialChatId)
+  ) {
+    return storedConversations;
+  }
+
+  const createdConversation = createConversationFromSlug(initialChatId);
+
+  if (!createdConversation) {
+    return storedConversations;
+  }
+
+  const nextConversations = [createdConversation, ...storedConversations];
+
+  return nextConversations;
+}
+
+type CommunityPageProps = {
+  initialChatId?: string | null;
+};
+
+export function CommunityPage({ initialChatId = null }: CommunityPageProps) {
+  const [conversations, setConversations] =
+    useState<Conversation[]>(() => initialConversations);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(
+    () => initialChatId || conversations[0]?.id || null,
+  );
+
+  async function refreshSupabaseConversations(nextSelectedId?: string | null) {
+    const remoteConversations =
+      await loadSupabaseConversationsForCurrentUser("jobseeker");
+
+    setConversations((currentConversations) =>
+      mergeCommunityConversations(remoteConversations, currentConversations),
+    );
+
+    if (nextSelectedId) {
+      setSelectedId(nextSelectedId);
+    }
+  }
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function syncSupabaseChats() {
+      let nextSelectedId: string | null = null;
+
+      if (initialChatId && !isSupabaseConversationId(initialChatId)) {
+        const conversation = await startSupabaseConversationWithProfile(
+          initialChatId,
+          {
+            subjectId: initialChatId,
+            subjectType: "profile",
+          },
+        );
+
+        nextSelectedId = conversation?.id || null;
+      }
+
+      const remoteConversations =
+        await loadSupabaseConversationsForCurrentUser("jobseeker");
+      const localConversations = getInitialConversations(initialChatId);
+
+      if (!isMounted) {
+        return;
+      }
+
+      setConversations((currentConversations) =>
+        mergeCommunityConversations(
+          remoteConversations,
+          mergeCommunityConversations(localConversations, currentConversations),
+        ),
+      );
+
+      if (nextSelectedId) {
+        setSelectedId(nextSelectedId);
+      }
+    }
+
+    void syncSupabaseChats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialChatId]);
+
+  const filteredConversations = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return sortConversations(conversations);
+    }
+
+    return sortConversations(
+      conversations.filter((conversation) =>
+        `${conversation.name} ${conversation.preview}`
+          .toLowerCase()
+          .includes(normalizedQuery),
+      ),
+    );
+  }, [conversations, query]);
+
+  const selectedConversation =
+    conversations.find((conversation) => conversation.id === selectedId) ??
+    null;
+
+  function handleSelect(conversationId: string) {
+    setSelectedId(conversationId);
+
+    if (isSupabaseConversationId(conversationId)) {
+      void markSupabaseConversationRead(conversationId);
+    }
+
+    setConversations((currentConversations) => {
+      const nextConversations = currentConversations.map((conversation) =>
+        conversation.id === conversationId
+          ? { ...conversation, unread: 0 }
+          : conversation,
+      );
+
+      persistConversations(nextConversations);
+      return nextConversations;
+    });
+  }
+
+  function handleSend(message: string) {
+    if (!selectedConversation) {
+      return;
+    }
+
+    if (isSupabaseConversationId(selectedConversation.id)) {
+      void sendSupabaseMessage(selectedConversation.id, message).then(() =>
+        refreshSupabaseConversations(selectedConversation.id),
+      );
+
+      return;
+    }
+
+    setConversations((currentConversations) => {
+      let updatedConversation: Conversation | null = null;
+      const nextConversations = currentConversations.reduce<Conversation[]>(
+        (items, conversation) => {
+          if (conversation.id !== selectedConversation.id) {
+            items.push(conversation);
+            return items;
+          }
+
+          updatedConversation = {
+            ...conversation,
+            messages: [
+              ...conversation.messages,
+              {
+                id: `${conversation.id}-${Date.now()}`,
+                sender: "me",
+                text: message,
+                time: formatMessageTime(),
+                type: "text",
+              } satisfies ChatMessage,
+            ],
+            preview: message,
+            time: "Now",
+          };
+
+          return items;
+        },
+        [],
+      );
+
+      if (updatedConversation) {
+        nextConversations.unshift(updatedConversation);
+      }
+
+      persistConversations(nextConversations);
+      return nextConversations;
+    });
+  }
+
+  function handleToggleStar(conversationId: string) {
+    setConversations((currentConversations) => {
+      const nextConversations = currentConversations.map((conversation) =>
+        conversation.id === conversationId
+          ? { ...conversation, starred: !conversation.starred }
+          : conversation,
+      );
+
+      persistConversations(nextConversations);
+      return nextConversations;
+    });
+  }
+
+  return (
+    <motion.main
+      animate="show"
+      className={`${mediaHireClassNames.appShell} px-4 py-8 sm:px-6`}
+      initial="hidden"
+      transition={mediaHireMotion.page}
+      variants={fadeIn}
+    >
+      <div className="mx-auto max-w-6xl">
+        <DashboardHeader
+          activeItem="Community"
+          isMenuOpen={isMenuOpen}
+          isUserMenuOpen={isUserMenuOpen}
+          onToggleMenu={() => setIsMenuOpen((value) => !value)}
+          onToggleUserMenu={() => setIsUserMenuOpen((value) => !value)}
+        />
+
+        <section className="mt-6">
+          <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+            Message
+          </h1>
+          <p className="mt-2 text-sm font-medium text-slate-500">
+            Communicate with employers and stay updated on job opportunities
+          </p>
+        </section>
+
+        <section className="mt-4 grid gap-4 lg:h-[500px] lg:grid-cols-[470px_1fr]">
+          <div className={selectedConversation ? "hidden lg:block" : "block"}>
+            <ChatSidebar
+              conversations={filteredConversations}
+              onQueryChange={setQuery}
+              onSelect={handleSelect}
+              query={query}
+              selectedId={selectedId}
+            />
+          </div>
+
+          <div className={selectedConversation ? "block" : "hidden lg:block"}>
+            {selectedConversation ? (
+              <ChatWindow
+                conversation={selectedConversation}
+                onBack={() => setSelectedId(null)}
+                onSend={handleSend}
+                onToggleStar={handleToggleStar}
+              />
+            ) : (
+              <EmptyChatState />
+            )}
+          </div>
+        </section>
+      </div>
+    </motion.main>
+  );
+}

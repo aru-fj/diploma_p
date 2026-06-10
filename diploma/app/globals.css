@@ -47,3 +47,153 @@ body {
   font-size: 12px !important;
   font-weight: 600 !important;
 }
+
+/* MediaHire Messages fixed height layout */
+.mediahire-messages-fixed {
+  height: calc(100dvh - 156px) !important;
+  max-height: calc(100dvh - 156px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  align-items: stretch !important;
+}
+
+/* every main white card inside messages must stay inside the screen */
+.mediahire-messages-fixed > * {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* important: all inner flex elements must be allowed to shrink */
+.mediahire-messages-fixed * {
+  min-height: 0 !important;
+}
+
+/* left conversations card */
+.mediahire-messages-fixed > *:first-child {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* scroll only the conversation list, not the whole page */
+.mediahire-messages-fixed > *:first-child > *:last-child {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* right chat card */
+.mediahire-messages-fixed > *:last-child {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* chat header stays fixed */
+.mediahire-messages-fixed > *:last-child > *:first-child {
+  flex: 0 0 auto !important;
+  overflow: hidden !important;
+}
+
+/* message input stays fixed at the bottom */
+.mediahire-messages-fixed > *:last-child > *:last-child {
+  flex: 0 0 auto !important;
+  overflow: hidden !important;
+}
+
+/* everything between header and input becomes the scrollable messages area */
+.mediahire-messages-fixed > *:last-child > *:not(:first-child):not(:last-child) {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* if the messages are nested deeper, do not let them stretch the page */
+.mediahire-messages-fixed > *:last-child > *:not(:first-child):not(:last-child) > * {
+  max-height: none !important;
+}
+
+/* prevent the page itself from scrolling because of long chats */
+body:has(.mediahire-messages-fixed) {
+  overflow: hidden !important;
+}
+
+/* End MediaHire Messages fixed height layout */
+
+/* Employer messages fixed layout */
+.employer-chat-fixed-layout {
+  height: calc(100dvh - 156px) !important;
+  max-height: calc(100dvh - 156px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  align-items: stretch !important;
+}
+
+.employer-chat-fixed-layout,
+.employer-chat-fixed-layout * {
+  min-height: 0 !important;
+}
+
+.employer-chat-fixed-layout > * {
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+/* left conversations block */
+.employer-chat-fixed-layout > *:first-child {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.employer-chat-fixed-layout > *:first-child > *:last-child {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+}
+
+/* right active chat block */
+.employer-chat-fixed-layout > *:last-child {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* chat header stays fixed */
+.employer-chat-fixed-layout > *:last-child > *:first-child {
+  flex: 0 0 auto !important;
+  overflow: hidden !important;
+}
+
+/* message input stays fixed */
+.employer-chat-fixed-layout > *:last-child > *:last-child {
+  flex: 0 0 auto !important;
+  overflow: hidden !important;
+}
+
+/* messages area scrolls inside the chat */
+.employer-chat-fixed-layout > *:last-child > *:not(:first-child):not(:last-child) {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+}
+
+/* do not let long messages stretch the page */
+.employer-chat-fixed-layout > *:last-child > *:not(:first-child):not(:last-child) > * {
+  max-height: none !important;
+}
+
+/* employer messages page should not scroll because of long chat */
+body:has(.employer-chat-fixed-layout) {
+  overflow: hidden !important;
+}
+

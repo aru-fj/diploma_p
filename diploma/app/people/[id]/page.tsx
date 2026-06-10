@@ -12,7 +12,7 @@ import {
   useEffect,
   useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import {
   ArrowLeft,
   BriefcaseBusiness,
@@ -34,6 +34,8 @@ import {
 
 import { SaveProfileButton } from "@/components/mediahire/save-profile-button";
 import { Header } from "@/components/mediahire/header";
+import { EmployerHeader } from "@/components/mediahire/employer/employer-ui";
+import { JobSeekerNavbar } from "@/components/mediahire/jobseeker-navbar";
 import {
   getPublicPersonBySlug,
   publicPeople,
@@ -46,12 +48,55 @@ import { getRemotePublicPersonById } from "@/components/mediahire/public/remote-
 type ProfileTab = "portfolio" | "resume" | "reviews";
 
 export default function JobSeekerPersonProfilePage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ id?: string; slug?: string }>();
+  const profileId = (params.id || params.slug || "").toString();
+  const pathname = usePathname();
+  const isJobSeekerRoute = pathname.startsWith("/home/jobseeker");
+  const isEmployerRoute = pathname.startsWith("/home/employer");
+
+  function renderDetailNavbar() {
+    if (isJobSeekerRoute) {
+      return <JobSeekerNavbar active="Home" />;
+    }
+
+    if (isEmployerRoute) {
+      return <EmployerHeader active="Home" />;
+    }
+
+    return <Header role="jobseeker" activeItem="Home" />;
+  }
+
   const [activeTab, setActiveTab] = useState<ProfileTab>("portfolio");
 
-  const staticPerson = getPublicPersonBySlug(params.id);
+  const staticPerson = getPublicPersonBySlug(profileId);
   const [remotePerson, setRemotePerson] = useState<Awaited<ReturnType<typeof getRemotePublicPersonById>> | null>(null);
   const [isRemoteLoading, setIsRemoteLoading] = useState(!staticPerson);
+  const [remoteCoverUrl, setRemoteCoverUrl] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProfileCover() {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("cover_url,public_slug,full_name")
+        .eq("public_slug", profileId)
+        .limit(1);
+
+      const row = data?.[0];
+
+      if (isMounted && row?.cover_url) {
+        setRemoteCoverUrl(row.cover_url);
+      }
+    }
+
+    void loadProfileCover();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profileId]);
+
 
   useEffect(() => {
     let isMounted = true;
@@ -64,7 +109,7 @@ export default function JobSeekerPersonProfilePage() {
 
     setIsRemoteLoading(true);
 
-    void getRemotePublicPersonById(params.id).then((person) => {
+    void getRemotePublicPersonById(profileId).then((person) => {
       if (!isMounted) {
         return;
       }
@@ -76,15 +121,14 @@ export default function JobSeekerPersonProfilePage() {
     return () => {
       isMounted = false;
     };
-  }, [params.id, staticPerson]);
+  }, [profileId, staticPerson]);
 
-  const currentProfileMirror = getCurrentProfilePublicMirror(params.id);
-  const person = currentProfileMirror || staticPerson || remotePerson;
+  const person = staticPerson || remotePerson;
 
   if (!person && isRemoteLoading) {
     return (
       <main className="min-h-screen bg-white text-slate-950">
-        <Header role="jobseeker" activeItem="Home" />
+        {renderDetailNavbar()}
         <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
           <div className="h-12 w-12 animate-pulse rounded-2xl bg-blue-50" />
           <div className="mt-5 h-7 w-48 animate-pulse rounded-full bg-slate-100" />
@@ -97,7 +141,7 @@ export default function JobSeekerPersonProfilePage() {
   if (!person) {
     return (
       <main className="min-h-screen bg-white text-slate-950">
-        <Header role="jobseeker" activeItem="Home" />
+        {renderDetailNavbar()}
 
         <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
           <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
@@ -124,8 +168,10 @@ export default function JobSeekerPersonProfilePage() {
     );
   }
 
+  const hasExplicitRemoteWorks = Array.isArray((person as any).remoteWorks);
+
   const portfolioWorks = enrichPortfolioWorksWithCovers(
-    (person as any).remoteWorks?.length
+    hasExplicitRemoteWorks
       ? (person as any).remoteWorks
       : getPortfolioWorks({
           slug: person.slug,
@@ -182,44 +228,24 @@ export default function JobSeekerPersonProfilePage() {
       </svg>`,
     );
 
-  const [remoteCoverUrl, setRemoteCoverUrl] = useState("");
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadProfileCover() {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("cover_url,public_slug,full_name")
-        .eq("public_slug", params.id)
-        .limit(1);
-
-      const row = data?.[0];
-
-      console.log("MediaHire public profile cover:", {
-        slug: params.id,
-        row,
-        error,
-      });
-
-      if (isMounted && row?.cover_url) {
-        setRemoteCoverUrl(row.cover_url);
-      }
-    }
-
-    void loadProfileCover();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [params.id]);
-
   const profileCoverSrc =
     remoteCoverUrl || person.coverImage || fallbackProfileCover;
 
   const profileCoverStyle = {
     backgroundImage: `url("${profileCoverSrc}")`,
   };
+
+  function getPortfolioProjectHref(projectSlug: string) {
+    if (isJobSeekerRoute) {
+      return `/home/jobseeker/work/${projectSlug}`;
+    }
+
+    if (isEmployerRoute) {
+      return `/home/employer/projects/${projectSlug}`;
+    }
+
+    return `/work/${projectSlug}`;
+  }
 
   const software = displaySoftware;
   const resumeItems: any[] = [];
@@ -238,7 +264,7 @@ export default function JobSeekerPersonProfilePage() {
         </div>
 
         <div className="relative z-10 pb-24 pt-4 sm:pt-5">
-          <Header role="jobseeker" activeItem="Home" />
+          {renderDetailNavbar()}
         </div>
       </section>
 
@@ -361,7 +387,7 @@ export default function JobSeekerPersonProfilePage() {
               {portfolioWorks.map((work: (typeof publicWorks)[number]) => (
                 <Link
                   key={work.slug}
-                  href={`/work/${work.slug}`}
+                  href={getPortfolioProjectHref(work.slug)}
                   className="portfolio-project-card group block rounded-2xl bg-white p-2.5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(37,99,235,0.13)]"
                 >
                   <div className="h-52 overflow-hidden rounded-xl bg-slate-100 shadow-sm">

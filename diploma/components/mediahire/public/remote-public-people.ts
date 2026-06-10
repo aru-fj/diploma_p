@@ -35,6 +35,7 @@ type ProfileRow = {
   software?: string[] | string | null;
   role?: string | null;
   profile_visibility?: boolean | null;
+  public_portfolio?: boolean | null;
   resume_url?: string | null;
   resume_name?: string | null;
 };
@@ -277,7 +278,7 @@ function toPublicPerson(profile: ProfileRow, works: PublicWork[]): RemotePublicP
 
 async function findProfileBySlug(id: string) {
   const profileSelect =
-    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,resume_url,resume_name,role,profile_visibility,preferred_work_type,experience_years,year_of_birth,gender,mobile,minimum_salary,payment_period,postal_code,role,profile_visibility,preferred_work_type,experience_years,year_of_birth,gender,mobile,minimum_salary,payment_period,postal_code,role,profile_visibility";
+    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,resume_url,resume_name,role,profile_visibility,public_portfolio,preferred_work_type,experience_years";
 
   const byPublicSlug = await supabase
     .from("profiles")
@@ -328,36 +329,110 @@ async function findProfileBySlug(id: string) {
 }
 
 export async function getRemotePublicPersonById(id: string) {
-  const profileRow = await findProfileBySlug(id);
+  const cleanId = decodeURIComponent(id || "").trim();
 
-  if (!profileRow) {
+  if (!cleanId) {
     return null;
   }
 
-  const authorId = profileRow.user_id || profileRow.id;
-  const works = await loadPublishedProjects(authorId, profileRow);
+  const profileSelect =
+    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,resume_url,resume_name,role,profile_visibility,public_portfolio,preferred_work_type,experience_years";
 
-  return toPublicPerson(profileRow, works);
+  const bySlug = await supabase
+    .from("profiles")
+    .select(profileSelect)
+    .eq("public_slug", cleanId)
+    .maybeSingle();
+
+  let profile = bySlug.data as ProfileRow | null;
+
+  if (!profile) {
+    const byUserId = await supabase
+      .from("profiles")
+      .select(profileSelect)
+      .eq("user_id", cleanId)
+      .maybeSingle();
+
+    profile = byUserId.data as ProfileRow | null;
+  }
+
+  if (!profile) {
+    const byId = await supabase
+      .from("profiles")
+      .select(profileSelect)
+      .eq("id", cleanId)
+      .maybeSingle();
+
+    profile = byId.data as ProfileRow | null;
+  }
+
+  if (!profile || !profile.profile_visibility) {
+    return null;
+  }
+
+  const authorIds = Array.from(
+    new Set(
+      [profile.user_id, profile.id, profile.public_slug].filter(
+        (value): value is string => Boolean(value),
+      ),
+    ),
+  );
+
+  const works = profile.public_portfolio
+    ? (
+        await Promise.all(
+          authorIds.map((authorId) => loadPublishedProjects(authorId, profile)),
+        )
+      ).flat()
+    : [];
+
+  const worksBySlug = new Map(works.map((work) => [work.slug, work]));
+
+  return toPublicPerson(profile, Array.from(worksBySlug.values()));
 }
+
+
 
 export async function getRemotePublicPeople() {
   const profileSelect =
-    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,resume_url,resume_name,role,profile_visibility,preferred_work_type,experience_years,year_of_birth,gender,mobile,minimum_salary,payment_period,postal_code";
+    "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url,cover_url,profession,job_title,location,city,country,bio,skills,software,resume_url,resume_name,role,profile_visibility,public_portfolio,preferred_work_type,experience_years";
 
-  const { data: profileRows } = await supabase
+  const { data: profileRows, error } = await supabase
     .from("profiles")
     .select(profileSelect)
     .eq("role", "jobseeker")
     .eq("profile_visibility", true);
 
+  if (error) {
+    console.error("Could not load public people:", error);
+    return [];
+  }
+
   const people = await Promise.all(
     ((profileRows || []) as ProfileRow[]).map(async (profile) => {
-      const authorId = profile.user_id || profile.id;
-      const works = await loadPublishedProjects(authorId, profile);
+      const authorIds = Array.from(
+        new Set(
+          [profile.user_id, profile.id, profile.public_slug].filter(
+            (value): value is string => Boolean(value),
+          ),
+        ),
+      );
 
-      return toPublicPerson(profile, works);
+      const works = profile.public_portfolio
+        ? (
+            await Promise.all(
+              authorIds.map((authorId) => loadPublishedProjects(authorId, profile)),
+            )
+          ).flat()
+        : [];
+
+      const worksBySlug = new Map(works.map((work) => [work.slug, work]));
+
+      return toPublicPerson(profile, Array.from(worksBySlug.values()));
     }),
   );
 
   return people;
 }
+
+

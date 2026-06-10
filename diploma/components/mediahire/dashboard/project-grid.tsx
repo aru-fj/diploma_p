@@ -47,16 +47,13 @@ export function ProjectGrid({
       void (async () => {
         const localWorks = getAllPublicWorks();
         const remoteWorks = await getRemotePublishedWorks();
-  
-        const worksBySlug = new Map<string, PublicWork>();
-  
-        const localSlugs = new Set(localWorks.map((work) => work.slug));
+        const worksBySlug = new Map<string, (typeof localWorks)[number]>();
 
-        const uniqueRemoteWorks = remoteWorks.filter(
-          (work) => !localSlugs.has(work.slug),
-          );
+        [...localWorks, ...remoteWorks].forEach((work) => {
+          worksBySlug.set(work.slug, work as (typeof localWorks)[number]);
+        });
 
-        setAvailableWorks([...localWorks, ...uniqueRemoteWorks]);
+        setAvailableWorks(Array.from(worksBySlug.values()));
       })();
     };
   

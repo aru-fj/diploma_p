@@ -42,6 +42,12 @@ import { kazakhstanCities } from "@/components/mediahire/public/public-jobs-data
 import { ChatSidebar } from "@/components/mediahire/community/chat-sidebar";
 import { ChatWindow } from "@/components/mediahire/community/chat-window";
 import { EmptyChatState } from "@/components/mediahire/community/empty-chat-state";
+import {
+  loadSupabaseConversationsForCurrentUser,
+  markSupabaseConversationRead,
+  sendSupabaseMessage,
+  startSupabaseConversationWithProfile,
+} from "@/components/mediahire/community/supabase-chat";
 import type {
   ChatMessage,
   Conversation,
@@ -511,7 +517,7 @@ function EmptyState({ text }: { text: string }) {
 }
 
 function ButtonRow({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-wrap items-center gap-3">{children}</div>;
+  return <div className="flex flex-wrap items-center gap-3 min-h-0">{children}</div>;
 }
 
 function PrimaryButton(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
@@ -605,7 +611,7 @@ function EmployerSortPills({
     mode === "People" ? employerPeopleSortOptions : employerProjectSortOptions;
 
   return (
-    <div className="mt-2.5 flex flex-wrap justify-center gap-1.5 rounded-2xl bg-slate-50 p-2">
+    <div className="mt-2.5 flex flex-wrap justify-center gap-1.5 rounded-2xl bg-slate-50 p-2 min-h-0">
       {sortOptions.map((option) => {
         const isActive = activeSort === option;
 
@@ -644,7 +650,7 @@ function EmployerCategoryPills({
   ];
 
   return (
-    <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
+    <div className="mt-2.5 flex flex-wrap justify-center gap-1.5 min-h-0">
       {categoryTabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeCategory === tab.label;
@@ -752,7 +758,7 @@ export function EmployerHomePage() {
         />
       </section>
       <section className="mx-auto mt-8 w-[min(1320px,calc(100%-32px))] pb-20">
-        <div className="mt-8 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        <div className="mt-8 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 mediahire-messages-fixed">
           {tab === "projects"
             ? projects.map((project, index) => (
                 <motion.div key={project.id} {...cardMotion(index)}>
@@ -828,8 +834,8 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
   if (!project) {
     return (
       <EmployerShell active="Home">
-        <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
-          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 text-blue-600">
+        <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-4 text-center min-h-0 overflow-hidden">
+          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 text-blue-600 min-h-0">
             <BriefcaseBusiness className="h-8 w-8" />
           </div>
 
@@ -843,7 +849,7 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
 
           <Link
             href="/home/employer"
-            className="mt-8 inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700"
+            className="mt-8 inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700 min-h-0"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to home
@@ -887,11 +893,11 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
   return (
     <EmployerShell active="Home">
       <section className="mx-auto w-full max-w-4xl px-4 pb-12 pt-6 sm:px-6 lg:px-5">
-        <div className="mb-5 flex flex-col gap-3 sm:grid sm:grid-cols-[auto_1fr] sm:items-center lg:grid-cols-[0px_1fr]">
+        <div className="mb-5 flex flex-col gap-3 sm:grid sm:grid-cols-[auto_1fr] sm:items-center lg:grid-cols-[0px_1fr] min-h-0 overflow-hidden employer-chat-fixed-layout">
           <button
             type="button"
             onClick={() => router.back()}
-            className="inline-flex h-10 w-fit items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 lg:-translate-x-20"
+            className="inline-flex h-10 w-fit items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 lg:-translate-x-20 min-h-0 shrink-0"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
@@ -899,7 +905,7 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
 
           <Link
             href={`/home/employer/people/${project.authorId}`}
-            className="flex w-fit items-center gap-3.5 rounded-2xl bg-white px-3.5 py-2.5 shadow-[0_12px_34px_rgba(15,23,42,0.07)] transition hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-[0_16px_42px_rgba(37,99,235,0.12)] sm:justify-self-start"
+            className="flex w-fit items-center gap-3.5 rounded-2xl bg-white px-3.5 py-2.5 shadow-[0_12px_34px_rgba(15,23,42,0.07)] transition hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-[0_16px_42px_rgba(37,99,235,0.12)] sm:justify-self-start min-h-0"
           >
             <div className="h-12 w-14 overflow-hidden rounded-xl bg-slate-200">
               <Image
@@ -926,7 +932,7 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
         <article className="overflow-hidden rounded-2xl border border-white bg-white shadow-[0_18px_56px_rgba(15,23,42,0.08)]">
           <div className="bg-[#eaf3ff] px-4 py-5 sm:px-5">
             <header className="mx-auto max-w-2xl text-center">
-              <p className="mb-3 inline-flex rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-blue-600 shadow-sm">
+              <p className="mb-3 inline-flex rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-blue-600 shadow-sm min-h-0">
                 Project details
               </p>
 
@@ -939,7 +945,7 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
               </p>
             </header>
 
-            <div className="mx-auto mt-6 flex max-w-2xl flex-col gap-4">
+            <div className="mx-auto mt-6 flex max-w-2xl flex-col gap-4 min-h-0 overflow-hidden">
               {mediaItems.map((media, index) => (
                 <EmployerProjectMediaItem
                   key={`${media.type}-${media.url || media.fileName || media.text || index}`}
@@ -977,7 +983,7 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
               <button
                 type="button"
                 onClick={handleToggleSavedProject}
-                className="mx-auto mt-5 flex h-9 w-9 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition hover:scale-105 hover:bg-blue-600"
+                className="mx-auto mt-5 flex h-9 w-9 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition hover:scale-105 hover:bg-blue-600 min-h-0"
                 title={isSavedProject ? "Remove from saved" : "Save project"}
               >
                 <Heart className={`h-5 w-5 ${isSavedProject ? "fill-white" : ""}`} />
@@ -987,8 +993,8 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
         </article>
 
         <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
-          <div className="border-b border-slate-200 p-4">
-            <div className="flex gap-3">
+          <div className="border-b border-slate-200 p-4 shrink-0">
+            <div className="flex gap-3 min-h-0">
               <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-dashed border-slate-300 bg-slate-50">
                 {commentAuthor.avatar ? (
                   <Image
@@ -1004,19 +1010,19 @@ export function EmployerProjectDetailPage({ slug }: { slug: string }) {
                 )}
               </div>
 
-              <div className="flex-1">
+              <div className="flex-1 min-h-0">
                 <textarea
                   value={comment}
                   onChange={(event) => setComment(event.target.value)}
                   placeholder="Write a comment about the project."
-                  className="h-16 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-medium text-slate-700 outline-none transition focus:border-blue-300 focus:bg-white"
+                  className="h-16 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-medium text-slate-700 outline-none transition focus:border-blue-300 focus:bg-white shrink-0"
                 />
 
-                <div className="mt-2.5 flex justify-end">
+                <div className="mt-2.5 flex justify-end min-h-0">
                   <button
                     type="button"
                     onClick={postComment}
-                    className="inline-flex h-8 items-center justify-center rounded-full bg-blue-600 px-4 text-[11px] font-black text-white transition hover:bg-blue-700"
+                    className="inline-flex h-8 items-center justify-center rounded-full bg-blue-600 px-4 text-[11px] font-black text-white transition hover:bg-blue-700 min-h-0"
                   >
                     <Send className="mr-2 h-3.5 w-3.5" />
                     Post comment
@@ -1077,7 +1083,7 @@ function EmployerProjectMediaItem({
   if (media.type === "video" && media.url) {
     return (
       <div className="overflow-hidden rounded-2xl bg-black shadow-sm ring-1 ring-white">
-        <div className="flex items-center gap-2 bg-slate-950 px-3.5 py-2.5 text-xs font-black text-white">
+        <div className="flex items-center gap-2 bg-slate-950 px-3.5 py-2.5 text-xs font-black text-white min-h-0">
           <Play className="h-4 w-4" />
           Video
         </div>
@@ -1096,8 +1102,8 @@ function EmployerProjectMediaItem({
   if (media.type === "pdf") {
     return (
       <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-3.5 py-2.5">
-          <div className="flex items-center gap-2 text-xs font-black text-slate-900">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-3.5 py-2.5 min-h-0 shrink-0">
+          <div className="flex items-center gap-2 text-xs font-black text-slate-900 min-h-0">
             <FileText className="h-4 w-4 text-blue-600" />
             {media.fileName || "Project PDF"}
           </div>
@@ -1156,7 +1162,7 @@ function EmployerCommentItem({
   const visibleAvatar = avatar || "";
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-3 min-h-0">
       <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-dashed border-slate-300 bg-slate-50">
         {visibleAvatar ? (
           <Image
@@ -1197,7 +1203,7 @@ function EmployerInfoBox({
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-2.5 flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+      <div className="mb-2.5 flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 min-h-0">
         {icon}
       </div>
 
@@ -1238,8 +1244,8 @@ export function EmployerPeopleProfilePage({ slug }: { slug: string }) {
   if (!candidate) {
     return (
       <EmployerShell active="Search CV">
-        <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
-          <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+        <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-4 text-center min-h-0 overflow-hidden">
+          <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 min-h-0">
             <UserRound className="h-8 w-8" />
           </div>
 
@@ -1253,7 +1259,7 @@ export function EmployerPeopleProfilePage({ slug }: { slug: string }) {
 
           <Link
             href="/home/employer/search-cv"
-            className="mt-8 inline-flex h-10 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700"
+            className="mt-8 inline-flex h-10 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700 min-h-0"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Search CV
@@ -1292,7 +1298,7 @@ export function EmployerPeopleProfilePage({ slug }: { slug: string }) {
 
   return (
     <EmployerShell active="Search CV">
-      <div className="min-h-screen bg-white text-slate-950">
+      <div className="min-h-0 overflow-hidden bg-white text-slate-950">
       <section className="relative -mt-[118px] overflow-hidden bg-slate-100 pt-[118px]">
         <div className="absolute inset-0">
           <div
@@ -1355,7 +1361,7 @@ export function EmployerPeopleProfilePage({ slug }: { slug: string }) {
               <button
                 type="button"
                 onClick={() => openChat(router, currentCandidate.id)}
-                className="flex h-9 w-full items-center justify-center gap-2 rounded-full border border-blue-500 bg-blue-50 text-xs font-black text-blue-600 transition hover:bg-blue-100"
+                className="flex h-9 w-full items-center justify-center gap-2 rounded-full border border-blue-500 bg-blue-50 text-xs font-black text-blue-600 transition hover:bg-blue-100 min-h-0 shrink-0"
               >
                 <MessageCircle className="h-3.5 w-3.5" />
                 Message
@@ -1365,7 +1371,7 @@ export function EmployerPeopleProfilePage({ slug }: { slug: string }) {
             <div className="mt-6">
               <h2 className="text-lg font-black text-slate-950">Skills</h2>
 
-              <div className="mt-3 max-h-[52px] overflow-hidden flex flex-wrap gap-1.5">
+              <div className="mt-3 max-h-[52px] overflow-hidden flex flex-wrap gap-1.5 min-h-0">
                 {currentCandidate.skills.length ? (
                   currentCandidate.skills.map((skill) => (
                     <span
@@ -1386,7 +1392,7 @@ export function EmployerPeopleProfilePage({ slug }: { slug: string }) {
             <div className="mt-6">
               <h2 className="text-lg font-black text-slate-950">Software</h2>
 
-              <div className="mt-3 max-h-[52px] overflow-hidden flex flex-wrap gap-1.5">
+              <div className="mt-3 max-h-[52px] overflow-hidden flex flex-wrap gap-1.5 min-h-0">
                 {currentCandidate.software.length ? (
                   currentCandidate.software.map((item) => (
                     <span
@@ -1410,13 +1416,13 @@ export function EmployerPeopleProfilePage({ slug }: { slug: string }) {
           <button
             type="button"
             onClick={() => router.back()}
-            className="mb-5 inline-flex h-9 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-xs font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+            className="mb-5 inline-flex h-9 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-xs font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 min-h-0 shrink-0"
           >
             <ArrowLeft className="mr-2 h-3.5 w-3.5" />
             Back
           </button>
 
-          <div className="mb-6 flex items-center gap-5 border-b border-slate-200">
+          <div className="mb-6 flex items-center gap-5 border-b border-slate-200 min-h-0 shrink-0">
             <EmployerProfileTabButton
               label="Portfolio"
               active={activeTab === "portfolio"}
@@ -1557,7 +1563,7 @@ export function EmployerPeopleProfilePage({ slug }: { slug: string }) {
                     key={review.id}
                     className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
                   >
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center justify-between gap-3 min-h-0">
                       <h3 className="font-black">{review.company}</h3>
                       <StarRating value={review.rating} />
                     </div>
@@ -1595,7 +1601,7 @@ function EmployerProfileInfoRow({
   text: string;
 }) {
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-2.5 min-h-0">
       <span className="text-blue-600 [&>svg]:h-3.5 [&>svg]:w-3.5">
         {icon}
       </span>
@@ -1639,8 +1645,8 @@ function EmployerResumeCard({
 }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-4 flex items-center gap-3">
-        <div className="flex items-center justify-center text-slate-500 [&>svg]:h-4 [&>svg]:w-4">
+      <div className="mb-4 flex items-center gap-3 min-h-0">
+        <div className="flex items-center justify-center text-slate-500 [&>svg]:h-4 [&>svg]:w-4 min-h-0">
           {icon}
         </div>
 
@@ -1671,7 +1677,7 @@ function ProfileChips({ title, values }: { title: string; values: string[] }) {
   return (
     <div className="mt-8">
       <h2 className="text-xl font-black">{title}</h2>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap gap-2 min-h-0">
         {values.map((value) => <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-500" key={value}>{value}</span>)}
       </div>
     </div>
@@ -1697,7 +1703,7 @@ function ReviewsBlock({ reviews }: { reviews: Array<{ company: string; id: strin
     <div className="mt-8 grid gap-4">
       {reviews.map((review) => (
         <div className="rounded-2xl border border-slate-200 p-5" key={review.id}>
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 min-h-0">
             <h3 className="font-black">{review.company}</h3>
             <StarRating value={review.rating} />
           </div>
@@ -1750,7 +1756,7 @@ export function EmployerPostedJobsPage() {
   return (
     <EmployerShell active="Posted Jobs">
       <section className="mx-auto mt-8 w-[min(1320px,calc(100%-32px))] pb-20">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 min-h-0">
           <div>
             <h1 className="text-2xl font-black">Activity / Posted Jobs</h1>
             <p className="mt-2 text-sm font-semibold text-slate-500">
@@ -1759,7 +1765,7 @@ export function EmployerPostedJobsPage() {
           </div>
 
           <Link
-            className="inline-flex h-10 items-center rounded-2xl bg-[#0B63E5] px-6 text-sm font-black text-white"
+            className="inline-flex h-10 items-center rounded-2xl bg-[#0B63E5] px-6 text-sm font-black text-white min-h-0"
             href="/home/employer/post-job"
           >
             Post a Job
@@ -1812,7 +1818,7 @@ export function EmployerPostedJobsPage() {
                     {applicationsCount} applications
                   </span>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 min-h-0">
                     <Link
                       className="rounded-xl border border-[#0B63E5] px-3 py-2 text-xs font-black text-[#0B63E5]"
                       href={`/home/employer/posted-jobs/${job.id}/applications`}
@@ -1855,7 +1861,7 @@ export function EmployerApplicationsPage({ jobId }: { jobId: string }) {
   return (
     <EmployerShell active="Posted Jobs">
       <section className="mx-auto mt-8 w-[min(1120px,calc(100%-32px))]">
-        <Link className="inline-flex items-center gap-2 text-sm font-black text-slate-500 hover:text-[#0B63E5]" href="/home/employer/posted-jobs"><ArrowLeft size={18} />Back to Posted Jobs</Link>
+        <Link className="inline-flex items-center gap-2 text-sm font-black text-slate-500 hover:text-[#0B63E5] min-h-0" href="/home/employer/posted-jobs"><ArrowLeft size={18} />Back to Posted Jobs</Link>
         <h1 className="mt-5 text-2xl font-black">{job.title} Applications</h1>
         <div className="mt-8 grid gap-5">
           {applications.map((application) => {
@@ -1879,7 +1885,7 @@ function ApplicantCard({ applicationStatus, candidate, jobId, onMessage }: { app
           <Link className="text-2xl font-black hover:text-[#0B63E5]" href={`/home/employer/people/${candidate.id}`}>{candidate.name}</Link>
           <p className="text-sm font-bold text-slate-500">{candidate.role}</p>
           <div className="mt-2"><StarRating value={candidate.rating} /></div>
-          <div className="mt-3 flex flex-wrap gap-2">{candidate.skills.slice(0, 4).map((skill) => <span className="rounded-full bg-[#eef4ff] px-3 py-1 text-xs font-black text-[#0B63E5]" key={skill}>{skill}</span>)}</div>
+          <div className="mt-3 flex flex-wrap gap-2 min-h-0">{candidate.skills.slice(0, 4).map((skill) => <span className="rounded-full bg-[#eef4ff] px-3 py-1 text-xs font-black text-[#0B63E5]" key={skill}>{skill}</span>)}</div>
         </div>
         <div className="grid gap-2">
           <span className="rounded-full bg-amber-50 px-4 py-2 text-center text-xs font-black text-amber-700">{applicationStatus}</span>
@@ -2005,7 +2011,7 @@ export function EmployerPostJobPage() {
             </label>
           </FormSection>
         </div>
-        <div className="mt-8 flex justify-end gap-3">
+        <div className="mt-8 flex justify-end gap-3 min-h-0">
           <OutlineButton onClick={() => router.push("/home/employer/posted-jobs")}>Cancel</OutlineButton>
           <PrimaryButton onClick={save}>Save</PrimaryButton>
         </div>
@@ -2033,15 +2039,15 @@ function Input({ label, onChange, value }: { label: string; onChange: (value: st
 }
 
 function Checkbox({ checked, label, onChange }: { checked: boolean; label: string; onChange: (checked: boolean) => void }) {
-  return <label className="flex items-center gap-2 text-sm font-bold text-slate-600"><input checked={checked} onChange={(event) => onChange(event.target.checked)} type="checkbox" />{label}</label>;
+  return <label className="flex items-center gap-2 text-sm font-bold text-slate-600 min-h-0"><input checked={checked} onChange={(event) => onChange(event.target.checked)} type="checkbox" />{label}</label>;
 }
 
 function CheckGroup({ items, selected, toggle }: { items: string[]; selected: string[]; toggle: (value: string) => void }) {
-  return <div className="flex flex-wrap gap-2">{items.map((item) => <button className={`rounded-full px-3 py-2 text-xs font-black ${selected.includes(item) ? "bg-[#0B63E5] text-white" : "bg-slate-100 text-slate-500"}`} key={item} onClick={() => toggle(item)} type="button">{item}</button>)}</div>;
+  return <div className="flex flex-wrap gap-2 min-h-0">{items.map((item) => <button className={`rounded-full px-3 py-2 text-xs font-black ${selected.includes(item) ? "bg-[#0B63E5] text-white" : "bg-slate-100 text-slate-500"}`} key={item} onClick={() => toggle(item)} type="button">{item}</button>)}</div>;
 }
 
 function RadioGroup({ items, onChange, selected }: { items: string[]; onChange: (value: string) => void; selected: string }) {
-  return <div className="flex flex-wrap gap-2">{items.map((item) => <button className={`rounded-full px-3 py-2 text-xs font-black ${selected === item ? "bg-[#0B63E5] text-white" : "bg-slate-100 text-slate-500"}`} key={item} onClick={() => onChange(item)} type="button">{item}</button>)}</div>;
+  return <div className="flex flex-wrap gap-2 min-h-0">{items.map((item) => <button className={`rounded-full px-3 py-2 text-xs font-black ${selected === item ? "bg-[#0B63E5] text-white" : "bg-slate-100 text-slate-500"}`} key={item} onClick={() => onChange(item)} type="button">{item}</button>)}</div>;
 }
 
 const employerSearchCvCategories = [
@@ -2152,7 +2158,7 @@ export function EmployerSearchCvPage() {
 
   return (
     <EmployerShell active="Search CV">
-      <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
+      <main className="min-h-0 overflow-hidden bg-[#f5f7fb] text-slate-950 h-[calc(100dvh-96px)]">
         <div className="bg-[#eaf3ff]">
           <section className="mx-auto w-full max-w-6xl px-4 pb-10 pt-10 text-center sm:px-6 lg:px-10">
             <h1 className="mx-auto max-w-3xl text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
@@ -2164,8 +2170,8 @@ export function EmployerSearchCvPage() {
               for — we will show the candidates.
             </p>
 
-            <div className="mx-auto mt-6 flex max-w-3xl flex-col gap-2 rounded-2xl bg-white p-2 shadow-[0_16px_50px_rgba(15,23,42,0.08)] md:flex-row">
-              <div className="flex h-10 flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3">
+            <div className="mx-auto mt-6 flex max-w-3xl flex-col gap-2 rounded-2xl bg-white p-2 shadow-[0_16px_50px_rgba(15,23,42,0.08)] md:flex-row min-h-0 overflow-hidden">
+              <div className="flex h-10 flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3 min-h-0">
                 <Search className="h-4 w-4 text-slate-400" />
 
                 <input
@@ -2178,7 +2184,7 @@ export function EmployerSearchCvPage() {
                   }}
                   list="employer-search-cv-suggestions"
                   placeholder="Profession and position"
-                  className="h-full min-w-0 flex-1 bg-transparent text-xs font-bold text-slate-900 outline-none placeholder:text-slate-400"
+                  className="h-full min-w-0 flex-1 bg-transparent text-xs font-bold text-slate-900 outline-none placeholder:text-slate-400 min-h-0"
                 />
 
                 <datalist id="employer-search-cv-suggestions">
@@ -2196,13 +2202,13 @@ export function EmployerSearchCvPage() {
                 </datalist>
               </div>
 
-              <div className="flex h-10 flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3 md:max-w-[250px]">
+              <div className="flex h-10 flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3 md:max-w-[250px] min-h-0">
                 <MapPin className="h-4 w-4 text-slate-400" />
 
                 <select
                   value={location}
                   onChange={(event) => setLocation(event.target.value)}
-                  className="h-full flex-1 bg-transparent text-xs font-black text-slate-700 outline-none"
+                  className="h-full flex-1 bg-transparent text-xs font-black text-slate-700 outline-none min-h-0"
                 >
                   {kazakhstanCities.map((city) => (
                     <option key={city} value={city}>
@@ -2215,7 +2221,7 @@ export function EmployerSearchCvPage() {
               <button
                 type="button"
                 onClick={handleSearch}
-                className="flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-blue-600 px-5 text-sm font-black text-white shadow-md shadow-blue-600/20 transitiover:bg-blue-700"
+                className="flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-blue-600 px-5 text-sm font-black text-white shadow-md shadow-blue-600/20 transitiover:bg-blue-700 min-h-0"
               >
                 <Search className="h-4 w-4" />
                 Search CV
@@ -2225,7 +2231,7 @@ export function EmployerSearchCvPage() {
         </div>
 
         <section className="mx-auto w-full max-w-none px-4 py-6 pb-20 sm:px-6 lg:px-10">
-          <div className="flex flex-wrap justify-center gap-2">
+          <div className="flex flex-wrap justify-center gap-2 min-h-0">
             {employerSearchCvCategories.map((item) => (
               <button
                 key={item}
@@ -2242,7 +2248,7 @@ export function EmployerSearchCvPage() {
             ))}
           </div>
 
-          <div className="mt-6 flex items-end justify-between gap-4">
+          <div className="mt-6 flex items-end justify-between gap-4 min-h-0">
             <div>
               <p className="text-[11px] font-black text-blue-600">
                 Public candidate search
@@ -2255,7 +2261,7 @@ export function EmployerSearchCvPage() {
 
             <Link
               href="/home/employer/favorites"
-              className="hidden h-9 items-center justify-center rounded-lg border border-blue-600 px-3.5 text-[11px] font-black text-blue-600 transition hover:bg-blue-50 sm:inline-flex"
+              className="hidden h-9 items-center justify-center rounded-lg border border-blue-600 px-3.5 text-[11px] font-black text-blue-600 transition hover:bg-blue-50 sm:inline-flex min-h-0 shrink-0"
             >
               Saved candidates
             </Link>
@@ -2269,9 +2275,9 @@ export function EmployerSearchCvPage() {
                 return (
                   <article
                     key={candidate.id}
-                    className="flex h-[320px] flex-col overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white p-3.5 shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)]"
+                    className="flex h-[320px] flex-col overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white p-3.5 shadow-[0_12px_36px_rgba(15,23,42,0.07)] transition hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(37,99,235,0.12)] min-h-0"
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-3 min-h-0">
                       <div className="h-14 w-14 overflow-hidden rounded-xl bg-slate-200">
                         <Image
                           src={candidate.avatar}
@@ -2283,7 +2289,7 @@ export function EmployerSearchCvPage() {
                         />
                       </div>
 
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 min-h-0">
                         <h3 className="line-clamp-1 text-sm font-black text-slate-950">
                           {candidate.name}
                         </h3>
@@ -2292,7 +2298,7 @@ export function EmployerSearchCvPage() {
                           {candidate.role}
                         </p>
 
-                        <div className="mt-1.5 flex items-center gap-1 text-[11px] font-black text-amber-600">
+                        <div className="mt-1.5 flex items-center gap-1 text-[11px] font-black text-amber-600 min-h-0">
                           <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
                           {candidate.rating}
                         </div>
@@ -2302,7 +2308,7 @@ export function EmployerSearchCvPage() {
                         type="button"
                         onClick={() => toggleSavedCandidate(candidate.id)}
                         title={isSaved ? "Remove from saved" : "Save candidate"}
-                        className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition hover:bg-blue-100"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition hover:bg-blue-100 min-h-0"
                       >
                         <Bookmark
                           className={`h-4 w-4 ${
@@ -2316,17 +2322,17 @@ export function EmployerSearchCvPage() {
                       {candidate.bio || candidate.resume.about}
                     </p>
 
-                    <div className="mt-2.5 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
+                    <div className="mt-2.5 flex items-center gap-2 text-[11px] font-semibold text-slate-500 min-h-0">
                       <MapPin className="h-4 w-4 text-blue-500" />
                       {candidate.location}
                     </div>
 
-                    <div className="mt-2 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
+                    <div className="mt-2 flex items-center gap-2 text-[11px] font-semibold text-slate-500 min-h-0">
                       <BriefcaseBusiness className="h-4 w-4 text-blue-500" />
                       {candidate.experience}
                     </div>
 
-                    <div className="mt-3 max-h-[30px] overflow-hidden flex flex-wrap gap-1.5">
+                    <div className="mt-3 max-h-[30px] overflow-hidden flex flex-wrap gap-1.5 min-h-0">
                       {candidate.skills.slice(0, 3).map((skill) => (
                         <span
                           key={skill}
@@ -2340,7 +2346,7 @@ export function EmployerSearchCvPage() {
                     <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
                       <Link
                         href={`/home/employer/people/${candidate.id}`}
-                        className="flex h-9 items-center justify-center rounded-lg bg-blue-600 px-3 text-[11px] font-black text-white transition hover:bg-blue-700"
+                        className="flex h-9 items-center justify-center rounded-lg bg-blue-600 px-3 text-[11px] font-black text-white transition hover:bg-blue-700 min-h-0"
                       >
                         View Profile
                       </Link>
@@ -2348,7 +2354,7 @@ export function EmployerSearchCvPage() {
                       <button
                         type="button"
                         onClick={() => openChat(router, candidate.id)}
-                        className="flex h-9 items-center justify-center rounded-lg border border-blue-600 px-3 text-[11px] font-black text-blue-600 transition hover:bg-blue-50"
+                        className="flex h-9 items-center justify-center rounded-lg border border-blue-600 px-3 text-[11px] font-black text-blue-600 transition hover:bg-blue-50 min-h-0 shrink-0"
                       >
                         Invite
                       </button>
@@ -2578,12 +2584,93 @@ function getInitialEmployerCommunityConversations(initialChatId: string | null) 
   return [createdConversation, ...storedConversations];
 }
 
+
+function isEmployerSupabaseConversationId(value?: string | null) {
+  return Boolean(
+    value &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value),
+  );
+}
+
+function mergeEmployerCommunityConversations(
+  remoteConversations: Conversation[],
+  localConversations: Conversation[],
+) {
+  const conversationsById = new Map<string, Conversation>();
+
+  [...remoteConversations, ...localConversations].forEach((conversation) => {
+    conversationsById.set(conversation.id, conversation);
+  });
+
+  return Array.from(conversationsById.values());
+}
+
 export function EmployerCommunityPage({ initialChatId = null }: { initialChatId?: string | null }) {
   const [conversations, setConversations] = useState<Conversation[]>([
     employerMediaHireConversation,
   ]);
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>("mediahire");
+  const [selectedId, setSelectedId] = useState<string | null>(
+    () => initialChatId || conversations[0]?.id || null,
+  );
+
+  async function refreshEmployerSupabaseConversations(nextSelectedId?: string | null) {
+    const remoteConversations =
+      await loadSupabaseConversationsForCurrentUser("employer");
+
+    setConversations((currentConversations) =>
+      mergeEmployerCommunityConversations(remoteConversations, currentConversations),
+    );
+
+    if (nextSelectedId) {
+      setSelectedId(nextSelectedId);
+    }
+  }
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function syncEmployerSupabaseChats() {
+      let nextSelectedId: string | null = null;
+
+      if (initialChatId && !isEmployerSupabaseConversationId(initialChatId)) {
+        const conversation = await startSupabaseConversationWithProfile(
+          initialChatId,
+          {
+            subjectId: initialChatId,
+            subjectType: "profile",
+          },
+        );
+
+        nextSelectedId = conversation?.id || null;
+      }
+
+      const remoteConversations =
+        await loadSupabaseConversationsForCurrentUser("employer");
+      const localConversations = [] as Conversation[];
+
+      if (!isMounted) {
+        return;
+      }
+
+      setConversations((currentConversations) =>
+        mergeEmployerCommunityConversations(
+          remoteConversations,
+          mergeEmployerCommunityConversations(localConversations, currentConversations),
+        ),
+      );
+
+      if (nextSelectedId) {
+        setSelectedId(nextSelectedId);
+      }
+    }
+
+    void syncEmployerSupabaseChats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialChatId]);
 
   useEffect(() => {
     const normalizedChatId = normalizeEmployerCommunityChatId(initialChatId);
@@ -2657,6 +2744,10 @@ export function EmployerCommunityPage({ initialChatId = null }: { initialChatId?
   function handleSelect(conversationId: string) {
     setSelectedId(conversationId);
 
+    if (isEmployerSupabaseConversationId(conversationId)) {
+      void markSupabaseConversationRead(conversationId);
+    }
+
     setConversations((currentConversations) => {
       const nextConversations = currentConversations.map((conversation) =>
         conversation.id === conversationId
@@ -2664,7 +2755,10 @@ export function EmployerCommunityPage({ initialChatId = null }: { initialChatId?
           : conversation,
       );
 
-      persistEmployerCommunityConversations(nextConversations);
+      persistEmployerCommunityConversations(
+        getEmployerPersistableConversations(nextConversations),
+      );
+
       return nextConversations;
     });
   }
@@ -2743,17 +2837,7 @@ export function EmployerCommunityPage({ initialChatId = null }: { initialChatId?
         transition={mediaHireMotion.page}
         variants={fadeIn}
       >
-        <section>
-          <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
-            Message
-          </h1>
-
-          <p className="mt-2 text-sm font-medium text-slate-500">
-            Communicate with candidates and stay updated on hiring conversations
-          </p>
-        </section>
-
-        <section className="mt-4 grid gap-4 lg:h-[500px] lg:grid-cols-[470px_1fr]">
+        <section className="mt-5 grid gap-4 lg:h-[calc(100vh-180px)] lg:min-h-[560px] lg:grid-cols-[470px_1fr]">
           <div className={selectedConversation ? "hidden lg:block" : "block"}>
             <ChatSidebar
               conversations={filteredConversations}
@@ -2811,9 +2895,9 @@ function HiredSpecialistCard({ candidate, expanded, onToggle }: { candidate: Emp
 
   return (
     <article className="rounded-2xl bg-white p-5 shadow-sm">
-      <button className="flex w-full items-center gap-4 text-left" onClick={onToggle} type="button">
+      <button className="flex w-full items-center gap-4 text-left min-h-0" onClick={onToggle} type="button">
         <Image alt={candidate.name} className="h-16 w-16 rounded-2xl object-cover" height={80} src={candidate.avatar} width={80} />
-        <div className="flex-1">
+        <div className="flex-1 min-h-0">
           <h3 className="text-xl font-black">{candidate.name}</h3>
           <p className="text-sm font-bold text-slate-500">{candidate.role}</p>
           <StarRating value={candidate.rating} />
@@ -2824,7 +2908,7 @@ function HiredSpecialistCard({ candidate, expanded, onToggle }: { candidate: Emp
       {expanded ? (
         <div className="mt-5 rounded-2xl bg-slate-50 p-5">
           <p className="font-black">{submitted ? "Review Submitted" : "Write Review"}</p>
-          <div className="mt-3 flex gap-1">{[1, 2, 3, 4, 5].map((star) => <button className={star <= rating ? "text-amber-400" : "text-slate-300"} key={star} onClick={() => setRating(star)} type="button"><Star className="fill-current" size={20} /></button>)}</div>
+          <div className="mt-3 flex gap-1 min-h-0">{[1, 2, 3, 4, 5].map((star) => <button className={star <= rating ? "text-amber-400" : "text-slate-300"} key={star} onClick={() => setRating(star)} type="button"><Star className="fill-current" size={20} /></button>)}</div>
           <textarea className="mt-3 min-h-20 w-full resize-none rounded-2xl border border-slate-200 p-4 text-sm font-semibold outline-none focus:border-[#0B63E5]" onChange={(event) => setText(event.target.value)} placeholder="Share your hiring experience..." value={text} />
           <PrimaryButton className="mt-3" onClick={submit}>Save review</PrimaryButton>
         </div>
@@ -2860,7 +2944,7 @@ export function EmployerFavoritesPage() {
 
   return (
     <EmployerDashboardShell active="Favorites" subtitle="Saved candidates and creative posts." title="Favorites">
-      <div className="mb-6 inline-flex rounded-2xl bg-slate-100 p-1">
+      <div className="mb-6 inline-flex rounded-2xl bg-slate-100 p-1 min-h-0">
         {(["candidates", "projects"] as const).map((item) => <button className={`h-7 rounded-lg px-3 text-[9px] font-semibold capitalize leading-none transition ${tab === item ? "bg-white text-slate-950 shadow-sm" : "text-slate-500 hover:text-[#0B63E5]"}`} key={item} onClick={() => setTab(item)} type="button">{item === "projects" ? "Posts / Projects" : item}</button>)}
       </div>
       {tab === "candidates" ? (
@@ -2942,7 +3026,7 @@ export function EmployerAccountSettingsPage() {
       title="Account Setting"
     >
       <div className="max-w-[900px] rounded-[24px] bg-white p-5 shadow-sm md:p-6">
-        <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 md:flex-row md:items-center">
+        <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 md:flex-row md:items-center min-h-0 overflow-hidden shrink-0">
           <label className="grid h-20 w-20 shrink-0 cursor-pointer place-items-center overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-slate-50">
             {profile.avatar ? (
               <Image
@@ -2964,8 +3048,8 @@ export function EmployerAccountSettingsPage() {
             <p className="mt-1 text-xs font-semibold text-slate-500">
               We support PNGs and JPEGs under 10MB
             </p>
-            <div className="mt-3 flex gap-3">
-              <label className="inline-flex h-10 cursor-pointer items-center rounded-xl bg-[#0B63E5] px-4 text-xs font-black text-white">
+            <div className="mt-3 flex gap-3 min-h-0">
+              <label className="inline-flex h-10 cursor-pointer items-center rounded-xl bg-[#0B63E5] px-4 text-xs font-black text-white min-h-0">
                 Upload Picture
                 <input className="hidden" onChange={(event) => upload(event.target.files?.[0])} type="file" />
               </label>
@@ -2998,18 +3082,18 @@ export function EmployerAccountSettingsPage() {
           </label>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="mt-6 flex flex-wrap items-center gap-3 min-h-0">
           <OutlineButton onClick={() => setProfile(getEmployerProfile())}>Cancel</OutlineButton>
           <PrimaryButton onClick={save}>Save</PrimaryButton>
 
           {error ? (
-            <span className="inline-flex min-h-10 items-center rounded-xl border border-[#0B63E5]/10 bg-[#eef4ff] px-4 text-xs font-black text-[#0B63E5]">
+            <span className="inline-flex min-h-10 items-center rounded-xl border border-[#0B63E5]/10 bg-[#eef4ff] px-4 text-xs font-black text-[#0B63E5] min-h-0">
               {error}
             </span>
           ) : null}
 
           {saved ? (
-            <span className="inline-flex min-h-10 items-center rounded-xl border border-[#0B63E5]/10 bg-[#eef4ff] px-4 text-xs font-black text-[#0B63E5]">
+            <span className="inline-flex min-h-10 items-center rounded-xl border border-[#0B63E5]/10 bg-[#eef4ff] px-4 text-xs font-black text-[#0B63E5] min-h-0">
               Saved successfully.
             </span>
           ) : null}
@@ -3047,7 +3131,7 @@ export function EmployerSettingsPage() {
       <div className="max-w-[900px] rounded-[24px] bg-white p-5 shadow-sm md:p-6">
         <div className="grid gap-4 md:grid-cols-2">
           <button
-            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100"
+            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100 min-h-0"
             onClick={() => update("messages", !settings.messages)}
             type="button"
           >
@@ -3058,7 +3142,7 @@ export function EmployerSettingsPage() {
           </button>
 
           <button
-            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100"
+            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100 min-h-0"
             onClick={() => update("interviewUpdates", !settings.interviewUpdates)}
             type="button"
           >
@@ -3069,7 +3153,7 @@ export function EmployerSettingsPage() {
           </button>
 
           <button
-            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100"
+            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100 min-h-0"
             onClick={() => update("newApplications", !settings.newApplications)}
             type="button"
           >
@@ -3080,7 +3164,7 @@ export function EmployerSettingsPage() {
           </button>
 
           <button
-            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100"
+            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100 min-h-0"
             onClick={() => update("companyVisibility", !settings.companyVisibility)}
             type="button"
           >
@@ -3091,7 +3175,7 @@ export function EmployerSettingsPage() {
           </button>
 
           <button
-            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100"
+            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100 min-h-0"
             onClick={() => update("publicJobPosts", !settings.publicJobPosts)}
             type="button"
           >
@@ -3102,7 +3186,7 @@ export function EmployerSettingsPage() {
           </button>
 
           <button
-            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100"
+            className="flex h-[54px] items-center justify-between rounded-2xl bg-slate-50 px-4 text-sm font-black text-slate-800 transition hover:bg-slate-100 min-h-0"
             onClick={() => update("googleIntegration", !settings.googleIntegration)}
             type="button"
           >
@@ -3151,11 +3235,11 @@ export function EmployerSettingsPage() {
           />
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="mt-6 flex flex-wrap items-center gap-3 min-h-0">
           <OutlineButton onClick={() => setSettings(getEmployerSettings())}>Cancel</OutlineButton>
           <PrimaryButton onClick={save}>Save</PrimaryButton>
           {message ? (
-            <span className="inline-flex min-h-10 items-center rounded-xl border border-[#0B63E5]/10 bg-[#eef4ff] px-4 text-xs font-black text-[#0B63E5]">
+            <span className="inline-flex min-h-10 items-center rounded-xl border border-[#0B63E5]/10 bg-[#eef4ff] px-4 text-xs font-black text-[#0B63E5] min-h-0">
               {message}
             </span>
           ) : null}
@@ -3171,7 +3255,7 @@ function SettingsSection({ children, title }: { children: React.ReactNode; title
 }
 
 function Toggle({ checked, label, onChange }: { checked: boolean; label: string; onChange: (value: boolean) => void }) {
-  return <button className="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-xs font-black" onClick={() => onChange(!checked)} type="button"><span>{label}</span><span className={`relative h-6 w-9 rounded-full transition ${checked ? "bg-[#0B63E5]" : "bg-slate-300"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${checked ? "left-5" : "left-1"}`} /></span></button>;
+  return <button className="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-xs font-black min-h-0" onClick={() => onChange(!checked)} type="button"><span>{label}</span><span className={`relative h-6 w-9 rounded-full transition ${checked ? "bg-[#0B63E5]" : "bg-slate-300"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${checked ? "left-5" : "left-1"}`} /></span></button>;
 }
 
 function Select({ label, onChange, options, value }: { label: string; onChange: (value: string) => void; options: string[]; value: string }) {

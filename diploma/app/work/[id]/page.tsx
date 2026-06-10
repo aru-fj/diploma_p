@@ -1,10 +1,12 @@
 "use client";
 
 import { Header } from "@/components/mediahire/header";
+import { EmployerHeader } from "@/components/mediahire/employer/employer-ui";
+import { JobSeekerNavbar } from "@/components/mediahire/jobseeker-navbar";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import {
   ArrowLeft,
   BriefcaseBusiness,
@@ -21,6 +23,7 @@ import {
   type PublicWorkMedia,
 } from "@/components/mediahire/public/public-works-data";
 import { publicPeople } from "@/components/mediahire/public/public-people-data";
+import { getRemotePublishedWorkBySlug } from "@/components/mediahire/public/remote-public-works";
 import { supabase } from "@/lib/supabase-client";
 import {
   isProjectSaved,
@@ -101,15 +104,61 @@ function isCurrentUserComment(comment: ProjectComment) {
 }
 
 export default function JobSeekerWorkDetailPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ id?: string; slug?: string }>();
+  const workId = (params.id || params.slug || "").toString();
+  const pathname = usePathname();
+  const isJobSeekerRoute = pathname.startsWith("/home/jobseeker");
+  const isEmployerRoute = pathname.startsWith("/home/employer");
+
+  function renderDetailNavbar() {
+    if (isJobSeekerRoute) {
+      return <JobSeekerNavbar active="Home" />;
+    }
+
+    if (isEmployerRoute) {
+      return <EmployerHeader active="Home" />;
+    }
+
+    return <Header role="jobseeker" activeItem="Home" />;
+  }
+
   const [hasHydrated, setHasHydrated] = useState(false);
 
   useEffect(() => {
     setHasHydrated(true);
   }, []);
 
-  const work = getPublicWorkBySlug(params.id);
-  const commentsStorageKey = `mediahire_jobseeker_project_comments_${params.id}`;
+  const staticWork = getPublicWorkBySlug(workId);
+  const [remoteWork, setRemoteWork] = useState<any>(null);
+  const [isRemoteWorkLoading, setIsRemoteWorkLoading] = useState(!staticWork);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (staticWork) {
+      setRemoteWork(null);
+      setIsRemoteWorkLoading(false);
+      return;
+    }
+
+    setIsRemoteWorkLoading(true);
+
+    void getRemotePublishedWorkBySlug(workId).then((work) => {
+      if (!isMounted) {
+        return;
+      }
+
+      setRemoteWork(work || null);
+      setIsRemoteWorkLoading(false);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [workId, staticWork]);
+
+  const work = staticWork || remoteWork;
+  const commentsStorageKey = `mediahire_jobseeker_project_comments_${workId}`;
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -125,7 +174,7 @@ export default function JobSeekerWorkDetailPage() {
 
   useEffect(() => {
     const syncSavedProject = () => {
-      setIsSaved(isProjectSaved(params.id));
+      setIsSaved(isProjectSaved(workId));
     };
 
     syncSavedProject();
@@ -136,7 +185,7 @@ export default function JobSeekerWorkDetailPage() {
       window.removeEventListener(SAVED_PROJECTS_CHANGED_EVENT, syncSavedProject);
       window.removeEventListener("storage", syncSavedProject);
     };
-  }, [params.id]);
+  }, [workId]);
 
   useEffect(() => {
     function syncProfile() {
@@ -174,7 +223,7 @@ export default function JobSeekerWorkDetailPage() {
   }, []);
 
   function handleToggleSavedProject() {
-    setIsSaved(toggleSavedProject(params.id));
+    setIsSaved(toggleSavedProject(workId));
   }
 
   function handlePostComment() {
@@ -208,34 +257,55 @@ export default function JobSeekerWorkDetailPage() {
   const [remoteAuthor, setRemoteAuthor] = useState<{
     avatarUrl?: string;
     fullName?: string;
+    publicSlug?: string;
   } | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadAuthorProfile() {
-      if (!work?.authorSlug) {
-        return;
-      }
+      const profileSelect =
+        "id,user_id,public_slug,full_name,first_name,last_name,email,avatar_url";
 
-      const profileSelect = "id,user_id,full_name,first_name,last_name,email,avatar_url";
+      async function findProfileBy(field: string, value?: string | null) {
+        if (!value) {
+          return null;
+        }
 
-      const byUserId = await supabase
-        .from("profiles")
-        .select(profileSelect)
-        .eq("user_id", work?.authorSlug)
-        .maybeSingle();
-
-      let profile = byUserId.data;
-
-      if (!profile) {
-        const byId = await supabase
+        const { data } = await supabase
           .from("profiles")
           .select(profileSelect)
-          .eq("id", work?.authorSlug)
+          .eq(field, value)
           .maybeSingle();
 
-        profile = byId.data;
+        return data as any;
+      }
+
+      let profile: any = null;
+
+      const authorSlug =
+        work?.authorSlug && work.authorSlug !== "jobseeker"
+          ? work.authorSlug
+          : "";
+
+      profile =
+        (await findProfileBy("public_slug", authorSlug)) ||
+        (await findProfileBy("user_id", authorSlug)) ||
+        (await findProfileBy("id", authorSlug));
+
+      if (!profile && workId) {
+        const { data: projectRow } = await supabase
+          .from("projects")
+          .select("author_id")
+          .eq("id", workId)
+          .maybeSingle();
+
+        const projectAuthorId = (projectRow as any)?.author_id || "";
+
+        profile =
+          (await findProfileBy("user_id", projectAuthorId)) ||
+          (await findProfileBy("id", projectAuthorId)) ||
+          (await findProfileBy("public_slug", projectAuthorId));
       }
 
       if (!isMounted || !profile) {
@@ -251,6 +321,7 @@ export default function JobSeekerWorkDetailPage() {
       setRemoteAuthor({
         avatarUrl: profile.avatar_url || undefined,
         fullName,
+        publicSlug: profile.public_slug || profile.user_id || profile.id || undefined,
       });
     }
 
@@ -259,13 +330,13 @@ export default function JobSeekerWorkDetailPage() {
     return () => {
       isMounted = false;
     };
-  }, [work?.authorSlug, work?.author]);
+  }, [workId, work?.authorSlug, work?.author]);
 
 
-  if (!hasHydrated) {
+  if (!hasHydrated || isRemoteWorkLoading) {
     return (
       <main className="min-h-screen bg-white text-slate-950">
-        <Header role="jobseeker" activeItem="Home" />
+        {renderDetailNavbar()}
         <section className="mx-auto flex min-h-[55vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
           <div className="h-16 w-16 animate-pulse rounded-2xl bg-blue-50" />
           <div className="mt-6 h-7 w-56 animate-pulse rounded-full bg-slate-100" />
@@ -279,7 +350,7 @@ export default function JobSeekerWorkDetailPage() {
     return (
       <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
         <div className="mx-auto min-h-screen w-full px-4 pt-6 pb-8 sm:px-8 lg:px-12">
-          <Header role="jobseeker" activeItem="Home" />
+          {renderDetailNavbar()}
 
           <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
             <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 text-blue-600">
@@ -333,14 +404,22 @@ export default function JobSeekerWorkDetailPage() {
       </svg>`,
     );
   const visibleAuthorAvatar = authorAvatar || fallbackAuthorAvatar;
-  const authorProfileHref = authorProfile
-    ? `/people/${authorProfile.slug}`
-    : `/people/${createSlug(work.author)}`;
+  const authorProfileSlug =
+    remoteAuthor?.publicSlug ||
+    (work.authorSlug && work.authorSlug !== "jobseeker" ? work.authorSlug : "") ||
+    authorProfile?.slug ||
+    createSlug(authorName || work.author);
+
+  const authorProfileHref = isJobSeekerRoute
+    ? `/home/jobseeker/people/${authorProfileSlug}`
+    : isEmployerRoute
+      ? `/home/employer/people/${authorProfileSlug}`
+      : `/people/${authorProfileSlug}`;
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
       <div className="mx-auto min-h-screen w-full px-4 pt-6 pb-8 sm:px-8 lg:px-12">
-        <Header role="jobseeker" activeItem="Home" />
+        {renderDetailNavbar()}
 
         <section className="mx-auto w-full max-w-4xl px-4 pb-12 pt-6 sm:px-6 lg:px-5">
           <div className="mb-5 flex flex-col gap-3 sm:grid sm:grid-cols-[auto_1fr] sm:items-center lg:grid-cols-[0px_1fr]">
@@ -393,7 +472,7 @@ export default function JobSeekerWorkDetailPage() {
               </header>
 
               <div className="mx-auto mt-6 flex max-w-2xl flex-col gap-4">
-              {work.gallery.map((media, index) => (
+              {work.gallery.map((media: PublicWorkMedia, index: number) => (
                 <ProjectMediaItem
                   key={`${media.type}-${
                     media.type === "text" ? media.text : media.src

@@ -184,6 +184,15 @@ function ToggleRow({
   );
 }
 
+
+function slugifySettingsPublicProfileName(value?: string | null) {
+  return (value || "mediahire-user")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9а-яё]+/gi, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export function JobSeekerSettingsPage() {
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -264,7 +273,20 @@ export function JobSeekerSettingsPage() {
         : "";
 
   function patchSettings(patch: Partial<JobSeekerSettings>) {
-    setSettings((current) => ({ ...current, ...patch }));
+    setSettings((current) => {
+      const next = { ...current, ...patch };
+
+      if (patch.profileVisibility === false) {
+        next.publicPortfolio = false;
+      }
+
+      if (patch.publicPortfolio === true) {
+        next.profileVisibility = true;
+      }
+
+      return next;
+    });
+
     setSavedMessage("");
   }
 
@@ -273,8 +295,14 @@ export function JobSeekerSettingsPage() {
       return;
     }
 
-    updateSettings(settings);
-    setSavedMessage("");
+    const nextSettings = {
+      ...settings,
+      publicPortfolio:
+        Boolean(settings.profileVisibility) && Boolean(settings.publicPortfolio),
+    };
+
+    updateSettings(nextSettings);
+    setSettings(nextSettings);
 
     try {
       const {
@@ -282,18 +310,34 @@ export function JobSeekerSettingsPage() {
       } = await supabase.auth.getUser();
 
       if (user) {
+        const currentProfile = getCurrentUserProfile();
+        const authEmail = user.email || currentProfile.email || "";
+        const fullName =
+          currentProfile.fullName ||
+          [currentProfile.firstName, currentProfile.lastName]
+            .filter(Boolean)
+            .join(" ") ||
+          authEmail.split("@")[0] ||
+          "MediaHire creator";
+
+        const publicSlug =
+          (currentProfile as any).publicSlug ||
+          slugifySettingsPublicProfileName(fullName || authEmail);
+
         const payload = {
-          email: user.email || null,
-          profile_visibility: Boolean(settings.profileVisibility),
-          public_portfolio: Boolean(settings.publicPortfolio),
+          email: authEmail,
+          full_name: fullName,
+          profile_visibility: Boolean(nextSettings.profileVisibility),
+          public_portfolio: Boolean(nextSettings.publicPortfolio),
+          public_slug: publicSlug,
           role: "jobseeker",
-          user_id: user.id,
           updated_at: new Date().toISOString(),
+          user_id: user.id,
         };
 
         const byUserId = await supabase
           .from("profiles")
-          .select("id")
+          .select("id,user_id")
           .eq("user_id", user.id)
           .maybeSingle();
 
@@ -309,7 +353,7 @@ export function JobSeekerSettingsPage() {
         } else {
           const byId = await supabase
             .from("profiles")
-            .select("id")
+            .select("id,user_id")
             .eq("id", user.id)
             .maybeSingle();
 
@@ -335,15 +379,17 @@ export function JobSeekerSettingsPage() {
         }
       }
 
+      window.dispatchEvent(new Event("mediahire:settings-updated"));
+      window.dispatchEvent(new Event("mediahire:jobseeker-profile-updated"));
+      window.dispatchEvent(new Event("mediahire:projects-updated"));
+
       setSavedMessage(t("settings.savedSuccess"));
     } catch (error) {
-      setSavedMessage(
-        error instanceof Error
-          ? error.message
-          : "Could not save settings. Please try again.",
-      );
+      console.error("Could not save public settings:", error);
+      setSavedMessage("Could not save settings. Please try again.");
     }
   }
+
 
   if (!isHydrated) {
     return (

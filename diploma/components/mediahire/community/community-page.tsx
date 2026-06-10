@@ -1,11 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { DashboardHeader } from "@/components/mediahire/dashboard/dashboard-header";
 import { ChatSidebar } from "./chat-sidebar";
 import { ChatWindow } from "./chat-window";
 import { EmptyChatState } from "./empty-chat-state";
+import {
+  loadSupabaseConversationsForCurrentUser,
+  markSupabaseConversationRead,
+  sendSupabaseMessage,
+  startSupabaseConversationWithProfile,
+} from "./supabase-chat";
 import {
   conversations as initialConversations,
   type ChatMessage,
@@ -97,6 +103,29 @@ function sortConversations(conversations: Conversation[]) {
   });
 }
 
+
+function isSupabaseConversationId(value?: string | null) {
+  return Boolean(
+    value &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        value,
+      ),
+  );
+}
+
+function mergeCommunityConversations(
+  remoteConversations: Conversation[],
+  localConversations: Conversation[],
+) {
+  const conversationsById = new Map<string, Conversation>();
+
+  [...localConversations, ...remoteConversations].forEach((conversation) => {
+    conversationsById.set(conversation.id, conversation);
+  });
+
+  return Array.from(conversationsById.values());
+}
+
 function persistConversations(conversations: Conversation[]) {
   if (typeof window === "undefined") {
     return;
@@ -186,13 +215,87 @@ type CommunityPageProps = {
 
 export function CommunityPage({ initialChatId = null }: CommunityPageProps) {
   const [conversations, setConversations] =
-    useState<Conversation[]>(() => getInitialConversations(initialChatId));
+    useState<Conversation[]>(() => initialConversations);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(
     () => initialChatId || conversations[0]?.id || null,
   );
+
+  async function refreshSupabaseConversations(nextSelectedId?: string | null) {
+    const remoteConversations =
+      await loadSupabaseConversationsForCurrentUser("jobseeker");
+
+    setConversations((currentConversations) =>
+      mergeCommunityConversations(remoteConversations, currentConversations),
+    );
+
+    if (nextSelectedId) {
+      setSelectedId(nextSelectedId);
+    }
+  }
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function syncSupabaseChats() {
+      let nextSelectedId: string | null = null;
+
+      if (initialChatId && !isSupabaseConversationId(initialChatId)) {
+        const conversation = await startSupabaseConversationWithProfile(
+          initialChatId,
+          {
+            subjectId: initialChatId,
+            subjectType: "profile",
+          },
+        );
+
+        nextSelectedId = conversation?.id || null;
+      }
+
+      const remoteConversations =
+        await loadSupabaseConversationsForCurrentUser("jobseeker");
+      const localConversations = getInitialConversations(initialChatId);
+
+      if (!isMounted) {
+        return;
+      }
+
+      setConversations((currentConversations) =>
+        mergeCommunityConversations(
+          remoteConversations,
+          mergeCommunityConversations(localConversations, currentConversations),
+        ),
+      );
+
+      if (nextSelectedId) {
+        setSelectedId(nextSelectedId);
+      }
+    }
+
+    void syncSupabaseChats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialChatId]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      void loadSupabaseConversationsForCurrentUser("jobseeker").then(
+        (remoteConversations) => {
+          setConversations((currentConversations) =>
+            mergeCommunityConversations(remoteConversations, currentConversations),
+          );
+        },
+      );
+    }, 2500);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   const filteredConversations = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -216,22 +319,33 @@ export function CommunityPage({ initialChatId = null }: CommunityPageProps) {
 
   function handleSelect(conversationId: string) {
     setSelectedId(conversationId);
-    setConversations((currentConversations) =>
-      {
-        const nextConversations = currentConversations.map((conversation) =>
+
+    if (isSupabaseConversationId(conversationId)) {
+      void markSupabaseConversationRead(conversationId);
+    }
+
+    setConversations((currentConversations) => {
+      const nextConversations = currentConversations.map((conversation) =>
         conversation.id === conversationId
           ? { ...conversation, unread: 0 }
           : conversation,
-        );
+      );
 
-        persistConversations(nextConversations);
-        return nextConversations;
-      },
-    );
+      persistConversations(nextConversations);
+      return nextConversations;
+    });
   }
 
   function handleSend(message: string) {
     if (!selectedConversation) {
+      return;
+    }
+
+    if (isSupabaseConversationId(selectedConversation.id)) {
+      void sendSupabaseMessage(selectedConversation.id, message).then(() =>
+        refreshSupabaseConversations(selectedConversation.id),
+      );
+
       return;
     }
 
@@ -304,16 +418,7 @@ export function CommunityPage({ initialChatId = null }: CommunityPageProps) {
           onToggleUserMenu={() => setIsUserMenuOpen((value) => !value)}
         />
 
-        <section className="mt-6">
-          <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
-            Message
-          </h1>
-          <p className="mt-2 text-sm font-medium text-slate-500">
-            Communicate with employers and stay updated on job opportunities
-          </p>
-        </section>
-
-        <section className="mt-4 grid gap-4 lg:h-[500px] lg:grid-cols-[470px_1fr]">
+        <section className="mt-5 grid gap-4 lg:h-[calc(100vh-180px)] lg:min-h-[560px] lg:grid-cols-[470px_1fr] mediahire-messages-fixed">
           <div className={selectedConversation ? "hidden lg:block" : "block"}>
             <ChatSidebar
               conversations={filteredConversations}
