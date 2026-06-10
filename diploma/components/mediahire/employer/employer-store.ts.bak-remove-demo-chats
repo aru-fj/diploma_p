@@ -664,7 +664,9 @@ export function getChats() {
     {
       candidateId: "alex-fernandez",
       id: "chat-alex-fernandez",
-      messages: [],
+      messages: [
+        { id: "m-1", sender: "candidate", text: "Hello! I can share my portfolio for your campaign.", time: "10:15", type: "text" },
+      ],
       status: "Applied",
       unread: 1,
     },
